@@ -1,0 +1,48 @@
+{
+  "name": "flight-game",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.5.1",
+    "@react-three/fiber": "^9.2.0",
+    "@react-three/postprocessing": "^3.0.4",
+    "alea": "^1.0.1",
+    "babel-plugin-glsl": "^1.0.0",
+    "comlink": "^4.4.2",
+    "next": "15.3.5",
+    "postprocessing": "^6.37.6",
+    "react": "^19.0.0",
+    "react-device-detect": "^2.2.3",
+    "react-dom": "^19.0.0",
+    "react-joystick-component": "^6.2.1",
+    "sass": "^1.89.2",
+    "simplex-noise": "^4.0.3",
+    "three": "^0.178.0",
+    "three-mesh-bvh": "^0.9.1",
+    "three-stdlib": "^2.36.0",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.5",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "glslify": "^7.1.1",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "worker-loader": "^3.0.8"
+  }
+}
