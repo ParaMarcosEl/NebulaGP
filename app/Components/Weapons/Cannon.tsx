@@ -14,25 +14,28 @@ const PROJECTILE_SPEED = 200;
 const FIRE_COOLDOWN = 0.25;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function Cannon({ parentRef, offset = new THREE.Vector3(0, 0, -5), onShoot }: CannonProps) {
+export default function Cannon({
+  parentRef,
+  offset = new THREE.Vector3(0, 0, -5),
+  onShoot,
+}: CannonProps) {
   const [projectiles, setProjectiles] = useState<THREE.Mesh[]>([]);
   const timeSinceLastShot = useRef(0);
   const cannonWorldPos = useRef(new THREE.Vector3());
   const cannonForward = useRef(new THREE.Vector3());
 
-  
   useEffect(() => {
     const shoot = () => {
       if (!parentRef.current) return;
-  
+
       const projectileGeometry = new THREE.SphereGeometry(0.5, 8, 8);
       const projectileMaterial = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
       const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
-  
+
       // Use world position and direction of the cannon
       projectile.position.copy(cannonWorldPos.current);
       projectile.userData.velocity = cannonForward.current.clone().multiplyScalar(PROJECTILE_SPEED);
-  
+
       setProjectiles((prev) => [...prev, projectile]);
       onShoot?.(projectile);
     };
@@ -54,8 +57,8 @@ export default function Cannon({ parentRef, offset = new THREE.Vector3(0, 0, -5)
     const parent = parentRef.current;
     // Update cannon's world position and forward direction based on parent
     if (parent) {
-        const offset = new THREE.Vector3(0, 0, 0).applyQuaternion(parent.quaternion);
-        const desiredPosition = parent.position.clone().add(offset);
+      const offset = new THREE.Vector3(0, 0, 0).applyQuaternion(parent.quaternion);
+      const desiredPosition = parent.position.clone().add(offset);
       // Get forward direction (-Z in local space)
       cannonForward.current.copy(desiredPosition);
     }
@@ -69,7 +72,7 @@ export default function Cannon({ parentRef, offset = new THREE.Vector3(0, 0, -5)
           }
           return p;
         })
-        .filter((p) => p.position.length() < 5000)
+        .filter((p) => p.position.length() < 5000),
     );
   });
 

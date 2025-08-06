@@ -33,13 +33,13 @@ export const BulletPool = forwardRef<BulletPoolHandle, BulletPoolProps>(
           initialPosition: new THREE.Vector3(),
           direction: new THREE.Vector3(),
           speed: 0,
-        }))
+        })),
     );
 
     useImperativeHandle(ref, () => ({
       spawnBullet(position, direction, speed) {
-        setBullets(prevBullets => {
-          const index = prevBullets.findIndex(b => !b.active);
+        setBullets((prevBullets) => {
+          const index = prevBullets.findIndex((b) => !b.active);
           if (index === -1) return prevBullets; // No free bullet
 
           const updated = [...prevBullets];
@@ -56,14 +56,12 @@ export const BulletPool = forwardRef<BulletPoolHandle, BulletPoolProps>(
     }));
 
     const deactivateBullet = (id: number) => {
-      setBullets(prev =>
-        prev.map(b => (b.id === id ? { ...b, active: false } : b))
-      );
+      setBullets((prev) => prev.map((b) => (b.id === id ? { ...b, active: false } : b)));
     };
 
     return (
       <>
-        {bullets.map(bullet =>
+        {bullets.map((bullet) =>
           bullet.active ? (
             <Bullet
               key={bullet.id}
@@ -76,11 +74,11 @@ export const BulletPool = forwardRef<BulletPoolHandle, BulletPoolProps>(
               maxDistance={maxDistance}
               onDeactivate={() => deactivateBullet(bullet.id)}
             />
-          ) : null
+          ) : null,
         )}
       </>
     );
-  }
+  },
 );
 
 BulletPool.displayName = 'BulletPool';

@@ -1,21 +1,17 @@
 'use client';
 
 import { useGLTF } from '@react-three/drei';
-import { useEffect, useRef } from 'react';
-import { usePlayerController } from '@/Controllers/playerControls/PlayerController';
+import { useEffect, useMemo } from 'react';
+import { usePlayerController } from '@/Components/Player/PlayerController';
 import * as THREE from 'three';
-import { SHIP_SCALE } from '@/Constants';
-import { RaceState } from './RaceState';
-import { useFrame } from '@react-three/fiber';
-import { useStateMachine } from '@/Lib/StateMachine/StateMachine';
-import { BaseState } from '@/Lib/StateMachine/BaseState';
-import { RaceState as FinishedState } from '../Bot/RaceState';
-import { useGameStore } from '@/Controllers/GameController';
+import { SHIP_SCALE, TOTAL_LAPS } from '@/Constants';
+import { useGameStore } from '@/Controllers/Game/GameController';
+import { useBotController } from './BotController';
 
 type AircraftProps = {
   aircraftRef: React.RefObject<THREE.Group | null>;
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
-  playingFieldRef?: React.RefObject<THREE.Mesh | null>; // <-- Add this optional prop
+  playingFieldRef?: React.RefObject<THREE.Mesh | null>;
   acceleration?: number;
   damping?: number;
   onSpeedChange?: (speed: number) => void;
@@ -24,6 +20,8 @@ type AircraftProps = {
   startPosition?: [number, number, number];
   startQuaternion?: THREE.Quaternion;
   curve: THREE.Curve<THREE.Vector3>;
+  isBot?: boolean;
+  botSpeed?: number;
 };
 
 export default function Aircraft({
@@ -38,11 +36,12 @@ export default function Aircraft({
   onAcceleratingChange,
   onBrakingChange,
   curve,
+  isBot,
+  botSpeed = 1,
 }: AircraftProps) {
-  const { scene } = useGLTF('/models/spaceship.glb');
-  const raceStateRef = useRef<RaceState | null>(null);
-  const { setState } = useStateMachine(raceStateRef.current as BaseState);
-  const { playerPhase } = useGameStore((s) => s);
+  const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
+  const { raceData, playerId } = useGameStore((s) => s);
+  const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
@@ -51,27 +50,13 @@ export default function Aircraft({
     }
   }, [startPosition, startQuaternion, aircraftRef]);
 
-  // Initialize RaceState once
-  useEffect(() => {
-    if (aircraftRef.current) {
-      const raceState = new RaceState();
-      raceStateRef.current = raceState;
-    }
-  }, [aircraftRef, curve]);
-
-  // Frame update for AI movement
-  useFrame((_, delta) => {
-    if (raceStateRef.current) {
-      raceStateRef.current.handleUpdate(delta);
-
-      if (!aircraftRef.current) return;
-
-      if (playerPhase === 'Finished') setState(new FinishedState(aircraftRef.current, curve, true));
-      if (playerPhase === 'Race') setState(new RaceState());
-    }
+  useBotController({
+    botRef: aircraftRef as React.RefObject<THREE.Group>,
+    curve,
+    enabled: isBot || raceData[playerId]?.history?.length >= TOTAL_LAPS,
+    speed: botSpeed,
   });
 
-  // Add curve to dependencies if RaceState depends on it
   usePlayerController({
     aircraftRef,
     obstacleRefs,
@@ -82,13 +67,16 @@ export default function Aircraft({
     onAcceleratingChange,
     onBrakingChange,
     curve,
+    botSpeed,
   });
 
   return (
-    <group ref={aircraftRef}>
-      <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
-        <primitive object={scene} scale={0.5} />
+    <>
+      <group ref={aircraftRef}>
+        <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
+          <primitive object={model} scale={0.5} />
+        </group>
       </group>
-    </group>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 export function StartCountdown() {
   const [timeLeft, setTimeLeft] = useState(3); // Show 3 → 2 → 1 → GO!

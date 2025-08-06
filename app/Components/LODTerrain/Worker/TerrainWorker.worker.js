@@ -10,8 +10,7 @@ function permuteScalar(x) {
 
 function noise(v) {
   const C = { x: 0.211324865, y: 0.366025404, z: 0.577350269, w: 0.0243902439 };
-  const dot = (v1, v2) =>
-    v1.x * v2.x + v1.y * v2.y;
+  const dot = (v1, v2) => v1.x * v2.x + v1.y * v2.y;
 
   const i_x = Math.floor(v.x + (v.x + v.y) * C.y);
   const i_y = Math.floor(v.y + (v.x + v.y) * C.y);
@@ -87,60 +86,54 @@ function fbm(pos, params) {
   return Math.pow((normalized + 1.0) / 2.0, params.uExponentiation);
 }
 
-function getElevation(
-  worldPos,
-  params,
-) {
+function getElevation(worldPos, params) {
   return fbm(worldPos, params) * params.uMaxHeight;
 }
 
 self.onmessage = (e) => {
   const { positions, noiseParams } = e.data;
 
-  
   const normals = new Float32Array(positions.length);
   const elevations = new Float32Array(positions.length / 3);
-   const epsilon = 0.01;
+  const epsilon = 0.01;
   try {
-    
-  
-    console.log("Worker: Starting terrain calculation loop.");
-  
+    console.log('Worker: Starting terrain calculation loop.');
+
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
       const z = positions[i + 2];
-  
+
       const globalNoiseInput = {
         x: x + noiseParams.uWorldOffset.x + noiseParams.uWorldOrigin.x,
         y: z + noiseParams.uWorldOffset.y + noiseParams.uWorldOrigin.y,
       };
-  
+
       const elevation = getElevation(globalNoiseInput, noiseParams);
       positions[i] = x;
       positions[i + 1] = elevation;
       positions[i + 2] = z;
-  
+
       elevations[i / 3] = elevation / noiseParams.uMaxHeight;
-  
+
       const dx_input = { x: globalNoiseInput.x + epsilon, y: globalNoiseInput.y };
       const dz_input = { x: globalNoiseInput.x, y: globalNoiseInput.y + epsilon };
-  
+
       const elevation_dx = getElevation(dx_input, noiseParams);
       const elevation_dz = getElevation(dz_input, noiseParams);
-  
+
       // FIX: Corrected the cross-product order from (vb x va) to (va x vb)
       // This ensures the normal vector points outwards from the terrain.
       const va = { x: epsilon, y: elevation_dx - elevation, z: 0.0 };
       const vb = { x: 0.0, y: elevation_dz - elevation, z: epsilon };
-  
+
       const normal_x = va.y * vb.z - va.z * vb.y;
       const normal_y = va.z * vb.x - va.x * vb.z;
       const normal_z = va.x * vb.y - va.y * vb.x;
-  
+
       const normal_length = Math.sqrt(
         normal_x * normal_x + normal_y * normal_y + normal_z * normal_z,
       );
-      
+
       if (normal_length === 0) {
         console.error(`Worker: Normal length is zero at index ${i}. Skipping normal calculation.`);
         normals[i] = 0;
@@ -153,7 +146,7 @@ self.onmessage = (e) => {
       }
     }
   } catch (error) {
-    console.log({ TerrainWorkerError: error })
+    console.log({ TerrainWorkerError: error });
   }
 
   self.onerror = (e) => {
@@ -163,8 +156,8 @@ self.onmessage = (e) => {
   // After fill:
 
   self.postMessage({ normals, elevations, positions /* SAB not needed for inputs */ });
-  console.log('finished')
-}
+  console.log('finished');
+};
 
 // console.log('Worker loaded');
 

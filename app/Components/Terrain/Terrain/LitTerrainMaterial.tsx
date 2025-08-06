@@ -1,21 +1,19 @@
 import * as THREE from 'three';
 
 export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
-
-  customUniforms: { 
-    uTime: { value: number; }; 
-    uMaxHeight: { value: number; }; 
-    uFrequency: { value: number; }; 
-    uAmplitude: { value: number; }; 
-    uOctaves: { value: number; }; 
-    uLacunarity: { value: number; }; 
-    uPersistence: { value: number; }; 
-    uExponentiation: { value: number; }; 
+  customUniforms: {
+    uTime: { value: number };
+    uMaxHeight: { value: number };
+    uFrequency: { value: number };
+    uAmplitude: { value: number };
+    uOctaves: { value: number };
+    uLacunarity: { value: number };
+    uPersistence: { value: number };
+    uExponentiation: { value: number };
     uWorldOffset: { value: THREE.Vector2 };
     uWorldOrigin: { value: THREE.Vector2 };
-    
-};
-  
+  };
+
   constructor() {
     super({
       color: 0xee8b57, // Color of Material
@@ -33,7 +31,6 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
       uExponentiation: { value: 1.0 },
       uWorldOffset: { value: new THREE.Vector2(0, 0) },
       uWorldOrigin: { value: new THREE.Vector2(0, 0) },
-
     };
 
     this.onBeforeCompile = (shader) => {
@@ -108,7 +105,7 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
             float normalized = total / maxAmplitude;
             return pow((normalized + 1.0) / 2.0, uExponentiation);
           }
-        `
+        `,
         )
         .replace(
           '#include <begin_vertex>',
@@ -120,7 +117,7 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
             displacedPosition.y = elevation * uMaxHeight;
 
             vec3 transformed = displacedPosition;
-        `
+        `,
         );
 
       this.userData.shader = shader; // optional access to shader later

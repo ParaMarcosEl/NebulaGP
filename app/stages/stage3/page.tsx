@@ -4,34 +4,33 @@ import { Canvas } from '@react-three/fiber';
 import { useRef, useMemo, useState, createRef, useEffect } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
-import Track from '@/Components/Track';
+import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/FollowCamera';
 // import Obstacle from '@/Components/Obstacle';
 import HUD from '@/Components/UI/HUD';
 import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
-import { Skybox } from '@/Components/Skybox';
-import BotCraft from '@/Components/Bot/BotCraft';
+import { Skybox } from '@/Components/Skybox/Skybox';
 import MiniMap from '@/Components/UI/MiniMap/MiniMap';
-import { useGameStore } from '@/Controllers/GameController';
-import { useRaceProgress } from '@/Controllers/RaceProgressController';
+import { useGameStore } from '@/Controllers/Game/GameController';
+import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import { StandingsUI } from '@/Components/UI/StandingsUI';
 import { RaceOver } from '@/Components/UI/RaceOver';
 import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
-import { StartCountdown } from '@/Controllers/StartTimer';
+import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import Link from 'next/link';
 // import Planet from '@/Components/Planet';
-import SpeedPadSpawner from '@/Components/speedPadSpawner';
-import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
+import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
+// import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 
 function RaceProgressTracker({
   playerRef,
   botRefs,
   curve,
 }: {
-  playerRef: React.RefObject<THREE.Object3D>;
-  botRefs: React.RefObject<THREE.Object3D>[];
+  playerRef: React.RefObject<THREE.Group>;
+  botRefs: React.RefObject<THREE.Group>[];
   curve: curveType;
 }) {
   useRaceProgress({ playerRef, playerRefs: botRefs, curve });
@@ -41,8 +40,8 @@ function RaceProgressTracker({
 export default function Stage() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
-  const botRef = useRef<THREE.Object3D | null>(null);
-  const botRef2 = useRef<THREE.Object3D | null>(null);
+  const botRef = useRef<THREE.Group | null>(null);
+  const botRef2 = useRef<THREE.Group | null>(null);
   const bounds = { x: 500, y: 250, z: 500 };
   const { raceData, reset, track: curve, setTrack, playerId } = useGameStore((state) => state);
   const positions = Object.entries(raceData)
@@ -52,6 +51,8 @@ export default function Stage() {
       id: parseInt(id),
     }))
     .filter((pos) => pos.id >= 0);
+
+  // create obstacle positions
   const obstaclePositions = useMemo(() => {
     const positions: [number, number, number][] = [];
     for (let i = 0; i < 500; i++) {
@@ -64,6 +65,7 @@ export default function Stage() {
     return positions;
   }, [bounds.x, bounds.y, bounds.z]);
 
+  // create refs for obstacles
   const obstacleRefs = useRef<React.RefObject<THREE.Mesh | null>[]>([]);
   if (obstacleRefs.current.length !== obstaclePositions.length) {
     obstacleRefs.current = obstaclePositions.map(() => createRef<THREE.Mesh>());
@@ -82,7 +84,7 @@ export default function Stage() {
   }, [reset, setTrack]);
 
   return (
-    <main 
+    <main
       style={{
         width: '100vw',
         height: '100vh',
@@ -92,8 +94,8 @@ export default function Stage() {
         touchAction: 'none',
         overscrollBehavior: 'none',
         WebkitOverflowScrolling: 'auto',
-      }}>
-
+      }}
+    >
       {/* UI */}
       <Link
         style={{
@@ -116,10 +118,10 @@ export default function Stage() {
       {/* Scene */}
       <Canvas shadows camera={{ position: [0, 5, 15], fov: 60 }}>
         <RaceProgressTracker
-          playerRef={aircraftRef as React.RefObject<THREE.Object3D>}
+          playerRef={aircraftRef as React.RefObject<THREE.Group>}
           botRefs={[
-            botRef as React.RefObject<THREE.Object3D>,
-            botRef2 as React.RefObject<THREE.Object3D>,
+            botRef as React.RefObject<THREE.Group>,
+            botRef2 as React.RefObject<THREE.Group>,
           ]}
           curve={curve}
         />
@@ -141,10 +143,10 @@ export default function Stage() {
         <Skybox stageName="stageD" />
         <Track
           ref={playingFieldRef}
-          aircraftRef={aircraftRef as React.RefObject<THREE.Object3D>}
+          aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
           curve={curve}
         />
-        <TerrainChunkManager
+        {/* <TerrainChunkManager
           yOffset={-250}
           chunkSize={512}
           maxHeight={512}
@@ -154,11 +156,11 @@ export default function Stage() {
           lowMapPath='/textures/planet_texture01.png'
           highMapPath='/textures/planet_texture01.png'
           midMapPath='/textures/planet_texture02.png'
-        />
+        /> */}
 
         <SpeedPadSpawner
           curve={curve}
-          playerRefs={[{ id: playerId, ref: aircraftRef as React.RefObject<THREE.Object3D> }]}
+          playerRefs={[{ id: playerId, ref: aircraftRef as React.RefObject<THREE.Group> }]}
         />
         {/* {obstaclePositions.map((pos, i) => (
           <Obstacle key={i} position={pos} ref={obstacleRefs.current[i]} />
@@ -178,18 +180,18 @@ export default function Stage() {
         />
 
         {/* Bots */}
-        <BotCraft
-          ref={botRef as React.RefObject<THREE.Object3D>}
-          startPosition={new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2])}
+        <Aircraft
+          aircraftRef={botRef as React.RefObject<THREE.Group>}
+          startPosition={startPosition}
           startQuaternion={startQuaternion}
-          speed={0.0005}
+          botSpeed={0.02}
           curve={curve}
         />
-        <BotCraft
-          ref={botRef2 as React.RefObject<THREE.Object3D>}
-          startPosition={new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2])}
+        <Aircraft
+          aircraftRef={botRef2 as React.RefObject<THREE.Group>}
+          startPosition={startPosition}
           startQuaternion={startQuaternion}
-          speed={0.00047}
+          botSpeed={0.03}
           curve={curve}
         />
 

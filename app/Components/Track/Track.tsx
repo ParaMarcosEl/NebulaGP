@@ -5,8 +5,8 @@ import { Line, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { TUBE_RADIUS } from '@/Constants';
 import { computeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
-import { useCheckpointController } from '@/Controllers/CheckPointController';
-import { useLapTimer } from '@/Controllers/LapTimer';
+import { useCheckpointController } from '@/Controllers/Game/CheckPointController';
+import { useLapTimer } from '@/Controllers/Game/LapTimer';
 
 // Setup BVH on BufferGeometry and raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;

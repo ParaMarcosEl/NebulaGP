@@ -1,8 +1,8 @@
 import { useEffect, useState, CSSProperties } from 'react';
 import Link from 'next/link';
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { formatTime } from '@/Utils';
-import { useRaceStandings } from '@/Controllers/useRaceStandings';
+import { useRaceStandings } from '@/Controllers/Game/useRaceStandings';
 
 type stylesType = Record<string, CSSProperties>;
 

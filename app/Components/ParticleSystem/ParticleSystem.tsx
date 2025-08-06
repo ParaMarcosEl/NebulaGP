@@ -25,14 +25,21 @@ void main() {
 
 const fragmentShader = `
   uniform sampler2D pointTexture;
-  uniform vec3 color;
+  uniform vec3 startColor;
+  uniform vec3 endColor;
+  uniform float startOpacity;
+  uniform float endOpacity;
+  varying float vLifetime;
+
   void main() {
     vec4 tex = texture2D(pointTexture, gl_PointCoord);
-    gl_FragColor = vec4(color, 1.0) * tex;
+    vec3 interpolatedColor = mix(startColor, endColor, vLifetime);
+    float interpolatedOpacity = mix(startOpacity, endOpacity, vLifetime);
+    gl_FragColor = vec4(interpolatedColor, interpolatedOpacity) * tex;
   }
 `;
 
-type ParticleEmitterSunProps = {
+type ParticleSystemProps = {
   position?: THREE.Vector3;
   particleCount?: number;
   size?: number;
@@ -56,9 +63,10 @@ export function ParticleSystem({
   startOpacity = 1.0,
   endOpacity = 0.0,
   useWorldSpace = false,
-}: ParticleEmitterSunProps) {
+}: ParticleSystemProps) {
   const pointsRef = useRef<THREE.Points>(null);
   const texture = useTexture('/textures/explosion.png');
+  const tempVec = new THREE.Vector3();
 
   // Particle state
   const positions = useMemo(() => new Float32Array(particleCount * 3), [particleCount]);
@@ -94,7 +102,7 @@ export function ParticleSystem({
         uniforms: {
           size: { value: size },
           pointTexture: { value: texture },
-          color: { value: new THREE.Color('orange') },
+          color: { value: new THREE.Color(startColor) }, // optional legacy fallback
           startColor: { value: new THREE.Color(startColor) },
           endColor: { value: new THREE.Color(endColor) },
           startOpacity: { value: startOpacity },
@@ -122,17 +130,18 @@ export function ParticleSystem({
       z += velocities[i].z;
 
       // Reset if too far
-      const dist = Math.sqrt(x * x + y * y + z * z);
-      const lifetime = dist / maxDistance;
-      if (dist > maxDistance) {
+      const distSq = x * x + y * y + z * z;
+      // const maxDistSq = maxDistance * maxDistance;
+      const lifetime = Math.sqrt(distSq) / maxDistance;
+
+      if (Math.sqrt(distSq) > maxDistance) {
         x = y = z = 0;
-        velocities[i] = new THREE.Vector3(
-          Math.random() * 2 - 1,
-          Math.random() * 2 - 1,
-          Math.random() * 2 - 1,
-        )
-          .normalize()
-          .multiplyScalar(speed + Math.random() * speed);
+        velocities[i].copy(
+          tempVec
+            .set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+            .normalize()
+            .multiplyScalar(speed + Math.random() * speed),
+        );
         lifetimes[i] = 0;
       } else {
         lifetimes[i] = lifetime;

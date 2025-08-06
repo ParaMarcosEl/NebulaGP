@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Joystick } from 'react-joystick-component';
 import { isMobileDevice } from '@/Utils';
 // import styles from './TouchControls.module.css'; // optional styling
-import { playerInputAxis } from '@/Controllers/playerControls/PlayerController';
+import { playerInputAxis } from '@/Components/Player/PlayerController';
 
 export default function TouchControls() {
   const [showControls, setShowControls] = useState(false);

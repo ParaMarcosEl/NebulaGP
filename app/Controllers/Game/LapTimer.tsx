@@ -1,6 +1,6 @@
 // controllers/LapTimer.ts
 import { useFrame } from '@react-three/fiber';
-import { useGameStore } from '@/Controllers/GameController'; // Assuming GameController is your zustand store file
+import { useGameStore } from '@/Controllers/Game/GameController'; // Assuming GameController is your zustand store file
 
 export function useLapTimer() {
   const setLapTime = useGameStore((state) => state.setLapTime);

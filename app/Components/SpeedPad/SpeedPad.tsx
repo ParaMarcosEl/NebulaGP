@@ -1,6 +1,7 @@
+'use client';
 // components/SpeedPad.tsx
 import { useRef } from 'react';
-import { useSpeedPadController } from '@/Controllers/SpeedPadController';
+import { useSpeedPadController } from '@/Components/SpeedPad/SpeedPadController';
 import * as THREE from 'three';
 
 type SpeedPadProps = {

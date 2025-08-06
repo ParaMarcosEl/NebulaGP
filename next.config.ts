@@ -1,7 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  webpack(config: { module: { rules: { test: RegExp; loader: string; options: { filename: string; inline: string; }; }[]; }; resolve: { fallback: any; }; }, { isServer }: any) {
+  webpack(
+    config: {
+      module: {
+        rules: { test: RegExp; loader: string; options: { filename: string; inline: string } }[];
+      };
+      resolve: { fallback: any };
+    },
+    { isServer }: any,
+  ) {
     if (!isServer) {
       config.module.rules.push({
         test: /\.worker\.js$/,

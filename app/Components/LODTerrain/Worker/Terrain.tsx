@@ -1,9 +1,8 @@
-
 import { useEffect, useRef, forwardRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { extend } from '@react-three/fiber';
 import { ITerrainChunkProps, Y_OFFSET, TERRAIN_PROPS, TerrainChunkRequest } from '@/Constants';
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { useTexture } from '@react-three/drei';
 import { WorkerTerrainMaterial } from './WorkerTerrainMaterial';
 
@@ -56,7 +55,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
   const setLitTerrainMaterialLoaded = useGameStore((state) => state.setLitTerrainMaterialLoaded);
 
   const [lowTexture, midTexture, highTexture] = useTexture([lowMapPath, midMapPath, highMapPath]);
-  
+
   [lowTexture, midTexture, highTexture].forEach((tex) => {
     if (tex) {
       tex.wrapS = THREE.RepeatWrapping;
@@ -64,17 +63,20 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
       tex.needsUpdate = true;
     }
   });
-  
-  const texturesReady = useMemo(() => lowTexture && midTexture && highTexture, [lowTexture, midTexture, highTexture]);
-  
+
+  const texturesReady = useMemo(
+    () => lowTexture && midTexture && highTexture,
+    [lowTexture, midTexture, highTexture],
+  );
+
   useEffect(() => {
     if (!texturesReady) return;
-    
-      // const positions = new Float32Array(positionSAB);
-      // const normals = new Float32Array(normalSAB);
-      // const elevations = new Float32Array(elevationSAB);
-      // const uvs = new Float32Array(uvSAB);
-      // const indices = new Uint32Array(indexSAB);
+
+    // const positions = new Float32Array(positionSAB);
+    // const normals = new Float32Array(normalSAB);
+    // const elevations = new Float32Array(elevationSAB);
+    // const uvs = new Float32Array(uvSAB);
+    // const indices = new Uint32Array(indexSAB);
     // Main thread - terrain.tsx (or wherever you're preparing the SAB and posting to the worker)
 
     const geom = new THREE.PlaneGeometry(size, size, segments, segments);
@@ -95,10 +97,9 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     const geomPositions = geom.attributes.position.array as Float32Array;
     const geomUVs = geom.attributes.uv.array as Float32Array;
 
-    
     positions.set(geomPositions);
     uvData.set(geomUVs);
-    
+
     // 🛠 Replace geometry attributes with SharedArrayBuffer views
     geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geom.setAttribute('uv', new THREE.BufferAttribute(uvData, 2));
@@ -128,7 +129,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     //   geom.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
     //   geom.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
     //   geom.setAttribute('elevation', new THREE.BufferAttribute(data.elevations, 1));
-      
+
     //   geom.computeBoundingSphere();
     //   geom.computeBoundingBox();
 
@@ -157,24 +158,38 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
       geometryRef.current = geom;
     };
 
-
     worker.onerror = (e) => console.error('Worker error:', e);
     worker.onmessageerror = (e) => console.error('Message error:', e);
 
     try {
       console.log({ request });
-      worker.postMessage(request)
+      worker.postMessage(request);
     } catch (syncError) {
       console.error('Synchronous error:', syncError);
     }
-    
+
     return () => {
       if (geometryRef.current) {
         geometryRef.current.dispose();
         geometryRef.current = null;
       }
     };
-  }, [size, segments, maxHeight, frequency, amplitude, octaves, lacunarity, persistence, exponentiation, position.x, position.z, worldOrigin.x, worldOrigin.y, texturesReady]);
+  }, [
+    size,
+    segments,
+    maxHeight,
+    frequency,
+    amplitude,
+    octaves,
+    lacunarity,
+    persistence,
+    exponentiation,
+    position.x,
+    position.z,
+    worldOrigin.x,
+    worldOrigin.y,
+    texturesReady,
+  ]);
 
   // COMBINED EFFECT for all material uniform assignments
   useEffect(() => {
@@ -185,16 +200,14 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     uniforms.highMap.value = highTexture;
     uniforms.lowMap.value = lowTexture;
     uniforms.map.value = midTexture;
-    uniforms.textureBlend.value = .5;
+    uniforms.textureBlend.value = 0.5;
     uniforms.uTextureScale.value = 0.08; // Set a consistent, larger value
-    
+
     if (materialRef.current.userData.shader && !useGameStore.getState().litTerrainMaterialLoaded) {
       setLitTerrainMaterialLoaded(true);
     }
-  }, [
-    highTexture, lowTexture, midTexture, setLitTerrainMaterialLoaded, texturesReady,
-  ]);
-  
+  }, [highTexture, lowTexture, midTexture, setLitTerrainMaterialLoaded, texturesReady]);
+
   // Use useFrame to update uniforms if needed, e.g., for time-based animations
   // This is a good place to put uniforms that change every frame
   // useFrame(() => {
@@ -204,18 +217,8 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
   // });
 
   return terrainGeometry ? (
-    <mesh
-      ref={ref}
-      position={[0, 0, 0]}
-      castShadow
-      receiveShadow
-      geometry={terrainGeometry}
-    >
-      <meshStandardMaterial
-        ref={materialRef} 
-        attach="material" 
-        side={THREE.DoubleSide}
-      />
+    <mesh ref={ref} position={[0, 0, 0]} castShadow receiveShadow geometry={terrainGeometry}>
+      <meshStandardMaterial ref={materialRef} attach="material" side={THREE.DoubleSide} />
     </mesh>
   ) : null;
 });

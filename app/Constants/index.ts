@@ -7,6 +7,15 @@ export const LAP_RADIUS = 400; // Approximate size of loop
 export const HEIGHT_VARIATION = 50; // Max vertical offset
 export const SEED = Math.random() * Date.now();
 export const TUBE_RADIUS = 30;
+export const keyboardControlsMap = [
+  { name: 'forward', keys: ['KeyI'] },
+  { name: 'backward', keys: ['KeyK'] },
+  { name: 'pitchDown', keys: ['KeyW'] },
+  { name: 'pitchUp', keys: ['KeyS'] },
+  { name: 'rollLeft', keys: ['KeyA'] },
+  { name: 'rollRight', keys: ['KeyD'] },
+  { name: 'shoot', keys: ['KeyJ'] },
+];
 
 // SHIP
 export const MAX_SPEED = 2.5;
@@ -132,6 +141,7 @@ export interface ITerrainChunkProps {
   midMapPath: string;
   highMapPath: string;
   overrideGeometry?: THREE.BufferGeometry | null;
+  setShaderCompiled?: (compiled: boolean) => void; // Optional callback to notify when shader is compiled
 }
 
 // Represents a terrain chunk instance managed within the pooling system

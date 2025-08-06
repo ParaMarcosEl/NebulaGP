@@ -54,7 +54,7 @@ declare module '@react-three/fiber' {
   }
 }
 
-extend({ WorkerTerrainShader })
+extend({ WorkerTerrainShader });
 
 declare module '@react-three/fiber' {
   interface ThreeElements {
@@ -72,7 +72,7 @@ declare module '@react-three/fiber' {
   }
 }
 
-extend({ SingleTextureMaterial })
+extend({ SingleTextureMaterial });
 
 declare module '@react-three/fiber' {
   interface ThreeElements {

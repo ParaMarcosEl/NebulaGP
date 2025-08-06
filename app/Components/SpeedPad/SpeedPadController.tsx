@@ -1,8 +1,9 @@
+'use client';
 // controllers/CheckpointController.ts
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 type SpeedPad = {
   mesh: THREE.Mesh;
@@ -21,7 +22,7 @@ export function useSpeedPadController({
   speedPadRef: React.RefObject<THREE.Mesh>;
   cooldownTime?: number;
 }) {
-  const { applyBoost, raceData } = useGameStore((s) => s);
+  const { applyBoost } = useGameStore((s) => s);
 
   const speedPad = useRef<SpeedPad>({
     mesh: speedPadRef.current as THREE.Mesh,
@@ -51,7 +52,6 @@ export function useSpeedPadController({
     const craft = playerBoxes.find((craft) => craft.box.intersectsBox(speedPadBox));
 
     if (!!craft && cooldown.current <= 0) {
-      console.log({ raceData: raceData[craft.id] });
       speedPad.current.didPass = true;
       cooldown.current = cooldownTime;
       applyBoost(craft.id);

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'; // Import the useMemo hook from React for memoization.
-import { useGameStore } from '@/Controllers/GameController'; // Import the Zustand game store.
+import { useGameStore } from '@/Controllers/Game/GameController'; // Import the Zustand game store.
 import { TOTAL_LAPS } from '@/Constants'; // Import the constant for the total number of laps.
 
 /**

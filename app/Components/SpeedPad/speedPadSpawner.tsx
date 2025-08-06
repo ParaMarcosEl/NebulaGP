@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { curveType } from '@/Constants';
@@ -9,6 +11,7 @@ type SpeedPadSpawnerProps = {
   padCount?: number;
   startT?: number;
   endT?: number;
+  offsetRadius?: number; // how far pads can randomly be from the curve
 };
 
 export default function SpeedPadSpawner({
@@ -17,6 +20,7 @@ export default function SpeedPadSpawner({
   padCount = 10,
   startT = 0.1,
   endT = 0.9,
+  offsetRadius = 30, // how far pads can randomly be from the curve
 }: SpeedPadSpawnerProps) {
   const pads = useMemo(() => {
     const step = (endT - startT) / (padCount - 1);
@@ -25,12 +29,28 @@ export default function SpeedPadSpawner({
       const t = startT + step * i;
       const position = curve.getPoint(t);
       const tangent = curve.getTangent(t).normalize();
+
+      // Create two perpendicular vectors to the tangent
+      const up = new THREE.Vector3(0, 1, 0);
+      if (Math.abs(tangent.dot(up)) > 0.95) up.set(1, 0, 0); // avoid degeneracy
+
+      const side = new THREE.Vector3().crossVectors(tangent, up).normalize();
+      const offsetUp = new THREE.Vector3().crossVectors(side, tangent).normalize();
+
+      // Apply random offset
+      const randomAngle = Math.random() * 2 * Math.PI;
+      const randomRadius = Math.random() * offsetRadius;
+      const offset = new THREE.Vector3()
+        .addScaledVector(side, Math.cos(randomAngle) * randomRadius)
+        .addScaledVector(offsetUp, Math.sin(randomAngle) * randomRadius);
+
+      const finalPosition = position.clone().add(offset);
       const quaternion = new THREE.Quaternion().setFromUnitVectors(
         new THREE.Vector3(0, 1, 0),
         tangent,
       );
 
-      return { position, quaternion };
+      return { position: finalPosition, quaternion };
     });
   }, [curve, startT, endT, padCount]);
 

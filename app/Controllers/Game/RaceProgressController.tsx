@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'; // Imports the useFrame hook from @react-three/fiber, which runs code every frame.
 import * as THREE from 'three'; // Imports the entire Three.js library for 3D math and objects.
-import { useGameStore } from '@/Controllers/GameController'; // Imports the Zustand game state store.
+import { useGameStore } from '@/Controllers/Game/GameController'; // Imports the Zustand game state store.
 import { useRef } from 'react'; // Imports the useRef hook from React for mutable references.
 import { getProgressAlongCurve } from '@/Utils'; // Imports a utility function to calculate progress along a 3D curve.
 import { TOTAL_LAPS } from '@/Constants'; // Imports the constant defining the total number of laps in the race.
