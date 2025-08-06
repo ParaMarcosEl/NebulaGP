@@ -52,7 +52,7 @@ export default function SpeedPadSpawner({
 
       return { position: finalPosition, quaternion };
     });
-  }, [curve, startT, endT, padCount]);
+  }, [endT, startT, padCount, curve, offsetRadius]);
 
   return (
     <>

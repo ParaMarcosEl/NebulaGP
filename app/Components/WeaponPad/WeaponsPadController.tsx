@@ -22,7 +22,7 @@ export function useWeaponsPad({
   weaponsPadRef: React.RefObject<THREE.Mesh>;
   cooldownTime?: number;
 }) {
-  const { setCannon, raceData } = useGameStore((s) => s);
+  const { setCannon } = useGameStore((s) => s);
 
   const weaponsPad = useRef<WeaponsPad>({
     mesh: weaponsPadRef.current as THREE.Mesh,

@@ -13,10 +13,8 @@ type CannonProps = {
 const PROJECTILE_SPEED = 200;
 const FIRE_COOLDOWN = 0.25;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function Cannon({
   parentRef,
-  offset = new THREE.Vector3(0, 0, -5),
   onShoot,
 }: CannonProps) {
   const [projectiles, setProjectiles] = useState<THREE.Mesh[]>([]);

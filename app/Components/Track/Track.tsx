@@ -42,10 +42,10 @@ const Track = forwardRef<
       const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
       tubeGeometry.computeBoundsTree();
       return tubeGeometry;
-    }, []);
+    }, [curve]);
 
     // Get points along the curve for rendering the line
-    const curvePoints = useMemo(() => curve.getPoints(1000), []);
+    const curvePoints = useMemo(() => curve.getPoints(1000), [curve]);
 
     const { quaternion } = useMemo(() => {
       const tangent = curve.getTangentAt(0).normalize();
@@ -57,7 +57,7 @@ const Track = forwardRef<
       return {
         quaternion,
       };
-    }, []);
+    }, [curve]);
 
     // Load and configure repeating texture for the playing field
     const texture = useTexture('/textures/stage_texture.png');
