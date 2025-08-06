@@ -1,6 +1,6 @@
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { formatTime } from '@/Utils';
-import { useRaceStandings } from '@/Controllers/useRaceStandings';
+import { useRaceStandings } from '@/Controllers/Game/useRaceStandings';
 
 export function StandingsUI() {
   const { finished } = useRaceStandings();

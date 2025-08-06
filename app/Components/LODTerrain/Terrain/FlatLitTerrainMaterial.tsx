@@ -115,7 +115,7 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
           float getElevation(vec2 worldPos) {
               return fbm(worldPos) * uMaxHeight;
           }
-          `
+          `,
         )
         .replace('#include <uv_vertex>', 'vUv = uv;')
         .replace(
@@ -137,16 +137,15 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
           vec3 va = vec3(epsilon, elevation_dx - elevation, 0.0);
           vec3 vb = vec3(0.0, elevation_dz - elevation, epsilon);
           objectNormal = normalize(cross(vb, va)); // Update objectNormal
-          `
+          `,
         )
         .replace(
-            '#include <worldpos_vertex>',
-            `
+          '#include <worldpos_vertex>',
+          `
             #include <worldpos_vertex>
             // vWorldNormal is no longer needed since triplanar mapping is removed
-            `
+            `,
         );
-
 
       shader.fragmentShader = shader.fragmentShader
         .replace(
@@ -158,7 +157,7 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
           uniform sampler2D lowMap;
           uniform sampler2D map;
           uniform sampler2D highMap;
-          `
+          `,
         )
         .replace(
           '#include <map_fragment>',
@@ -179,7 +178,7 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
           finalColor = mix(finalColor, highColor, midToHighBlend);
 
           diffuseColor.rgb = finalColor.rgb;
-          `
+          `,
         );
 
       this.userData.shader = shader;

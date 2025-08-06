@@ -76,21 +76,21 @@ const fragmentShader = `
 `;
 
 export class WorkerTerrainShader extends THREE.ShaderMaterial {
-    constructor() {
-        super({
-            uniforms: {
-                lowMap: { value: null },
-                highMap: { value: null },
-                map: { value: null },
-                uTextureScale: { value: 0.08 },
-                uDirectionalLightColor: { value: new THREE.Color(0xffffff) },
-                uDirectionalLightDirection: { value: new THREE.Vector3(0, 1, 0) },
-                uAmbientLightColor: { value: new THREE.Color(0x333333) },
-            },
-            vertexShader,
-            fragmentShader,
-            lights: true,
-            transparent: false,
-        });
-    }
+  constructor() {
+    super({
+      uniforms: {
+        lowMap: { value: null },
+        highMap: { value: null },
+        map: { value: null },
+        uTextureScale: { value: 0.08 },
+        uDirectionalLightColor: { value: new THREE.Color(0xffffff) },
+        uDirectionalLightDirection: { value: new THREE.Vector3(0, 1, 0) },
+        uAmbientLightColor: { value: new THREE.Color(0x333333) },
+      },
+      vertexShader,
+      fragmentShader,
+      lights: true,
+      transparent: false,
+    });
+  }
 }

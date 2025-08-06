@@ -26,6 +26,14 @@
       "*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src", "types", "app/components/LODTerrain/worker/TerrainWorker.worker.js"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src",
+    "types",
+    "app/components/LODTerrain/worker/TerrainWorker.worker.js"
+  ],
   "exclude": ["node_modules"]
 }

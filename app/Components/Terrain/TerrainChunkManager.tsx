@@ -31,16 +31,16 @@ const TerrainChunkManager = () => {
     const leafNodes = root.getLeafNodes();
 
     const newChunks = new Map<ChunkKey, ITerrainChunkProps>();
-    console.log(JSON.stringify({ rootCenter, rootSize }, null, 2))
+    console.log(JSON.stringify({ rootCenter, rootSize }, null, 2));
     for (const node of leafNodes) {
-      console.log(JSON.stringify({ childCenter: node.center, childSize: node.size}, null, 2))
+      console.log(JSON.stringify({ childCenter: node.center, childSize: node.size }, null, 2));
       const key = getChunkKey(node.center, node.size);
       if (!chunks.has(key)) {
         newChunks.set(key, {
           worldOrigin: rootCenter,
           position: new THREE.Vector3(node.center.x, 0, node.center.y),
           size: node.size,
-          ...DEFAULT_CHUNK_PROPS_BUILDER
+          ...DEFAULT_CHUNK_PROPS_BUILDER,
         });
       } else {
         newChunks.set(key, chunks.get(key)!);
@@ -48,7 +48,7 @@ const TerrainChunkManager = () => {
     }
 
     // Only update state if new chunks were added or removed
-    if (newChunks.size !== chunks.size || [...newChunks.keys()].some(k => !chunks.has(k))) {
+    if (newChunks.size !== chunks.size || [...newChunks.keys()].some((k) => !chunks.has(k))) {
       setChunks(newChunks);
     }
   });

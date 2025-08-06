@@ -4,14 +4,17 @@ import Link from 'next/link';
 import { CSSProperties } from 'react';
 import { GalaxyBackground } from '@/Components/UI/backgrounds/Galaxy';
 import { blue } from '@/Constants/colors';
+
 const styles = {
   main: {
-    padding: '2rem',
-    color: '#fff',
-    fontFamily: 'monospace',
-    maxWidth: '800px',
-    margin: '0 auto',
-    textAlign: 'center',
+    width: '100vw',
+    height: '100vh',
+    margin: 0,
+    padding: 0,
+    overflow: 'hidden',
+    touchAction: 'none',
+    overscrollBehavior: 'none',
+    WebkitOverflowScrolling: 'auto',
   } as CSSProperties,
   heading: {
     fontSize: '2.5rem',

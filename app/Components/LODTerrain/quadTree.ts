@@ -10,7 +10,6 @@ export class QuadtreeNode {
     this.size = size;
   }
 
-
   shouldSplit(cameraPos: THREE.Vector3, thresholdMultiplier: number) {
     const dx = cameraPos.x - this.center.x;
     const dz = cameraPos.z - this.center.y;
@@ -19,42 +18,39 @@ export class QuadtreeNode {
 
     return distance < threshold;
   }
-  
+
   split() {
-  const childSize = this.size / 2;
-  const quarter = this.size / 4;
+    const childSize = this.size / 2;
+    const quarter = this.size / 4;
 
-  this.children = [
-    // SW
-    new QuadtreeNode(
-      new THREE.Vector2(this.center.x - quarter, this.center.y - quarter),
-      childSize
-    ),
-    // SE
-    new QuadtreeNode(
-      new THREE.Vector2(this.center.x + quarter, this.center.y - quarter),
-      childSize
-    ),
-    // NW
-    new QuadtreeNode(
-      new THREE.Vector2(this.center.x - quarter, this.center.y + quarter),
-      childSize
-    ),
-    // NE
-    new QuadtreeNode(
-      new THREE.Vector2(this.center.x + quarter,this.center.y + quarter),
-      childSize
-    ),
-  ];
-}
-
+    this.children = [
+      // SW
+      new QuadtreeNode(
+        new THREE.Vector2(this.center.x - quarter, this.center.y - quarter),
+        childSize,
+      ),
+      // SE
+      new QuadtreeNode(
+        new THREE.Vector2(this.center.x + quarter, this.center.y - quarter),
+        childSize,
+      ),
+      // NW
+      new QuadtreeNode(
+        new THREE.Vector2(this.center.x - quarter, this.center.y + quarter),
+        childSize,
+      ),
+      // NE
+      new QuadtreeNode(
+        new THREE.Vector2(this.center.x + quarter, this.center.y + quarter),
+        childSize,
+      ),
+    ];
+  }
 
   getLeafNodes(): QuadtreeNode[] {
     if (this.children.length === 0) return [this];
     return this.children.flatMap((child) => child.getLeafNodes());
   }
-
-  
 }
 
 // function snapToGrid(value: number, gridSize: number) {

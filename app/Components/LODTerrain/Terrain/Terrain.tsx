@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { extend } from '@react-three/fiber';
 import { LitTerrainMaterial } from './LitTerrainMaterial';
 import { ITerrainChunkProps, Y_OFFSET, TERRAIN_PROPS } from '@/Constants';
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { useTexture } from '@react-three/drei';
 
 extend({ LitTerrainMaterial });
@@ -24,18 +24,13 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     midMapPath = TERRAIN_PROPS.midMapPath,
     highMapPath = TERRAIN_PROPS.highMapPath,
     lowMapPath = TERRAIN_PROPS.lowMapPath,
-
   },
-  ref
+  ref,
 ) {
   const materialRef = useRef<LitTerrainMaterial>(null);
   const geometryRef = useRef<THREE.PlaneGeometry | null>(null);
   const setLitTerrainMaterialLoaded = useGameStore((state) => state.setLitTerrainMaterialLoaded);
-  const [midTexture, lowTexture, highTexture] = useTexture([
-    lowMapPath, 
-    midMapPath, 
-    highMapPath
-  ]);
+  const [midTexture, lowTexture, highTexture] = useTexture([lowMapPath, midMapPath, highMapPath]);
 
   [midTexture, lowTexture, highTexture].forEach((tex) => {
     tex.wrapS = THREE.RepeatWrapping;
@@ -102,10 +97,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     uniforms.uPersistence.value = persistence;
     uniforms.uExponentiation.value = exponentiation;
 
-    uniforms.uWorldOffset.value.set(
-      position.x - worldOrigin.x,
-      position.z - worldOrigin.y
-    );
+    uniforms.uWorldOffset.value.set(position.x - worldOrigin.x, position.z - worldOrigin.y);
     uniforms.uWorldOrigin.value.set(worldOrigin.x, worldOrigin.y);
   }, [
     maxHeight,
@@ -121,18 +113,8 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
   ]);
 
   return (
-    <mesh
-      ref={ref}
-      position={[0, 0, 0]}
-      castShadow
-      receiveShadow
-      geometry={geometry}
-    >
-      <litTerrainMaterial
-        ref={materialRef}
-        attach="material"
-        side={THREE.DoubleSide}
-      />
+    <mesh ref={ref} position={[0, 0, 0]} castShadow receiveShadow geometry={geometry}>
+      <litTerrainMaterial ref={materialRef} attach="material" side={THREE.DoubleSide} />
     </mesh>
   );
 });

@@ -1,5 +1,5 @@
-import { useRaceStandings } from '@/Controllers/useRaceStandings';
-import { useGameStore } from '@/Controllers/GameController';
+import { useRaceStandings } from '@/Controllers/Game/useRaceStandings';
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { formatTime } from '@/Utils';
 import { CSSProperties } from 'react';
 import { TOTAL_LAPS } from '@/Constants';

@@ -1,30 +1,31 @@
+'use client';
 // controllers/CheckpointController.ts
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
-type SpeedPad = {
+type WeaponsPad = {
   mesh: THREE.Mesh;
   didPass: boolean;
 };
 
-export function useSpeedPadController({
+export function useWeaponsPad({
   playerRefs,
-  speedPadRef,
+  weaponsPadRef,
   cooldownTime = 2,
 }: {
   playerRefs: {
     id: number;
     ref: React.RefObject<THREE.Object3D>;
   }[];
-  speedPadRef: React.RefObject<THREE.Mesh>;
+  weaponsPadRef: React.RefObject<THREE.Mesh>;
   cooldownTime?: number;
 }) {
-  const { applyBoost, raceData } = useGameStore((s) => s);
+  const { setCannon } = useGameStore((s) => s);
 
-  const speedPad = useRef<SpeedPad>({
-    mesh: speedPadRef.current as THREE.Mesh,
+  const weaponsPad = useRef<WeaponsPad>({
+    mesh: weaponsPadRef.current as THREE.Mesh,
     didPass: false,
   });
 
@@ -38,8 +39,8 @@ export function useSpeedPadController({
         mesh: ref.current,
       }),
     );
-    const speedPadMesh = speedPadRef.current;
-    if (!(players.length > 0) || !speedPad) return;
+    const weaponsPadMesh = weaponsPadRef.current;
+    if (!(players.length > 0) || !weaponsPad) return;
 
     cooldown.current -= delta;
 
@@ -47,20 +48,19 @@ export function useSpeedPadController({
       id: player.id,
       box: new THREE.Box3().setFromObject(player.mesh),
     }));
-    const speedPadBox = new THREE.Box3().setFromObject(speedPadMesh);
-    const craft = playerBoxes.find((craft) => craft.box.intersectsBox(speedPadBox));
+    const WeaponsPadBox = new THREE.Box3().setFromObject(weaponsPadMesh);
+    const craft = playerBoxes.find((craft) => craft.box.intersectsBox(WeaponsPadBox));
 
     if (!!craft && cooldown.current <= 0) {
-      console.log({ raceData: raceData[craft.id] });
-      speedPad.current.didPass = true;
+      weaponsPad.current.didPass = true;
       cooldown.current = cooldownTime;
-      applyBoost(craft.id);
+      setCannon(craft.id, true);
     }
 
-    if (!craft && cooldown.current <= 0 && speedPad.current.didPass) {
-      speedPad.current.didPass = false;
+    if (!craft && cooldown.current <= 0 && weaponsPad.current.didPass) {
+      weaponsPad.current.didPass = false;
     }
   });
 
-  return speedPad;
+  return weaponsPad;
 }

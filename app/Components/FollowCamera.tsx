@@ -8,20 +8,27 @@ export default function FollowCamera({
 }) {
   const { camera } = useThree();
 
+  // In front and slightly above
+  const offset = new THREE.Vector3(0, 0.5, 10);
+
   useFrame(() => {
     const target = targetRef.current;
     if (!target) return;
 
-    const offset = new THREE.Vector3(0, 0, 8).applyQuaternion(target.quaternion);
-    const desiredPosition = target.position.clone().add(offset);
+    const targetPos = new THREE.Vector3();
+    const targetQuat = new THREE.Quaternion();
 
-    // Smooth camera position
-    camera.position.lerp(desiredPosition, 0.2);
+    target.getWorldPosition(targetPos);
+    target.getWorldQuaternion(targetQuat);
 
-    camera.quaternion.slerp(target.quaternion, 0.1);
+    // Offset relative to ship orientation
+    const worldOffset = offset.clone().applyQuaternion(targetQuat);
+    const desiredCameraPos = targetPos.clone().add(worldOffset);
+
+    // Smooth position and orientation — keep full ship orientation (including roll)
+    camera.position.lerp(desiredCameraPos, 0.5);
+    camera.quaternion.slerp(targetQuat, 0.1);
   });
 
   return null;
 }
-
-export { FollowCamera };

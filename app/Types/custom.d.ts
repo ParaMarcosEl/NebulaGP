@@ -27,8 +27,7 @@ export declare module 'babel-plugin-glsl' {
   export default value;
 }
 
-
-declare module "*.worker.ts" {
+declare module '*.worker.ts' {
   // This is a common declaration for `worker-loader`
   class WebpackWorker extends Worker {
     constructor();

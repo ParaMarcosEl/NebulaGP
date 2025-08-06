@@ -3,7 +3,7 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Points, PointMaterial } from '@react-three/drei';
-import { Skybox } from '../../Skybox';
+import { Skybox } from '../../Skybox/Skybox';
 
 function GalaxyPoints() {
   const pointsRef = useRef<THREE.Points>(null);

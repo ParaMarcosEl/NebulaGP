@@ -1,3 +1,4 @@
+'use client';
 /* eslint-disable @typescript-eslint/no-unused-vars */ // Disables ESLint warning for unused variables, common in type definitions.
 import { create } from 'zustand'; // Import `create` function from Zustand for state management.
 import { devtools } from 'zustand/middleware'; // Import `devtools` middleware for Redux DevTools integration.
@@ -111,6 +112,7 @@ type GameState = {
     // Comprehensive data for all racers (player and bots).
     number,
     {
+      useCannon?: boolean;
       boosting: boolean;
       position: THREE.Vector3;
       progress: number;
@@ -123,9 +125,9 @@ type GameState = {
   playerPhase: 'Idle' | 'Race' | 'Finished'; // The current phase of the local player.
   track: THREE.Curve<THREE.Vector3>; // The current 3D track curve being used for the race.
   raceStatus: RaceStatus; // The overall status of the race (idle, countdown, racing).
-  
+
   position: THREE.Vector3;
-  
+
   // New terrain loading properties
   totalTerrainChunks: number;
   loadedTerrainChunks: number;
@@ -135,17 +137,18 @@ type GameState = {
 
 /**
  * Type for updating multiple racer positions.
-*/
+ */
 export type RacePositonsType = { id: number; position: THREE.Vector3 };
 /**
  * Type for updating multiple racer progresses.
-*/
+ */
 export type RaceProgressesType = { id: number; progress: number };
 
 /**
  * Defines all the actions (functions) that can modify the game state.
-*/
+ */
 type GameActions = {
+  setCannon: (id: number, useCannon?: boolean) => void; // Sets whether the player can use the cannon.
   setLitTerrainMaterialLoaded: (loaded: boolean) => void;
   setTotalTerrainChunks: (count: number) => void;
   incrementLoadedTerrainChunks: () => void;
@@ -175,6 +178,7 @@ type GameActions = {
 /**
  * Combines `GameState` and `GameActions` to define the complete type of the Zustand store.
  */
+let timeout: NodeJS.Timeout = setTimeout(() => {}, 5000); // Default timeout for cannon use
 type GameStore = GameState & GameActions;
 
 // Default settings for the game.
@@ -217,26 +221,29 @@ export const useGameStore = create(
       true, // `true` indicates a closed loop curve.
     ),
     raceStatus: 'idle', // Initial race status is 'idle'.
-    
+
     position: new THREE.Vector3(0, 0, 0),
-    
-  // New terrain loading state initialization
-  totalTerrainChunks: 0,
-  loadedTerrainChunks: 0,
-  litTerrainMaterialLoaded: false,
-  // --- Actions (Functions to modify state) ---
-  setLitTerrainMaterialLoaded: (loaded: boolean) => set({ litTerrainMaterialLoaded: loaded}),
-  setTotalTerrainChunks: (count) => set({
-    totalTerrainChunks: count,
-    loadedTerrainChunks: 0, // Reset loaded count when a new total is set
-  }),
-  incrementLoadedTerrainChunks: () => set((state) => ({
-    loadedTerrainChunks: state.loadedTerrainChunks + 1,
-  })),
-  resetTerrainLoading: () => set({
+
+    // New terrain loading state initialization
     totalTerrainChunks: 0,
     loadedTerrainChunks: 0,
-  }),
+    litTerrainMaterialLoaded: false,
+    // --- Actions (Functions to modify state) ---
+    setLitTerrainMaterialLoaded: (loaded: boolean) => set({ litTerrainMaterialLoaded: loaded }),
+    setTotalTerrainChunks: (count) =>
+      set({
+        totalTerrainChunks: count,
+        loadedTerrainChunks: 0, // Reset loaded count when a new total is set
+      }),
+    incrementLoadedTerrainChunks: () =>
+      set((state) => ({
+        loadedTerrainChunks: state.loadedTerrainChunks + 1,
+      })),
+    resetTerrainLoading: () =>
+      set({
+        totalTerrainChunks: 0,
+        loadedTerrainChunks: 0,
+      }),
     setPosition: (pos) => set(() => ({ position: pos })),
     setBaseSpeed: (speed: number) => set({ baseSpeed: speed }),
 
@@ -266,6 +273,28 @@ export const useGameStore = create(
           set({ playerSpeed: get().baseSpeed, raceData: newRaceData });
         }, 2000);
       }
+    },
+
+    setCannon: (id: number, useCannon?: boolean) => {
+      const { raceData } = get();
+
+      const player = raceData[id];
+      if (!player) return;
+
+      // Basic approach: set a flag to indicate cannon use
+      const newRaceData = get().raceData;
+      newRaceData[id].useCannon = useCannon;
+      const isPlayer = id === get().playerId;
+      set({
+        raceData: newRaceData,
+      });
+
+      clearTimeout(timeout);
+      // Optionally reset after timeout
+      timeout = setTimeout(() => {
+        newRaceData[id].useCannon = false;
+        set({ raceData: newRaceData });
+      }, 5000);
     },
 
     setPlayerSpeed: (speed: number) => set({ playerSpeed: speed }),

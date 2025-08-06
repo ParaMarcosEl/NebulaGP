@@ -5,73 +5,73 @@ import * as THREE from 'three';
 // This allows us to use a custom shader while keeping the PBR (Physically Based Rendering) features
 // of the standard material, like lighting and shadows.
 export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
-    // Custom uniforms to be passed to the shader. These values can be
-    // changed from JavaScript to control the terrain's appearance and generation.
-    customUniforms: {
-        lowMap: { value: THREE.Texture | null }; // Texture for low elevation areas (e.g., grass).
-        highMap: { value: THREE.Texture | null }; // Texture for high elevation areas (e.g., snow/rock).
-        map: { value: THREE.Texture | null }; // Texture for mid-elevation areas.
-        textureBlend: { value: number }; // A blend factor, though not used in the final shader.
-        uTime: { value: number }; // Time uniform for animations (e.g., moving water).
-        uMaxHeight: { value: number }; // Maximum height of the terrain.
-        uFrequency: { value: number }; // Base frequency for the noise function.
-        uAmplitude: { value: number }; // Base amplitude for the noise function.
-        uOctaves: { value: number }; // Number of noise layers (octaves) for detail.
-        uLacunarity: { value: number }; // Frequency multiplier for each octave.
-        uPersistence: { value: number }; // Amplitude multiplier for each octave.
-        uExponentiation: { value: number }; // Controls the sharpness/flatness of the terrain.
-        uWorldOffset: { value: THREE.Vector2 }; // Offset for infinite terrain.
-        uWorldOrigin: { value: THREE.Vector2 }; // Origin point for terrain.
-        uTextureScale: { value: number }; // Scaling factor for textures.
+  // Custom uniforms to be passed to the shader. These values can be
+  // changed from JavaScript to control the terrain's appearance and generation.
+  customUniforms: {
+    lowMap: { value: THREE.Texture | null }; // Texture for low elevation areas (e.g., grass).
+    highMap: { value: THREE.Texture | null }; // Texture for high elevation areas (e.g., snow/rock).
+    map: { value: THREE.Texture | null }; // Texture for mid-elevation areas.
+    textureBlend: { value: number }; // A blend factor, though not used in the final shader.
+    uTime: { value: number }; // Time uniform for animations (e.g., moving water).
+    uMaxHeight: { value: number }; // Maximum height of the terrain.
+    uFrequency: { value: number }; // Base frequency for the noise function.
+    uAmplitude: { value: number }; // Base amplitude for the noise function.
+    uOctaves: { value: number }; // Number of noise layers (octaves) for detail.
+    uLacunarity: { value: number }; // Frequency multiplier for each octave.
+    uPersistence: { value: number }; // Amplitude multiplier for each octave.
+    uExponentiation: { value: number }; // Controls the sharpness/flatness of the terrain.
+    uWorldOffset: { value: THREE.Vector2 }; // Offset for infinite terrain.
+    uWorldOrigin: { value: THREE.Vector2 }; // Origin point for terrain.
+    uTextureScale: { value: number }; // Scaling factor for textures.
+  };
+
+  // A callback function that can be set to run after the shader is compiled.
+  onShaderCompiled: (() => void) | undefined;
+
+  // The constructor sets up the material with default values and shader modifications.
+  constructor() {
+    // Call the parent constructor with basic material properties.
+    super({
+      color: 0xffffff, // Default color is white.
+      flatShading: false, // Disables flat shading for smooth-looking terrain.
+    });
+
+    // PBR (Physically Based Rendering) properties.
+    this.metalness = 0.2;
+    this.roughness = 0.8;
+
+    // Initialize custom uniforms with default values.
+    this.customUniforms = {
+      lowMap: { value: null },
+      highMap: { value: null },
+      map: { value: null },
+      textureBlend: { value: 0.5 },
+      uTime: { value: 0 },
+      uMaxHeight: { value: 40 },
+      uFrequency: { value: 0.015 },
+      uAmplitude: { value: 1.0 },
+      uOctaves: { value: 6.0 },
+      uLacunarity: { value: 2.0 },
+      uPersistence: { value: 0.5 },
+      uExponentiation: { value: 1.0 },
+      uWorldOffset: { value: new THREE.Vector2(0, 0) },
+      uWorldOrigin: { value: new THREE.Vector2(0, 0) },
+      uTextureScale: { value: 0.08 },
     };
 
-    // A callback function that can be set to run after the shader is compiled.
-    onShaderCompiled: (() => void) | undefined;
+    // This is the core of the custom material. onBeforeCompile is a hook that
+    // lets us inject or replace parts of the shader code before it's compiled.
+    this.onBeforeCompile = (shader) => {
+      // Merge our custom uniforms with the shader's existing uniforms.
+      Object.assign(shader.uniforms, this.customUniforms);
 
-    // The constructor sets up the material with default values and shader modifications.
-    constructor() {
-        // Call the parent constructor with basic material properties.
-        super({
-            color: 0xffffff, // Default color is white.
-            flatShading: false, // Disables flat shading for smooth-looking terrain.
-        });
+      // --- Vertex Shader Modifications ---
 
-        // PBR (Physically Based Rendering) properties.
-        this.metalness = 0.2;
-        this.roughness = 0.8;
-
-        // Initialize custom uniforms with default values.
-        this.customUniforms = {
-            lowMap: { value: null },
-            highMap: { value: null },
-            map: { value: null },
-            textureBlend: { value: 0.5 },
-            uTime: { value: 0 },
-            uMaxHeight: { value: 40 },
-            uFrequency: { value: 0.015 },
-            uAmplitude: { value: 1.0 },
-            uOctaves: { value: 6.0 },
-            uLacunarity: { value: 2.0 },
-            uPersistence: { value: 0.5 },
-            uExponentiation: { value: 1.0 },
-            uWorldOffset: { value: new THREE.Vector2(0, 0) },
-            uWorldOrigin: { value: new THREE.Vector2(0, 0) },
-            uTextureScale: { value: 0.08 },
-        };
-
-        // This is the core of the custom material. onBeforeCompile is a hook that
-        // lets us inject or replace parts of the shader code before it's compiled.
-        this.onBeforeCompile = (shader) => {
-            // Merge our custom uniforms with the shader's existing uniforms.
-            Object.assign(shader.uniforms, this.customUniforms);
-
-            // --- Vertex Shader Modifications ---
-
-            // The vertex shader is responsible for calculating vertex positions and other per-vertex data.
-            shader.vertexShader = shader.vertexShader
-                .replace(
-                    '#include <common>',
-                    `
+      // The vertex shader is responsible for calculating vertex positions and other per-vertex data.
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          '#include <common>',
+          `
                     #include <common>
                     // Varying variables are passed from the vertex to the fragment shader.
                     varying vec2 vUv;
@@ -143,14 +143,14 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
                     float getElevation(vec2 worldPos) {
                         return fbm(worldPos) * uMaxHeight;
                     }
-                    `
-                )
-                // Maps the `uv` attribute to the varying `vUv` for use in the fragment shader.
-                .replace('#include <uv_vertex>', 'vUv = uv;')
-                // This is the main section where the terrain's geometry is modified.
-                .replace(
-                    '#include <begin_vertex>',
-                    `
+                    `,
+        )
+        // Maps the `uv` attribute to the varying `vUv` for use in the fragment shader.
+        .replace('#include <uv_vertex>', 'vUv = uv;')
+        // This is the main section where the terrain's geometry is modified.
+        .replace(
+          '#include <begin_vertex>',
+          `
                     vec3 transformed = position;
         
                     // Get the elevation based on the vertex's world position.
@@ -179,16 +179,16 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
                     // Set the world position varying.
                     vWorldPosition = transformed + vec3(uWorldOffset.x + uWorldOrigin.x, 0.0, uWorldOffset.y + uWorldOrigin.y);
                     vWorldNormal = normalize(mat3(modelMatrix) * objectNormal);
-                    `
-                );
+                    `,
+        );
 
-            // --- Fragment Shader Modifications ---
+      // --- Fragment Shader Modifications ---
 
-            // The fragment shader determines the final color of each pixel.
-            shader.fragmentShader = shader.fragmentShader
-                .replace(
-                    '#include <common>',
-                    `#include <common>
+      // The fragment shader determines the final color of each pixel.
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
                     // Varying variables from the vertex shader.
                     varying vec2 vUv;
                     varying float vElevation;
@@ -214,13 +214,13 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
         
                         return xProj * blendWeights.x + yProj * blendWeights.y + zProj * blendWeights.z;
                     }
-                    `
-                )
-                // This is where we replace the default texture mapping with our custom
-                // elevation-based blending logic.
-                .replace(
-                    '#include <map_fragment>',
-                    `
+                    `,
+        )
+        // This is where we replace the default texture mapping with our custom
+        // elevation-based blending logic.
+        .replace(
+          '#include <map_fragment>',
+          `
                     // Sample textures using tri-planar mapping.
                     vec4 lowColor = sampleTriplanar(lowMap, vWorldPosition, vWorldNormal, uTextureScale);
                     vec4 midColor = sampleTriplanar(map, vWorldPosition, vWorldNormal, uTextureScale);
@@ -243,21 +243,21 @@ export class LitTerrainMaterial extends THREE.MeshStandardMaterial {
         
                     // Set the final color of the material.
                     diffuseColor.rgb = finalColor.rgb;
-                    `
-                );
+                    `,
+        );
 
-            // Store a reference to the shader for debugging or further use.
-            this.userData.shader = shader;
+      // Store a reference to the shader for debugging or further use.
+      this.userData.shader = shader;
 
-            // Call the optional callback if it exists.
-            if (this.onShaderCompiled) {
-                this.onShaderCompiled();
-            }
-        };
-    }
+      // Call the optional callback if it exists.
+      if (this.onShaderCompiled) {
+        this.onShaderCompiled();
+      }
+    };
+  }
 
-    // A public method to update the uTime uniform, typically called in the animation loop.
-    updateTime(time: number) {
-        this.customUniforms.uTime.value = time;
-    }
+  // A public method to update the uTime uniform, typically called in the animation loop.
+  updateTime(time: number) {
+    this.customUniforms.uTime.value = time;
+  }
 }

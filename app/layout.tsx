@@ -2,7 +2,7 @@
 import Head from 'next/head';
 import './globals.css';
 import { isMobileDevice } from '@/Utils';
-import OrientationLock from '@/Components/OrientationLock';
+import OrientationLock from '@/Components/UI/OrientationLock';
 
 export const metadata = {
   title: 'Nebula GP | Anti-Gravity Racing',

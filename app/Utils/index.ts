@@ -1,6 +1,12 @@
 // utils/getStartPoseFromCurve.ts
 import * as THREE from 'three';
 import { SvgMapOptions } from '@/Constants';
+import { RapierRigidBody } from 'node_modules/@react-three/rapier/dist/react-three-rapier.cjs';
+
+// Define BotState type if not imported from elsewhere
+type BotState = {
+  lastDir: THREE.Vector3;
+};
 
 export function getStartPoseFromCurve(
   curve: THREE.Curve<THREE.Vector3>,
@@ -65,6 +71,129 @@ export function getProgressAlongCurve(
   }
 
   return closestIndex / divisions;
+}
+
+export function getNearestCurveT(
+  position: THREE.Vector3,
+  curve: THREE.Curve<THREE.Vector3>,
+  samples = 50,
+) {
+  let closestT = 0;
+  let minDist = Infinity;
+
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    const point = curve.getPoint(t);
+    const dist = point.distanceToSquared(position);
+    if (dist < minDist) {
+      minDist = dist;
+      closestT = t;
+    }
+  }
+
+  return closestT;
+}
+
+export function getWaypointsAlongCurve(
+  curve: THREE.Curve<THREE.Vector3>,
+  tStart: number,
+  tEnd: number,
+  step = 0.01,
+): THREE.Vector3[] {
+  const points: THREE.Vector3[] = [];
+
+  let deltaT = tEnd - tStart;
+  if (deltaT < 0) deltaT += 1;
+
+  const numSteps = Math.ceil(deltaT / step);
+
+  for (let i = 0; i <= numSteps; i++) {
+    const t = (tStart + i * step) % 1;
+    points.push(curve.getPoint(t));
+  }
+
+  return points;
+}
+
+export function computeRollInput(
+  forward: THREE.Vector3,
+  toTarget: THREE.Vector3,
+  up: THREE.Vector3,
+): number {
+  const forwardNorm = forward.clone().normalize();
+  const toTargetNorm = toTarget.clone().normalize();
+
+  // Ship's local right vector
+  const right = new THREE.Vector3().crossVectors(up, forwardNorm).normalize();
+
+  // Project target direction onto plane perpendicular to the up vector (horizontal plane)
+  const toTargetProjected = toTargetNorm.clone().projectOnPlane(up).normalize();
+
+  // Compute signed dot product to get left/right
+  const dot = right.dot(toTargetProjected);
+  return THREE.MathUtils.clamp(dot, -1, 1);
+}
+
+export function computePitchInput(
+  forward: THREE.Vector3,
+  toTarget: THREE.Vector3,
+  up: THREE.Vector3,
+): number {
+  const forwardNorm = forward.clone().normalize();
+  const upNorm = up.clone().normalize();
+  const toTargetNorm = toTarget.clone().normalize();
+
+  // Get the axis perpendicular to both forward and toTarget — the rotation axis
+  const axis = forwardNorm.clone().cross(toTargetNorm).normalize();
+
+  // The pitch component is how much this axis aligns with the right vector
+  const pitchAmount = axis.dot(new THREE.Vector3().crossVectors(upNorm, forwardNorm).normalize());
+
+  return THREE.MathUtils.clamp(pitchAmount, -1, 1);
+}
+
+export function applyBotControls({
+  rigidBody,
+  currentForward,
+  targetDir,
+  maxSpeed,
+  state,
+}: {
+  rigidBody: RapierRigidBody;
+  currentForward: THREE.Vector3;
+  targetDir: THREE.Vector3;
+  maxSpeed: number;
+  state: BotState;
+}) {
+  const alignment = currentForward.dot(targetDir); // [-1, 1]
+
+  // Determine rotation direction
+  const turnAxis = new THREE.Vector3().crossVectors(currentForward, targetDir).normalize();
+  const angleDiff = Math.acos(THREE.MathUtils.clamp(alignment, -1, 1));
+
+  // Apply roll or pitch forces based on angle and turnAxis
+  const torque = 10 * angleDiff;
+  const impulse = new THREE.Vector3().copy(turnAxis).multiplyScalar(torque);
+
+  rigidBody.applyTorqueImpulse(impulse, true);
+
+  // Throttle up if aligned, brake if misaligned
+  const velocity = rigidBody.linvel();
+  const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2);
+  const aligned = alignment > 0.9;
+
+  if (aligned && speed < maxSpeed) {
+    // Accelerate forward
+    const force = new THREE.Vector3().copy(currentForward).multiplyScalar(50);
+    rigidBody.applyImpulse(force, true);
+  } else if (!aligned) {
+    // Brake slightly to reorient
+    const brake = new THREE.Vector3(-velocity.x, -velocity.y, -velocity.z).multiplyScalar(0.05);
+    rigidBody.applyImpulse(brake, true);
+  }
+
+  // Store the new state if needed
+  state.lastDir.copy(currentForward);
 }
 
 /**
@@ -296,4 +425,3 @@ export function createTerrainGroup() {
 export function chunkKey(pos: THREE.Vector2, size: number): string {
   return `${pos.x}_${pos.y}_${size}`;
 }
-

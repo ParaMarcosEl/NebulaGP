@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, CSSProperties } from 'react';
-import { setThrottle } from '@/Controllers/playerControls/PlayerController'; // Adjust path if needed
+import { setThrottle } from '@/Components/Player/PlayerController'; // Adjust path if needed
 import { isMobileDevice } from '@/Utils';
 
 export function ThrottleLever() {

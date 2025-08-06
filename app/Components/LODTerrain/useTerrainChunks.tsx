@@ -3,7 +3,7 @@ import { useRef, useState, useCallback, ReactElement, useEffect } from 'react';
 import { ITerrainChunkProps } from '@/Constants';
 import * as THREE from 'three';
 import Terrain from './Terrain/Terrain';
-import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 // Pool to reuse terrain chunks (simple object pool pattern)
 const terrainPool: THREE.Mesh[] = [];
@@ -11,19 +11,23 @@ const terrainPool: THREE.Mesh[] = [];
 export function useTerrainChunkBuilder() {
   const [doneBuilding, setDoneBuilding] = useState(false);
   // Access the terrain loading state setters from the game store
-  const { setTotalTerrainChunks, incrementLoadedTerrainChunks, resetTerrainLoading } = useGameStore();
-  
+  const { setTotalTerrainChunks, incrementLoadedTerrainChunks, resetTerrainLoading } =
+    useGameStore();
+
   const buildQueue = useRef<ITerrainChunkProps[]>([]);
   const activeChunks = useRef<Map<string, ReactElement>>(new Map());
   const [renderedChunks, setRenderedChunks] = useState<ReactElement[]>([]);
 
-  const enqueueChunks = useCallback((chunks: ITerrainChunkProps[]) => {
-    buildQueue.current.push(...chunks);
-    setTotalTerrainChunks(chunks.length); // Inform the store about the total chunks to build
-  }, [setTotalTerrainChunks]);
+  const enqueueChunks = useCallback(
+    (chunks: ITerrainChunkProps[]) => {
+      buildQueue.current.push(...chunks);
+      setTotalTerrainChunks(chunks.length); // Inform the store about the total chunks to build
+    },
+    [setTotalTerrainChunks],
+  );
 
   const createKey = (pos: THREE.Vector3, size: number) =>
-  `${Math.floor(pos.x / size)}_${Math.floor(pos.z / size)}_${size}`;
+    `${Math.floor(pos.x / size)}_${Math.floor(pos.z / size)}_${size}`;
 
   // Generator-based terrain creation function
   function* buildTerrainChunk(props: ITerrainChunkProps) {
@@ -34,11 +38,17 @@ export function useTerrainChunkBuilder() {
     const mesh = terrainPool.pop() || new THREE.Mesh();
     yield;
 
-    const { position : { x, y, z }, size } = props;
+    const {
+      position: { x, y, z },
+      size,
+    } = props;
 
     const chunkElement = (
       <Terrain
-        key={createKey(new THREE.Vector3(Math.floor(x), Math.floor(y), Math.floor(z)), Math.floor(size))}
+        key={createKey(
+          new THREE.Vector3(Math.floor(x), Math.floor(y), Math.floor(z)),
+          Math.floor(size),
+        )}
         ref={(ref: THREE.Mesh | null) => {
           if (ref) {
             ref.position.copy(props.position);
@@ -47,7 +57,7 @@ export function useTerrainChunkBuilder() {
               props.size,
               props.size,
               props.segments,
-              props.segments
+              props.segments,
             ).rotateX(-Math.PI / 2); // if needed
           }
         }}
@@ -81,12 +91,9 @@ export function useTerrainChunkBuilder() {
         currentChunkProps.current = null;
 
         // Once all chunks are done, update visible terrain
-        if (
-          buildQueue.current.length === 0 &&
-          currentBuilder.current === null
-        ) {
+        if (buildQueue.current.length === 0 && currentBuilder.current === null) {
           if (buildQueue.current.length === 0 && currentBuilder.current === null) {
-            setRenderedChunks([...activeChunks.current.values()]);
+            setRenderedChunks([...activeChunks.current.values()]);
           }
         }
       }
@@ -106,6 +113,6 @@ export function useTerrainChunkBuilder() {
     poolChunk(mesh: THREE.Mesh) {
       terrainPool.push(mesh);
     },
-    doneBuilding
+    doneBuilding,
   };
 }

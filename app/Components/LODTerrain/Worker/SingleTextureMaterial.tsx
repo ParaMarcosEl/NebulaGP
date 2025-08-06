@@ -36,7 +36,7 @@ export class SingleTextureMaterial extends THREE.MeshStandardMaterial {
         void main() {
           vElevation = elevation;
           vCustomUv = uv;
-        `
+        `,
       );
 
       // Now, we modify the fragment shader to use our uniforms and varyings.
@@ -57,7 +57,7 @@ export class SingleTextureMaterial extends THREE.MeshStandardMaterial {
         }
 
         void main() {
-        `
+        `,
       );
 
       // This is the crucial part. Instead of replacing the entire map_fragment,
@@ -76,7 +76,7 @@ export class SingleTextureMaterial extends THREE.MeshStandardMaterial {
         blendColor = mix(blendColor, highColor, blend(vElevation - textureBlend));
         
         diffuseColor *= blendColor;
-        `
+        `,
       );
 
       // We need to attach the shader to userData to ensure it is not garbage collected

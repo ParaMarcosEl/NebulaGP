@@ -20,7 +20,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     persistence = 0.5,
     exponentiation = 1.0,
   },
-  ref
+  ref,
 ) {
   const materialRef = useRef<LitTerrainMaterial>(null);
 
@@ -44,10 +44,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     uniforms.uExponentiation.value = exponentiation;
 
     //  Set correct shader offsets based on chunk's world position
-    uniforms.uWorldOffset.value.set(
-      position.x - worldOrigin.x,
-      position.z - worldOrigin.y
-    );
+    uniforms.uWorldOffset.value.set(position.x - worldOrigin.x, position.z - worldOrigin.y);
     uniforms.uWorldOrigin.value.set(worldOrigin.x, worldOrigin.y);
   }, [
     maxHeight,
@@ -74,11 +71,10 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
         attach="material"
         side={THREE.FrontSide}
         metalness={0}
-        roughness={.8}
+        roughness={0.8}
       />
     </mesh>
   );
 });
 
 export default Terrain;
-
