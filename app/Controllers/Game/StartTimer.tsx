@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '@/Controllers/Game/GameController';
+import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 
 export function StartCountdown() {
   const [timeLeft, setTimeLeft] = useState(3); // Show 3 → 2 → 1 → GO!
@@ -8,12 +9,13 @@ export function StartCountdown() {
   const raceStatus = useGameStore((s) => s.raceStatus);
   const setRaceStatus = useGameStore((s) => s.setRaceStatus);
   const didStart = useRef(false);
+  const { isLoaderActive } = useCanvasLoader();
 
   useEffect(() => setRaceStatus('idle'), [setRaceStatus]);
 
   // Start countdown on 'countdown' status
   useEffect(() => {
-    if (raceStatus !== 'countdown') return;
+    if (raceStatus !== 'countdown' || isLoaderActive) return;
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
@@ -33,7 +35,7 @@ export function StartCountdown() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [raceStatus, setRaceStatus]);
+  }, [raceStatus, setRaceStatus, isLoaderActive]);
 
   // Auto-trigger countdown from idle
   useEffect(() => {

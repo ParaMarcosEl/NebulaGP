@@ -52,7 +52,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
   // const { terrainWorker } = workerState;
   const [terrainGeometry, setTerrainGeometry] = useState<THREE.PlaneGeometry | null>(null);
   const geometryRef = useRef<THREE.PlaneGeometry | null>(null);
-  const setLitTerrainMaterialLoaded = useGameStore((state) => state.setLitTerrainMaterialLoaded);
+  const setMaterialLoaded = useGameStore((state) => state.setMaterialLoaded);
 
   const [lowTexture, midTexture, highTexture] = useTexture([lowMapPath, midMapPath, highMapPath]);
 
@@ -203,10 +203,10 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     uniforms.textureBlend.value = 0.5;
     uniforms.uTextureScale.value = 0.08; // Set a consistent, larger value
 
-    if (materialRef.current.userData.shader && !useGameStore.getState().litTerrainMaterialLoaded) {
-      setLitTerrainMaterialLoaded(true);
+    if (materialRef.current.userData.shader && !useGameStore.getState().MaterialLoaded) {
+      setMaterialLoaded(true);
     }
-  }, [highTexture, lowTexture, midTexture, setLitTerrainMaterialLoaded, texturesReady]);
+  }, [highTexture, lowTexture, midTexture, setMaterialLoaded, texturesReady]);
 
   // Use useFrame to update uniforms if needed, e.g., for time-based animations
   // This is a good place to put uniforms that change every frame
@@ -255,7 +255,7 @@ export default Terrain;
 //   const geometryRef = useRef<THREE.BufferGeometry | null>(null);
 //   const meshRef = useRef<THREE.Mesh>(null);
 //   const [terrainGeometry, setTerrainGeometry] = useState<THREE.BufferGeometry | null>(null);
-//   const setLitTerrainMaterialLoaded = useGameStore((s) => s.setLitTerrainMaterialLoaded);
+//   const setMaterialLoaded = useGameStore((s) => s.setMaterialLoaded);
 
 //   const [lowTexture, midTexture, highTexture] = useTexture([lowMapPath, midMapPath, highMapPath]);
 //   const texturesReady = useMemo(() => lowTexture && midTexture && highTexture, [lowTexture, midTexture, highTexture]);
@@ -356,10 +356,10 @@ export default Terrain;
 //     uniforms.uTextureScale.value = 0.08;
 //     uniforms.textureBlend.value = 0.5;
 
-//     if (materialRef.current.userData.shader && !useGameStore.getState().litTerrainMaterialLoaded) {
-//       setLitTerrainMaterialLoaded(true);
+//     if (materialRef.current.userData.shader && !useGameStore.getState().MaterialLoaded) {
+//       setMaterialLoaded(true);
 //     }
-//   }, [highTexture, lowTexture, midTexture, setLitTerrainMaterialLoaded, texturesReady]);
+//   }, [highTexture, lowTexture, midTexture, setMaterialLoaded, texturesReady]);
 
 //   return terrainGeometry ? (
 //     <mesh

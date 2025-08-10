@@ -23,15 +23,16 @@ export function useRaceStandings() {
   // and then pass that as a dependency to useMemo.
   // However, in this specific case, `useMemo`'s dependency array `[raceData]`
   // ensures re-calculation when `raceData` changes, making this approach functionally correct.
-  const raceData = useGameStore.getState().raceData;
-  const playerId = useGameStore.getState().playerId;
+  // const raceData = raceData;
+  // const playerId = playerId;
+  const { raceData, playerId } = useGameStore.getState();
 
   // useMemo ensures that the calculation within its callback only runs when
   // `raceData` (its dependency) changes. This prevents unnecessary re-renders
   // and re-calculations of standings on every component render.
   return useMemo(() => {
     // 1. Calculate the list of finished racers
-    const finishedList = Object.entries(useGameStore.getState().raceData) // Get all racer entries from raceData.
+    const finishedList = Object.entries(raceData) // Get all racer entries from raceData.
       // Filter for racers who have completed TOTAL_LAPS and have a valid ID (>= 0).
       .filter(([id, player]) => player.lapCount >= TOTAL_LAPS && parseInt(id) >= 0)
       // Sort finished racers by their total accumulated race time in ascending order.
@@ -50,7 +51,7 @@ export function useRaceStandings() {
       }));
 
     // 2. Calculate the list of in-progress racers
-    const inProgress = Object.entries(useGameStore.getState().raceData) // Get all racer entries.
+    const inProgress = Object.entries(raceData) // Get all racer entries.
       // Filter for racers who have NOT completed all laps and have a valid ID.
       .filter(([id, player]) => (player?.history?.length || 0) < TOTAL_LAPS && parseInt(id) >= 0)
       // Sort in-progress racers based on a hierarchy:
@@ -71,7 +72,7 @@ export function useRaceStandings() {
           id: parseInt(id), // Convert string ID back to number.
           // Calculate place by adding the number of already finished racers.
           place: idx + 1 + finishedList.length,
-          finished: false, // This `finished: true` seems like a typo here, should likely be `false` for in-progress racers.
+          finished: false, 
           time: history?.reduce((sum, lap) => sum + lap.time, 0) || 0, // Total time so far.
           history, // Include full history.
         };

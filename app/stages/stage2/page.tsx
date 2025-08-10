@@ -6,7 +6,7 @@ import { useRef, useMemo, useState, createRef, useEffect } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Track from '@/Components/Track/Track';
-import FollowCamera from '@/Components/FollowCamera';
+import FollowCamera from '@/Components/Camera/FollowCamera';
 // import Obstacle from '@/Components/Obstacle';
 import HUD from '@/Components/UI/HUD';
 import { getStartPoseFromCurve, isMobileDevice } from '@/Utils';

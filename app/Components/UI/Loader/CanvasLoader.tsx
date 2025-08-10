@@ -1,11 +1,12 @@
 // CanvasLoader.tsx
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { useProgress } from '@react-three/drei';
-import { useState } from 'node_modules/@types/react';
+import { Spinner } from './Spinner';
 
 // CanvasLoader component to show loading progress
 export const useCanvasLoader = () => {
   const { active, progress: dreiProgress } = useProgress(); // drieProgress for general assets
-  const [MaterialLoaded, setMaterialLoaded] = useState(false);
+  const { MaterialLoaded, setMaterialLoaded } = useGameStore(s => s);
   // Determine if the loader should be active
   // It's active if general assets are loading, OR
   // if terrain chunks are still building, OR
@@ -14,6 +15,7 @@ export const useCanvasLoader = () => {
   const isLoaderActive = active || !MaterialLoaded;
 
   return {
+    isLoaderActive,
     setMaterialLoaded,
     loader: (
       <div
@@ -37,7 +39,12 @@ export const useCanvasLoader = () => {
         }}
       >
         <p>Loading Scene Assets: {Math.floor(dreiProgress)}%</p>
-        {!MaterialLoaded && <p>Compiling Terrain Shaders...</p>}
+              {!MaterialLoaded &&  (
+                <>
+                  <Spinner />
+                  <p>Compiling Terrain Shaders...</p> 
+                </>
+              )}
         {!isLoaderActive && <p>Loading Complete!</p>}
       </div>
     ),

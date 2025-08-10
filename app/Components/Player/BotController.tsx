@@ -1,7 +1,9 @@
+'use client';
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { ReactElement, useImperativeHandle, useRef, useState } from 'react';
+import { ReactElement, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   getNearestCurveT,
   getWaypointsAlongCurve,
@@ -18,7 +20,7 @@ interface UseBotControllerProps {
   onSpeedChange?: (speed: number) => void;
 }
 
-const ROLL_TORQUE = 15;
+const ROLL_TORQUE = 7;
 const PITCH_TORQUE = -1;
 
 export function useBotController({
@@ -34,8 +36,15 @@ export function useBotController({
   const speedRef = useRef(0);
   const time = useRef(0);
   const t = useRef(0);
-  const waypointIndexRef = useRef(0);
+  const waypointIndexRef = useRef(8);
   const { raceStatus } = useGameStore((s) => s);
+
+  useEffect(() => {
+      const bot = botRef.current;
+      if (bot && !bot.userData.impulseVelocity) {
+        bot.userData.impulseVelocity = new THREE.Vector3();
+      }
+  }, [botRef]);
 
   useImperativeHandle(botRef, () => botRef.current as THREE.Group, [botRef]);
   useFrame((_, delta) => {
@@ -121,8 +130,28 @@ export function useBotController({
     bot.quaternion.multiply(deltaQuat).normalize();
 
     // === Translation ===
-    const moveDir = new THREE.Vector3(0, 0, -1).applyQuaternion(bot.quaternion);
-    bot.position.add(moveDir.multiplyScalar(speedRef.current));
+    bot.userData.velocity = forward.multiplyScalar(speedRef.current);
+    // Calculate forward direction based on ship's current rotation.
+    // Calculate desired velocity based on forward direction and speed.
+    
+    // const desiredVelocity = forward.multiplyScalar(speedRef.current);
+    // // Lerp (linear interpolate) the current velocity towards the desired velocity for smooth movement.
+    // const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
+    // bot.userData.velocity.lerp(desiredVelocity, lerpFactor);
+    // // Update ship position based on current velocity.
+    // bot.position.add(bot.userData.velocity);
+    const desiredVelocity = forward.multiplyScalar(speedRef.current);
+    const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
+    bot.userData.velocity.lerp(desiredVelocity, lerpFactor);
+
+    // Apply impulse velocity and decay
+    bot.userData.velocity.add(bot.userData.impulseVelocity);
+
+    // Apply decay to impulse
+    bot.userData.impulseVelocity.multiplyScalar(0.9); // Tune this for bounce recovery
+
+    bot.position.add(bot.userData.velocity);
+
     if (onSpeedChange) onSpeedChange(speedRef.current);
   });
 

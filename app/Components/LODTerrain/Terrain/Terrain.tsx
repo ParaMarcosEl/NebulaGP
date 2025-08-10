@@ -29,7 +29,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
 ) {
   const materialRef = useRef<LitTerrainMaterial>(null);
   const geometryRef = useRef<THREE.PlaneGeometry | null>(null);
-  const setLitTerrainMaterialLoaded = useGameStore((state) => state.setLitTerrainMaterialLoaded);
+  const setMaterialLoaded = useGameStore((state) => state.setMaterialLoaded);
   const [midTexture, lowTexture, highTexture] = useTexture([lowMapPath, midMapPath, highMapPath]);
 
   [midTexture, lowTexture, highTexture].forEach((tex) => {
@@ -67,8 +67,8 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.onShaderCompiled = () => {
-        if (!useGameStore.getState().litTerrainMaterialLoaded) {
-          setLitTerrainMaterialLoaded(true);
+        if (!useGameStore.getState().MaterialLoaded) {
+          setMaterialLoaded(true);
         }
       };
     }
@@ -78,13 +78,13 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
         material.onShaderCompiled = undefined;
       }
     };
-  }, [setLitTerrainMaterialLoaded]);
+  }, [setMaterialLoaded]);
 
   useEffect(() => {
     if (!materialRef.current) return;
 
-    if (materialRef.current.userData.shader && !useGameStore.getState().litTerrainMaterialLoaded) {
-      setLitTerrainMaterialLoaded(true);
+    if (materialRef.current.userData.shader && !useGameStore.getState().MaterialLoaded) {
+      setMaterialLoaded(true);
     }
 
     const uniforms = materialRef.current.customUniforms;
@@ -109,7 +109,7 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     exponentiation,
     position,
     worldOrigin,
-    setLitTerrainMaterialLoaded,
+    setMaterialLoaded,
   ]);
 
   return (

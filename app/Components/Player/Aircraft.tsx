@@ -1,15 +1,14 @@
 'use client';
 
-import { useGLTF } from '@react-three/drei';
-import { useEffect, useMemo } from 'react';
+import { useGLTF, Trail } from '@react-three/drei';
+import { useEffect, useMemo, useRef } from 'react';
 import { usePlayerController } from '@/Components/Player/PlayerController';
 import * as THREE from 'three';
-import { SHIP_SCALE, TOTAL_LAPS } from '@/Constants';
-import { useGameStore } from '@/Controllers/Game/GameController';
-import { useBotController } from './BotController';
+import { SHIP_SCALE } from '@/Constants';
 
 type AircraftProps = {
   aircraftRef: React.RefObject<THREE.Group | null>;
+  playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
   playingFieldRef?: React.RefObject<THREE.Mesh | null>;
   acceleration?: number;
@@ -26,6 +25,7 @@ type AircraftProps = {
 
 export default function Aircraft({
   aircraftRef,
+  playerRefs,
   startPosition,
   startQuaternion,
   obstacleRefs,
@@ -40,8 +40,8 @@ export default function Aircraft({
   botSpeed = 1,
 }: AircraftProps) {
   const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
-  const { raceData, playerId } = useGameStore((s) => s);
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
+  const trailTarget = useRef<THREE.Object3D | null>(null)
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
@@ -50,15 +50,9 @@ export default function Aircraft({
     }
   }, [startPosition, startQuaternion, aircraftRef]);
 
-  useBotController({
-    botRef: aircraftRef as React.RefObject<THREE.Group>,
-    curve,
-    enabled: isBot || raceData[playerId]?.history?.length >= TOTAL_LAPS,
-    speed: botSpeed,
-  });
-
   usePlayerController({
     aircraftRef,
+    playerRefs,
     obstacleRefs,
     playingFieldRef,
     acceleration,
@@ -68,6 +62,7 @@ export default function Aircraft({
     onBrakingChange,
     curve,
     botSpeed,
+    enabled: !isBot
   });
 
   return (
@@ -75,8 +70,18 @@ export default function Aircraft({
       <group ref={aircraftRef}>
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
+          <object3D ref={trailTarget} position={[0, .31, 2]}/>
         </group>
       </group>
+            
+      <Trail
+        target={trailTarget as React.RefObject<THREE.Object3D>}
+        width={10}
+        length={.6}
+        color={'orange'}
+        decay={.001}
+        attenuation={(t) => t * t}
+      />
     </>
   );
 }

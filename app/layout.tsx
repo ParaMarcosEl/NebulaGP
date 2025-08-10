@@ -3,6 +3,7 @@ import Head from 'next/head';
 import './globals.css';
 import { isMobileDevice } from '@/Utils';
 import OrientationLock from '@/Components/UI/OrientationLock';
+import { TextureLoader } from './Components/TextureLoader/TextureLoader';
 
 export const metadata = {
   title: 'Nebula GP | Anti-Gravity Racing',
@@ -17,12 +18,12 @@ export const metadata = {
     'three.js game',
   ],
   authors: [{ name: 'Para El', url: 'https://github.com/paramarcosel' }],
-  metadataBase: new URL('https://fligh-game-lake.vercel.app'), // Set to your production domain
+  metadataBase: new URL('https://nebulagp.vercel.app'), // Set to your production domain
   openGraph: {
-    title: 'Nebula GP | Anti-Gravity Racing',
+    title: 'Nebula GP | Zero-Gravity Racing',
     description:
       'Race through galactic tracks at breakneck speeds in the ultimate zero-G racing game.',
-    url: 'https://nebulagp.com',
+    url: 'https://nebulagp.vercel.app',
     siteName: 'Nebula GP',
     images: [
       {
@@ -67,6 +68,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </Head>
       <body>
         {/* <TransitionLayout > */}
+        <TextureLoader 
+          textures={[
+            '/textures/explosion.png',
+            '/textures/clouds.png',
+            '/textures/particle.png',
+            '/textures/planet_texture01.png',
+            '/textures/planet_texture02.png',
+            '/textures/planet_texture03.png',
+            '/textures/stage_texture.png',
+            '/textures/sunsurface.png',
+          ]}
+        />
         {children}
         <OrientationLock />
         {/* </TransitionLayout> */}
