@@ -66,7 +66,8 @@ export default function Stage1() {
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
   const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
-  const { loader } = useCanvasLoader();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { loader, setMaterialLoaded } = useCanvasLoader();
 
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
@@ -110,7 +111,8 @@ export default function Stage1() {
   useEffect(() => {
     setTrack(tracks[2]);
     reset();
-  }, [reset, setTrack]);
+    return () => setMaterialLoaded(false);
+  }, [reset, setMaterialLoaded, setTrack]);
 
   const players = playerRefs.map((player, id) =>
     id === 0 ? (

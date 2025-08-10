@@ -68,7 +68,7 @@ export default function Stage1() {
   );
 
   const bounds = { x: 500, y: 250, z: 500 };
-  const { raceData, reset, track: curve, setTrack } = useGameStore((state) => state);
+  const { raceData, reset, track: curve, setTrack, setMaterialLoaded } = useGameStore((state) => state);
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
       isPlayer: player.isPlayer,
@@ -102,8 +102,11 @@ export default function Stage1() {
   );
 
   useEffect(() => {
+    setMaterialLoaded(true);
     setTrack(tracks[0]);
     reset();
+
+    return () => setMaterialLoaded(false);
   }, [reset, setTrack]);
 
   const players = playerRefs.map((player, id) =>

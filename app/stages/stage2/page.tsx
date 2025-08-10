@@ -1,15 +1,14 @@
 'use client';
 
-import Head from 'next/head';
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect } from 'react';
+import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
+import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-// import Obstacle from '@/Components/Obstacle';
 import HUD from '@/Components/UI/HUD';
-import { getStartPoseFromCurve, isMobileDevice } from '@/Utils';
+import { getStartPoseFromCurve, onShipCollision } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
@@ -22,38 +21,62 @@ import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import Planet from '@/Components/World/Planet';
-import Satellite from '@/Components/World/Satellite';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
-
-// import {ParticleSystem} from '@/Components/ParticleSystem';
+import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
+import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
+import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
+// import Satellite from '@/Components/World/Satellite';
+import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
+import Satellite from '@/Components/World/Satellite';
+// import { Trail } from 'node_modules/@react-three/drei';
 
 function RaceProgressTracker({
-  playerRef,
-  botRefs,
-  curve,
+  playerRefs,
 }: {
-  playerRef: React.RefObject<THREE.Group>;
-  botRefs: React.RefObject<THREE.Group>[];
+  playerRefs: React.RefObject<THREE.Group>[];
   curve: curveType;
 }) {
-  useRaceProgress({ playerRef, playerRefs: botRefs, curve });
+  useRaceProgress({ playerRefs: playerRefs as React.RefObject<THREE.Group>[] });
   return null; // No rendering, just logic
 }
 
-export default function Stage() {
+function ShipCollisionTracker({
+  playerRefs,
+  onCollide,
+}: {
+  playerRefs: React.RefObject<THREE.Object3D>[];
+  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
+}) {
+  useShipCollisions({
+    playerRefs,
+    onCollide,
+  });
+  return null;
+}
+
+export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
-  const botRef = useRef<THREE.Group | null>(null);
-  const botRef2 = useRef<THREE.Group | null>(null);
   const planetRef = useRef<THREE.Mesh>(null);
   const sunRef = useRef<THREE.Mesh>(null);
-  // const botRef3 = useRef<THREE.Group | null>(null);
-  // const botRef4 = useRef<THREE.Group | null>(null);
-  // const botRef5 = useRef<THREE.Group | null>(null);
-  // const botRef6 = useRef<THREE.Group | null>(null);
-  // const botRef7 = useRef<THREE.Group | null>(null);
+  const botRef1 = useRef<THREE.Group | null>(null);
+  const botRef2 = useRef<THREE.Group | null>(null);
+  const botRef3 = useRef<THREE.Group | null>(null);
+  const botRef4 = useRef<THREE.Group | null>(null);
+  const botRef5 = useRef<THREE.Group | null>(null);
+  const botRef6 = useRef<THREE.Group | null>(null);
+  const botRef7 = useRef<THREE.Group | null>(null);
+  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { loader, setMaterialLoaded } = useCanvasLoader();
+
+  const playerRefs = useMemo(
+    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
+    [],
+  );
+
   const bounds = { x: 500, y: 250, z: 500 };
-  const { raceData, reset, track: curve, setTrack, playerId } = useGameStore((state) => state);
+  const { raceData, reset, track: curve, setTrack } = useGameStore((state) => state);
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
       isPlayer: player.isPlayer,
@@ -61,6 +84,7 @@ export default function Stage() {
       id: parseInt(id),
     }))
     .filter((pos) => pos.id >= 0);
+
   const obstaclePositions = useMemo(() => {
     const positions: [number, number, number][] = [];
     for (let i = 0; i < 500; i++) {
@@ -80,19 +104,65 @@ export default function Stage() {
 
   // HUD state
   const [speed, setSpeed] = useState(0);
-  const { position: startPosition, quaternion: startQuaternion } = useMemo(
-    () => getStartPoseFromCurve(curve, 0.01),
-    [curve],
+  const startPositions = useMemo(
+    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
+    [curve, playerRefs],
   );
 
   useEffect(() => {
-    if (isMobileDevice() && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen();
-    }
-
+    setMaterialLoaded(true);
     setTrack(tracks[1]);
     reset();
-  }, [reset, setTrack]);
+    return () => setMaterialLoaded(false);
+  }, [reset, setMaterialLoaded, setTrack]);
+
+  const players = playerRefs.map((player, id) =>
+    id === 0 ? (
+      <Aircraft
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        curve={curve}
+        obstacleRefs={obstacleRefs.current}
+        playingFieldRef={playingFieldRef}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        acceleration={0.01}
+        damping={0.99}
+        onSpeedChange={setSpeed}
+        botSpeed={1.6}
+      />
+    ) : (
+      <Bot
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        curve={curve}
+        isBot
+        obstacleRefs={obstacleRefs.current}
+        playingFieldRef={playingFieldRef}
+        acceleration={0.01}
+        damping={0.99}
+        botSpeed={1.2}
+      />
+    ),
+  );
+
+  const boosters = playerRefs.map((player, id) => (
+    <ParticleSystem
+      key={id}
+      target={player as React.RefObject<THREE.Object3D>}
+      size={400}
+      texturePath="/textures/explosion.png"
+      offset={thrusterOffset}
+      // useWorldSpace
+      // emissions={{
+      //   rateOverDistance: 100
+      // }}
+    />
+  ));
 
   return (
     <main
@@ -107,12 +177,6 @@ export default function Stage() {
         WebkitOverflowScrolling: 'auto',
       }}
     >
-      <Head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        />
-      </Head>
       {/* UI */}
       <Link
         style={{
@@ -131,45 +195,33 @@ export default function Stage() {
       <RaceOver />
       <Speedometer speed={speed} />
       <StartCountdown />
-
+      {loader}
       {/* Scene */}
-      <Canvas
-        camera={{ position: [0, 5, 15], fov: 60 }}
-        style={{
-          width: '100vw',
-          height: '100vh',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-        }}
-      >
-        <RaceProgressTracker
-          playerRef={aircraftRef as React.RefObject<THREE.Group>}
-          botRefs={[
-            botRef as React.RefObject<THREE.Group>,
-            botRef2 as React.RefObject<THREE.Group>,
-            // botRef3 as React.RefObject<THREE.Group>,
-            // botRef4 as React.RefObject<THREE.Group>,
-            // botRef5 as React.RefObject<THREE.Group>,
-            // botRef6 as React.RefObject<THREE.Group>,
-            // botRef7 as React.RefObject<THREE.Group>,
-          ]}
-          curve={curve}
-        />
-        {/* Lighting */}
-        <ambientLight intensity={0.8} />
-        <directionalLight
-          position={[150, 50, -500]}
-          intensity={0.8}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-          shadow-camera-near={0.5}
-          shadow-camera-far={500}
-        />
-        <pointLight position={[-10, 5, -10]} intensity={0.3} />
+      <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
+        <Suspense fallback={null}>
+          <RaceProgressTracker
+            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
+            curve={curve}
+          />
 
-        {/* Postprocessing */}
+          <ShipCollisionTracker
+            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
+            onCollide={onShipCollision}
+          />
+
+          {/* Lighting */}
+          <ambientLight intensity={0.4} />
+          <directionalLight
+            position={[5, 10, 7]}
+            intensity={0.8}
+            castShadow
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
+            shadow-camera-near={0.5}
+            shadow-camera-far={500}
+          />
+          <pointLight position={[-10, 5, -10]} intensity={0.3} />
+
 
         {/* World */}
         <Skybox stageName="stageF" />
@@ -205,96 +257,31 @@ export default function Stage() {
             <Planet emissive color={'green'} size={3} clouds={false} />
           </Satellite>
         </Satellite>
+          <SpeedPadSpawner
+            curve={curve}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
 
-        <SpeedPadSpawner
-          curve={curve}
-          playerRefs={[{ id: playerId, ref: aircraftRef as React.RefObject<THREE.Group> }]}
-        />
+          <WeaponsPadSpawner
+            curve={curve}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
 
-        {/* <mesh position={new THREE.Vector3(-500, 0, -500)}>
-          <sphereGeometry args={[100]}/>
-          <meshStandardMaterial color="white" emissive='lighblue' emissiveIntensity={1} />
-        </mesh> */}
+          {/* Players */}
+          {players}
+          {boosters}
 
-        {/* <ParticleSystem 
-          position={new THREE.Vector3(startPosition[0], startPosition[1] -100, startPosition[2] - 800)}
-          particleCount={300} 
-          size={100000} 
-          maxDistance={300}
-          speed={2}
-          startColor="yellow"
-          endColor="red"
-          startOpacity={1}
-          endOpacity={0}
-        /> */}
-        {/* {obstaclePositions.map((pos, i) => (
-          <Obstacle key={i} position={pos} ref={obstacleRefs.current[i]} />
-        ))} */}
-
-        {/* Aircraft */}
-        <Aircraft
-          curve={curve}
-          aircraftRef={aircraftRef}
-          obstacleRefs={obstacleRefs.current}
-          playingFieldRef={playingFieldRef}
-          startPosition={startPosition}
-          startQuaternion={startQuaternion}
-          acceleration={0.01}
-          damping={0.99}
-          onSpeedChange={setSpeed}
-        />
-
-        {/* Bots */}
-        <Aircraft
-          aircraftRef={botRef as React.RefObject<THREE.Group>}
-          startPosition={startPosition}
-          startQuaternion={startQuaternion}
-          botSpeed={0.02}
-          curve={curve}
-          isBot
-        />
-        <Aircraft
-          aircraftRef={botRef2 as React.RefObject<THREE.Group>}
-          startPosition={startPosition}
-          startQuaternion={startQuaternion}
-          botSpeed={0.03}
-          curve={curve}
-          isBot
-        />
-        {/* <Aircraft 
-          ref={botRef3 as React.RefObject<THREE.Group>} 
-          startPosition={new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2])} 
-          startQuaternion={startQuaternion} speed={.0003}
-          curve={curve}
-        />
-        <Aircraft 
-          ref={botRef4 as React.RefObject<THREE.Group>} 
-          startPosition={new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2])} 
-          startQuaternion={startQuaternion} speed={.00035}
-          curve={curve}
-        />
-        <Aircraft 
-          ref={botRef5 as React.RefObject<THREE.Group>} 
-          startPosition={new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2])} 
-          startQuaternion={startQuaternion} speed={.0004}
-          curve={curve}
-        />
-        <Aircraft 
-          ref={botRef6 as React.RefObject<THREE.Group>} 
-          startPosition={new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2])} 
-          startQuaternion={startQuaternion} speed={.00045}
-          curve={curve}
-        />
-        <Aircraft 
-          ref={botRef7 as React.RefObject<THREE.Group>} 
-          startPosition={new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2])} 
-          startQuaternion={startQuaternion} speed={.0005}
-          curve={curve}
-        /> */}
-
-        {/* Camera */}
-        <FollowCamera targetRef={aircraftRef} />
+          {/* Camera */}
+          <FollowCamera targetRef={aircraftRef} />
+        </Suspense>
       </Canvas>
     </main>
   );
 }
+
