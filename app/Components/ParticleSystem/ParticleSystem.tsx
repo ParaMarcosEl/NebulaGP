@@ -38,7 +38,7 @@ const fragmentShader = `
 `;
 
 type ParticleSystemProps = {
-  target?: React.RefObject<THREE.Object3D>;
+  target?: React.RefObject<THREE.Object3D>;
   offset?: THREE.Vector3;
   duration?: number; // Duration in seconds
   delay?: number;
@@ -55,10 +55,10 @@ type ParticleSystemProps = {
   particleLife?: number;
   useWorldSpace?: boolean;
   texturePath: string;
-//   emissions?: {
-//     rateOverDistance: number;
-//     rateOverTime?: number; // New property
-//   };
+  //   emissions?: {
+  //     rateOverDistance: number;
+  //     rateOverTime?: number; // New property
+  //   };
 };
 
 export function ParticleSystem({
@@ -96,7 +96,7 @@ export function ParticleSystem({
   const velocities = useMemo(() => new Float32Array(particleCount * 3), [particleCount]);
   const alive = useMemo(() => new Array(particleCount).fill(false), [particleCount]);
   const nextSpawnIndex = useRef(0);
-  
+
   // Spawn / respawn a particle in place
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function respawnParticle(i: number) {
@@ -107,7 +107,7 @@ export function ParticleSystem({
     const spawnPos = new THREE.Vector3(
       (Math.random() * 2 - 1) * 0.1,
       (Math.random() * 2 - 1) * 0.1,
-      (Math.random() * 2 - 1) * 0.1
+      (Math.random() * 2 - 1) * 0.1,
     ).add(offset);
 
     if (useWorldSpace && pointsRef.current) {
@@ -123,11 +123,9 @@ export function ParticleSystem({
     positions[i * 3 + 2] = 0;
 
     // Velocity
-    const dir = direction ?? new THREE.Vector3(
-      Math.random() * 2 - 1,
-      Math.random() * 2 - 1,
-      Math.random() * 2 - 1
-    );
+    const dir =
+      direction ??
+      new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
     dir.normalize().multiplyScalar(speed + Math.random() * speed);
 
     velocities[i * 3 + 0] = dir.x;
@@ -155,29 +153,24 @@ export function ParticleSystem({
     nextSpawnIndex.current = (nextSpawnIndex.current + 1) % particleCount;
   }, [alive, lifetimes, velocities, origins, particleCount]);
 
-
   useEffect(() => {
-  for (let i = 0; i < particleCount; i++) {
-    spawnNextParticle();
-  }
-}, [particleCount, spawnNextParticle]);
-
+    for (let i = 0; i < particleCount; i++) {
+      spawnNextParticle();
+    }
+  }, [particleCount, spawnNextParticle]);
 
   useEffect(() => {
     for (let i = 0; i < particleCount; i++) {
-      const dir = direction ?? new THREE.Vector3(
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-        Math.random() * 2 - 1,
-      )
-        .normalize()
-        .multiplyScalar(speed + Math.random() * speed);
+      const dir =
+        direction ??
+        new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+          .normalize()
+          .multiplyScalar(speed + Math.random() * speed);
       velocities[i * 3 + 0] = dir.x;
       velocities[i * 3 + 1] = dir.y;
       velocities[i * 3 + 2] = dir.z;
     }
   }, [direction, particleCount, speed, velocities]);
-
 
   // Geometry setup
   const geometry = useMemo(() => {
@@ -216,9 +209,9 @@ export function ParticleSystem({
     }
 
     for (let i = 0; i < particleCount; i++) {
-      const x = (Math.random() * 2 - 1) * .1;
-      const y = (Math.random() * 2 - 1) * .1;
-      const z = (Math.random() * 2 - 1) * .1;
+      const x = (Math.random() * 2 - 1) * 0.1;
+      const y = (Math.random() * 2 - 1) * 0.1;
+      const z = (Math.random() * 2 - 1) * 0.1;
 
       const localPos = new THREE.Vector3(x, y, z).add(offset);
       const worldPos = localPos.clone();
@@ -246,48 +239,47 @@ export function ParticleSystem({
   }, [geometry, material, texture]);
 
   function animateParticles({
-      geometry,
-      positions,
-      velocities,
-      lifetimes,
-      origins ,
-      useWorldSpace,
-      delta,
-  }: { 
-    geometry: THREE.BufferGeometry, 
-    positions: Float32Array<ArrayBuffer>,
-    velocities: Float32Array<ArrayBuffer>,
-    lifetimes: Float32Array<ArrayBuffer>,
-    useWorldSpace?: boolean,
-    origins: Float32Array<ArrayBuffer>,
-    delta: number
+    geometry,
+    positions,
+    velocities,
+    lifetimes,
+    origins,
+    useWorldSpace,
+    delta,
+  }: {
+    geometry: THREE.BufferGeometry;
+    positions: Float32Array<ArrayBuffer>;
+    velocities: Float32Array<ArrayBuffer>;
+    lifetimes: Float32Array<ArrayBuffer>;
+    useWorldSpace?: boolean;
+    origins: Float32Array<ArrayBuffer>;
+    delta: number;
   }) {
-
     const posAttr = geometry.getAttribute('position') as THREE.BufferAttribute;
     const lifeAttr = geometry.getAttribute('aLifetime') as THREE.BufferAttribute;
     if (useWorldSpace) {
       for (let i = 0; i < particleCount; i++) {
-        const ox = origins[i * 3 + 0];
-        const oy = origins[i * 3 + 1];
-        const oz = origins[i * 3 + 2];
+        const ox = origins[i * 3 + 0];
+        const oy = origins[i * 3 + 1];
+        const oz = origins[i * 3 + 2];
 
-        let dx = positions[i * 3 + 0];
-        let dy = positions[i * 3 + 1];
-        let dz = positions[i * 3 + 2];
+        let dx = positions[i * 3 + 0];
+        let dy = positions[i * 3 + 1];
+        let dz = positions[i * 3 + 2];
 
-        dx += velocities[i * 3 + 0];
-        dy += velocities[i * 3 + 1];
-        dz += velocities[i * 3 + 2];
+        dx += velocities[i * 3 + 0];
+        dy += velocities[i * 3 + 1];
+        dz += velocities[i * 3 + 2];
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const x = ox + dx;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const y = oy + dy;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const z = oz + dz;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const x = ox + dx;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const y = oy + dy;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const z = oz + dz;
 
-      //   const distSq = dx * dx + dy * dy + dz * dz;
-      //   const lifetime = Math.sqrt(distSq) / maxDistance;
+        //   const distSq = dx * dx + dy * dy + dz * dz;
+        //   const lifetime = Math.sqrt(distSq) / maxDistance;
 
         if (!alive[i]) continue; // Skip unused slots
 
@@ -298,43 +290,39 @@ export function ParticleSystem({
           continue;
         }
 
-        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (dist > maxDistance) {
           alive[i] = false;
           spawnNextParticle();
           continue;
-        }
+        } // Store displacement only
 
+        positions[i * 3 + 0] = dx;
+        positions[i * 3 + 1] = dy;
+        positions[i * 3 + 2] = dz;
 
-        // Store displacement only
-        positions[i * 3 + 0] = dx;
-        positions[i * 3 + 1] = dy;
-        positions[i * 3 + 2] = dz;
-
-        posAttr.setXYZ(i, ox + dx, oy + dy, oz + dz);
-        lifeAttr.setX(i, lifetimes[i]);
+        posAttr.setXYZ(i, ox + dx, oy + dy, oz + dz);
+        lifeAttr.setX(i, lifetimes[i]);
       }
-      
     } else {
       for (let i = 0; i < particleCount; i++) {
         let x = positions[i * 3 + 0];
         let y = positions[i * 3 + 1];
         let z = positions[i * 3 + 2];
-  
+
         x += velocities[i * 3 + 0];
         y += velocities[i * 3 + 1];
         z += velocities[i * 3 + 2];
-  
+
         // Reset if too far
         const distSq = x * x + y * y + z * z;
         // const maxDistSq = maxDistance * maxDistance;
         const dist = Math.sqrt(distSq);
-        
+
         if (!alive[i]) continue; // Skip unused slots
 
         lifetimes[i] += delta / particleLife; // Advance lifetime
         if (lifetimes[i] > 1.0) {
-
           alive[i] = false;
           spawnNextParticle();
           continue;
@@ -348,7 +336,7 @@ export function ParticleSystem({
         positions[i * 3 + 0] = x;
         positions[i * 3 + 1] = y;
         positions[i * 3 + 2] = z;
-  
+
         posAttr.setXYZ(i, x, y, z);
         lifeAttr.setX(i, lifetimes[i]);
       }
@@ -360,7 +348,6 @@ export function ParticleSystem({
 
   // Animate positions
   useFrame(({ clock }, delta) => {
-
     if (!activeRef.current) return;
     if (startTimeRef.current === null) {
       startTimeRef.current = clock.elapsedTime;
@@ -378,20 +365,18 @@ export function ParticleSystem({
       return;
     }
 
+    if (!pointsRef.current) return; // --- NEW LOGIC: Update position if a target is provided ---
 
-    if (!pointsRef.current) return;
-
-    // --- NEW LOGIC: Update position if a target is provided ---
-    if (target?.current) {
+    if (target?.current) {
       followTarget({
         followerRef: pointsRef as React.RefObject<THREE.Object3D>,
         targetRef: target,
-        offset
-      })
-    } else {
-      // If no target, use the position prop. This is the original behavior.
-      pointsRef.current.position.copy(position);
-    }
+        offset,
+      });
+    } else {
+      // If no target, use the position prop. This is the original behavior.
+      pointsRef.current.position.copy(position);
+    }
 
     animateParticles({
       geometry,
@@ -400,7 +385,7 @@ export function ParticleSystem({
       lifetimes,
       origins,
       useWorldSpace,
-      delta
+      delta,
     });
   });
 

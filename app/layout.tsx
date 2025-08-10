@@ -68,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </Head>
       <body>
         {/* <TransitionLayout > */}
-        <TextureLoader 
+        <TextureLoader
           textures={[
             '/textures/explosion.png',
             '/textures/clouds.png',

@@ -41,7 +41,7 @@ export default function Aircraft({
 }: AircraftProps) {
   const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
-  const trailTarget = useRef<THREE.Object3D | null>(null)
+  const trailTarget = useRef<THREE.Object3D | null>(null);
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
@@ -62,7 +62,7 @@ export default function Aircraft({
     onBrakingChange,
     curve,
     botSpeed,
-    enabled: !isBot
+    enabled: !isBot,
   });
 
   return (
@@ -70,16 +70,16 @@ export default function Aircraft({
       <group ref={aircraftRef}>
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
-          <object3D ref={trailTarget} position={[0, .31, 2]}/>
+          <object3D ref={trailTarget} position={[0, 0.31, 2]} />
         </group>
       </group>
-            
+
       <Trail
         target={trailTarget as React.RefObject<THREE.Object3D>}
         width={10}
-        length={.6}
+        length={0.6}
         color={'orange'}
-        decay={.001}
+        decay={0.001}
         attenuation={(t) => t * t}
       />
     </>

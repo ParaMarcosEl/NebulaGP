@@ -36,14 +36,17 @@ function RaceProgressTracker({
   return null; // No rendering, just logic
 }
 
-function ShipCollisionTracker({ playerRefs, onCollide } : {
-    playerRefs: React.RefObject<THREE.Object3D>[],
-    onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void
+function ShipCollisionTracker({
+  playerRefs,
+  onCollide,
+}: {
+  playerRefs: React.RefObject<THREE.Object3D>[];
+  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
 }) {
   useShipCollisions({
     playerRefs,
-    onCollide
-  })
+    onCollide,
+  });
   return null;
 }
 
@@ -57,18 +60,12 @@ export default function Stage1() {
   const botRef5 = useRef<THREE.Group | null>(null);
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
-  const thrusterOffset = new THREE.Vector3(0, .31, 1.6);
+  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
 
-  const playerRefs = useMemo(() => [
-    aircraftRef,
-    botRef1,
-    botRef2,
-    botRef3,
-    botRef4,
-    botRef5,
-    botRef6,
-    botRef7
-  ], []);
+  const playerRefs = useMemo(
+    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
+    [],
+  );
 
   const bounds = { x: 500, y: 250, z: 500 };
   const { raceData, reset, track: curve, setTrack } = useGameStore((state) => state);
@@ -108,47 +105,47 @@ export default function Stage1() {
     setTrack(tracks[0]);
     reset();
   }, [reset, setTrack]);
-  
 
-  const players = playerRefs.map((player, id) => (
-    id === 0 ?
-    <Aircraft 
-          key={id}
-          aircraftRef={player}
-          playerRefs={playerRefs}
-          curve={curve}
-          obstacleRefs={obstacleRefs.current}
-          playingFieldRef={playingFieldRef}
-          startPosition={startPositions[id].position}
-          startQuaternion={startPositions[id].quaternion}
-          acceleration={0.01}
-          damping={0.99}
-          onSpeedChange={setSpeed}
-          botSpeed={1.6}
-    />
-    :
-    <Bot 
-      key={id}
-      aircraftRef={player}
-      playerRefs={playerRefs}
-      startPosition={startPositions[id].position}
-      startQuaternion={startPositions[id].quaternion}
-      curve={curve}
-      isBot
-      obstacleRefs={obstacleRefs.current}
-      playingFieldRef={playingFieldRef}
-      acceleration={0.01}
-      damping={0.99}
-      botSpeed={1.2}
-    />
-  ));
+  const players = playerRefs.map((player, id) =>
+    id === 0 ? (
+      <Aircraft
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        curve={curve}
+        obstacleRefs={obstacleRefs.current}
+        playingFieldRef={playingFieldRef}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        acceleration={0.01}
+        damping={0.99}
+        onSpeedChange={setSpeed}
+        botSpeed={1.6}
+      />
+    ) : (
+      <Bot
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        curve={curve}
+        isBot
+        obstacleRefs={obstacleRefs.current}
+        playingFieldRef={playingFieldRef}
+        acceleration={0.01}
+        damping={0.99}
+        botSpeed={1.2}
+      />
+    ),
+  );
 
-  const boosters = playerRefs.map((player, id) =>(
-    <ParticleSystem 
+  const boosters = playerRefs.map((player, id) => (
+    <ParticleSystem
       key={id}
       target={player as React.RefObject<THREE.Object3D>}
       size={400}
-      texturePath='/textures/explosion.png'
+      texturePath="/textures/explosion.png"
       offset={thrusterOffset}
       // useWorldSpace
       // emissions={{
@@ -196,7 +193,7 @@ export default function Stage1() {
           curve={curve}
         />
 
-        <ShipCollisionTracker 
+        <ShipCollisionTracker
           playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
           onCollide={onShipCollision}
         />
@@ -225,29 +222,25 @@ export default function Stage1() {
 
         <SpeedPadSpawner
           curve={curve}
-          playerRefs={
-            playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>
-            }))
-          }
+          playerRefs={playerRefs.map((ref, id) => ({
+            id,
+            ref: ref as React.RefObject<THREE.Group>,
+          }))}
         />
 
-        <WeaponsPadSpawner 
+        <WeaponsPadSpawner
           curve={curve}
-          playerRefs={
-            playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>
-            }))
-          }
+          playerRefs={playerRefs.map((ref, id) => ({
+            id,
+            ref: ref as React.RefObject<THREE.Group>,
+          }))}
         />
         <Planet size={350} />
 
         {/* Players */}
         {players}
         {boosters}
-        
+
         {/* Camera */}
         <FollowCamera targetRef={aircraftRef} />
       </Canvas>

@@ -35,12 +35,12 @@ export default function Bot({
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
 
-    useBotController({
-      botRef: aircraftRef as React.RefObject<THREE.Group>,
-      curve,
-      enabled: !!isBot,
-      speed: botSpeed,
-    });
+  useBotController({
+    botRef: aircraftRef as React.RefObject<THREE.Group>,
+    curve,
+    enabled: !!isBot,
+    speed: botSpeed,
+  });
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
@@ -54,15 +54,15 @@ export default function Bot({
       <group ref={aircraftRef}>
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
-          <object3D ref={trailTarget} position={[0, .31, 1.8]}/>
+          <object3D ref={trailTarget} position={[0, 0.31, 1.8]} />
         </group>
       </group>
-      <Trail 
+      <Trail
         target={trailTarget as React.RefObject<THREE.Object3D>}
         width={10}
         length={1}
         color={'orange'}
-        decay={.1}
+        decay={0.1}
         attenuation={(t) => t * t}
       />
     </>

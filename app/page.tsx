@@ -20,9 +20,8 @@ import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
-import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader'
+import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { blue } from '@/Constants/colors';
-
 
 const styles = {
   main: {
@@ -122,14 +121,17 @@ function RaceProgressTracker({
   return null; // No rendering, just logic
 }
 
-function ShipCollisionTracker({ playerRefs, onCollide } : {
-    playerRefs: React.RefObject<THREE.Object3D>[],
-    onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void
+function ShipCollisionTracker({
+  playerRefs,
+  onCollide,
+}: {
+  playerRefs: React.RefObject<THREE.Object3D>[];
+  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
 }) {
   useShipCollisions({
     playerRefs,
-    onCollide
-  })
+    onCollide,
+  });
   return null;
 }
 
@@ -143,24 +145,18 @@ export default function Stage1() {
   const botRef5 = useRef<THREE.Group | null>(null);
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
-  const thrusterOffset = new THREE.Vector3(0, .31, 1.6);
+  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
 
   const { loader, setMaterialLoaded } = useCanvasLoader();
 
-  const playerRefs = useMemo(() => [
-    aircraftRef,
-    botRef1,
-    botRef2,
-    botRef3,
-    botRef4,
-    botRef5,
-    botRef6,
-    botRef7
-  ], []);
+  const playerRefs = useMemo(
+    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
+    [],
+  );
 
   const { reset, track: curve, setTrack } = useGameStore((state) => state);
   // HUD state
-  const [,setSpeed] = useState(0);
+  const [, setSpeed] = useState(0);
   const startPositions = useMemo(
     () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
     [curve, playerRefs],
@@ -172,44 +168,45 @@ export default function Stage1() {
     reset();
   }, [reset, setMaterialLoaded, setTrack]);
 
-  const players = playerRefs.map((player, id) => (
-    id === 0 ?
-    <Aircraft 
-          key={id}
-          aircraftRef={player}
-          playerRefs={playerRefs}
-          curve={curve}
-          playingFieldRef={playingFieldRef}
-          startPosition={startPositions[id].position}
-          startQuaternion={startPositions[id].quaternion}
-          acceleration={0.01}
-          damping={0.99}
-          onSpeedChange={setSpeed}
-          botSpeed={1.6}
-          isBot
-    />
-    :
-    <Bot 
-      key={id}
-      aircraftRef={player}
-      playerRefs={playerRefs}
-      startPosition={startPositions[id].position}
-      startQuaternion={startPositions[id].quaternion}
-      curve={curve}
-      isBot
-      playingFieldRef={playingFieldRef}
-      acceleration={0.01}
-      damping={0.99}
-      botSpeed={.9 + id * .1}
-    />
-  ));
+  const players = playerRefs.map((player, id) =>
+    id === 0 ? (
+      <Aircraft
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        curve={curve}
+        playingFieldRef={playingFieldRef}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        acceleration={0.01}
+        damping={0.99}
+        onSpeedChange={setSpeed}
+        botSpeed={1.6}
+        isBot
+      />
+    ) : (
+      <Bot
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        curve={curve}
+        isBot
+        playingFieldRef={playingFieldRef}
+        acceleration={0.01}
+        damping={0.99}
+        botSpeed={0.9 + id * 0.1}
+      />
+    ),
+  );
 
-  const boosters = playerRefs.map((player, id) =>(
-    <ParticleSystem 
+  const boosters = playerRefs.map((player, id) => (
+    <ParticleSystem
       key={id}
       target={player as React.RefObject<THREE.Object3D>}
       size={400}
-      texturePath='/textures/explosion.png'
+      texturePath="/textures/explosion.png"
       offset={thrusterOffset}
       // useWorldSpace
       // emissions={{
@@ -217,56 +214,54 @@ export default function Stage1() {
       // }}
     />
   ));
-  
-const keyboardControls = [
-  [['W', 'S'], 'Pitch Up / Down'],
-  [['A', 'D'], 'Roll Left / Right'],
-  [['I'], 'Accelerate'],
-  [['K'], 'Brake'],
-];
 
-const gamepadControls = [
-  [['X'], 'Accelerate'],
-  [['☐'], 'Brake'],
-  [['Left Stick'], 'Pitch / Roll'],
-];
-const UIStyles: CSSProperties = {
-  position: 'absolute',
-  width: '100%',
-  top: '20px',
-  left: '20px',
-  background: 'rgba(0, 0, 0, 0)',
-  zIndex: 100,
-  overflow: 'hidden',
-  overscrollBehavior: 'scroll',
-}
+  const keyboardControls = [
+    [['W', 'S'], 'Pitch Up / Down'],
+    [['A', 'D'], 'Roll Left / Right'],
+    [['I'], 'Accelerate'],
+    [['K'], 'Brake'],
+  ];
+
+  const gamepadControls = [
+    [['X'], 'Accelerate'],
+    [['☐'], 'Brake'],
+    [['Left Stick'], 'Pitch / Roll'],
+  ];
+  const UIStyles: CSSProperties = {
+    position: 'absolute',
+    width: '100%',
+    top: '20px',
+    left: '20px',
+    background: 'rgba(0, 0, 0, 0)',
+    zIndex: 100,
+    overflow: 'hidden',
+    overscrollBehavior: 'scroll',
+  };
 
   return (
     <>
-    
       <StartCountdown />
       {loader}
 
       {/* Scene */}
-      <Canvas 
-      
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: -1,
-        width: '100%',
-        height: '100%',
-      }}
-      camera={{ position: [0, 5, 15], fov: 60 }}>
+      <Canvas
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: -1,
+          width: '100%',
+          height: '100%',
+        }}
+        camera={{ position: [0, 5, 15], fov: 60 }}
+      >
         <Suspense fallback={null}>
-
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}
           />
 
-          <ShipCollisionTracker 
+          <ShipCollisionTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             onCollide={onShipCollision}
           />
@@ -295,97 +290,91 @@ const UIStyles: CSSProperties = {
 
           <SpeedPadSpawner
             curve={curve}
-            playerRefs={
-              playerRefs.map((ref, id) => ({
-                id,
-                ref: ref as React.RefObject<THREE.Group>
-              }))
-            }
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
           />
 
-          <WeaponsPadSpawner 
+          <WeaponsPadSpawner
             curve={curve}
-            playerRefs={
-              playerRefs.map((ref, id) => ({
-                id,
-                ref: ref as React.RefObject<THREE.Group>
-              }))
-            }
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
           />
           <Planet size={350} />
 
           {/* Players */}
           {players}
           {boosters}
-          
+
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>
       </Canvas>
-    <main
-      style={styles.main}
-    >
-      {/* UI */}
-      <div style={UIStyles}>
-        <h1 style={styles.heading}>NEBULA GP</h1>
-        <p style={styles.paragraph}>Anti-gravity Racing</p>
+      <main style={styles.main}>
+        {/* UI */}
+        <div style={UIStyles}>
+          <h1 style={styles.heading}>NEBULA GP</h1>
+          <p style={styles.paragraph}>Anti-gravity Racing</p>
 
-        <Link style={styles.link} href="/stage-select">
-          Start Game
-        </Link>
+          <Link style={styles.link} href="/stage-select">
+            Start Game
+          </Link>
 
-        <section style={styles.controlsSection}>
-          <div style={styles.subheading}>🕹️ Keyboard Controls</div>
+          <section style={styles.controlsSection}>
+            <div style={styles.subheading}>🕹️ Keyboard Controls</div>
 
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Key</th>
-                <th style={styles.th}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keyboardControls.map(([keys, action], i) => (
-                <tr key={i}>
-                  <td style={styles.td}>
-                    {(keys as string[]).map((key) => (
-                      <kbd style={styles.kbd} key={key}>
-                        {key}
-                      </kbd>
-                    ))}
-                  </td>
-                  <td style={styles.td}>{action}</td>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Key</th>
+                  <th style={styles.th}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {keyboardControls.map(([keys, action], i) => (
+                  <tr key={i}>
+                    <td style={styles.td}>
+                      {(keys as string[]).map((key) => (
+                        <kbd style={styles.kbd} key={key}>
+                          {key}
+                        </kbd>
+                      ))}
+                    </td>
+                    <td style={styles.td}>{action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-          <h3 style={styles.subheading}>🎮 Gamepad (PlayStation-style)</h3>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Button</th>
-                <th style={styles.th}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gamepadControls.map(([keys, action], i) => (
-                <tr key={i}>
-                  <td style={styles.td}>
-                    {(keys as string[]).map((key) => (
-                      <kbd style={styles.kbd} key={key}>
-                        {key}
-                      </kbd>
-                    ))}
-                  </td>
-                  <td style={styles.td}>{action}</td>
+            <h3 style={styles.subheading}>🎮 Gamepad (PlayStation-style)</h3>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Button</th>
+                  <th style={styles.th}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      </div>
-    </main>
+              </thead>
+              <tbody>
+                {gamepadControls.map(([keys, action], i) => (
+                  <tr key={i}>
+                    <td style={styles.td}>
+                      {(keys as string[]).map((key) => (
+                        <kbd style={styles.kbd} key={key}>
+                          {key}
+                        </kbd>
+                      ))}
+                    </td>
+                    <td style={styles.td}>{action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </div>
+      </main>
     </>
   );
 }

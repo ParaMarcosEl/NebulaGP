@@ -10,12 +10,11 @@ export function useCollisions({
   mesh2,
   onCollide,
   type,
-
-}:{
-  mesh1: THREE.Object3D | null,
-  mesh2: THREE.Object3D | THREE.Object3D[] | null,
-  onCollide: (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => void,
-  type: CollisionType,
+}: {
+  mesh1: THREE.Object3D | null;
+  mesh2: THREE.Object3D | THREE.Object3D[] | null;
+  onCollide: (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => void;
+  type: CollisionType;
 }) {
   const tempBox1 = new THREE.Box3();
   const tempBox2 = new THREE.Box3();
@@ -34,7 +33,7 @@ export function useCollisions({
       if (!Array.isArray(mesh2)) {
         if (mesh1 === mesh2) return;
         tempBox2.setFromObject(mesh2);
-  
+
         if (tempBox1.intersectsBox(tempBox2)) {
           onCollide(mesh1, mesh2);
         }
@@ -100,7 +99,6 @@ function getBoundingSphere(object: THREE.Object3D | THREE.Object3D[]): THREE.Sph
   }
 }
 
-
 function getOBB(object: THREE.Object3D): OBB {
   const box = new THREE.Box3().setFromObject(object);
   const obb = new OBB();
@@ -120,5 +118,3 @@ function getOBB(object: THREE.Object3D): OBB {
 
   return obb;
 }
-
-

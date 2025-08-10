@@ -66,29 +66,26 @@ export function usePlayerController({
   const { raceStatus, playerId, playerSpeed, raceData } = useGameStore((state) => state);
   const controlsEnabled = raceStatus === 'racing';
   // const players = Array.isArray(playerRefs) ? playerRefs?.map(player => player.current) : [];
-  
-  const { fire, poolRef } = useProjectiles(
-    aircraftRef as React.RefObject<THREE.Object3D>, 
-    {
-      fireRate: 5,
-      maxProjectiles: 20,
-      velocity: 200
-    }
-  );
+
+  const { fire, poolRef } = useProjectiles(aircraftRef as React.RefObject<THREE.Object3D>, {
+    fireRate: 5,
+    maxProjectiles: 20,
+    velocity: 200,
+  });
 
   useProjectileCollisions({
     projectiles: poolRef.current,
     playerRefs,
     onCollide: onBulletCollision,
-    owner: aircraftRef
+    owner: aircraftRef,
   });
-  
+
   useEffect(() => {
     const ship = aircraftRef.current;
     if (!ship) return;
     ship.userData.velocity = new THREE.Vector3(0, 0, 0);
     ship.userData.impulseVelocity = new THREE.Vector3();
-  },[aircraftRef]);
+  }, [aircraftRef]);
 
   // const onCollide = (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => {
   //   // Calculate the vector from the obstacle's position to the bot's position.
@@ -97,7 +94,7 @@ export function usePlayerController({
   //     .subVectors(mesh1.position, mesh2.position).normalize();
 
   //   // A factor to control the bounciness of the collision.
-  //   const restitution = 0.5; 
+  //   const restitution = 0.5;
 
   //   // Adjust the velocity by reflecting it off the collision normal.
   //   velocity.current.reflect(collisionNormal);
@@ -181,7 +178,7 @@ export function usePlayerController({
     const accelerating = !!(keys.current['i'] || gp?.buttons?.[0]?.pressed || throttle > 0);
     const braking = !!(keys.current['k'] || gp?.buttons?.[2]?.pressed || throttle < 0);
     const shooting = !!(keys.current['j'] || gp?.buttons?.[7]?.pressed);
-    
+
     // Trigger onAcceleratingChange callback if the accelerating state has changed.
     if (accelerating !== previousInputState.current.accelerating) {
       onAcceleratingChange?.(accelerating);
@@ -192,32 +189,32 @@ export function usePlayerController({
       onBrakingChange?.(braking);
       previousInputState.current.braking = braking;
     }
-    
+
     // Forward motion
     if (accelerating || throttle > 0) {
       // Accelerate up to playerSpeed, adjusting for mobile throttle input.
       speedRef.current = Math.min(
         playerSpeed,
         isMobileDevice()
-        ? (speedRef.current + acceleration) * Math.abs(throttle)
-        : speedRef.current + acceleration,
+          ? (speedRef.current + acceleration) * Math.abs(throttle)
+          : speedRef.current + acceleration,
       );
     } else if (!braking) {
       // Apply damping (slow down) when not accelerating or braking.
       speedRef.current *= damping;
     }
-    
+
     // Braking motion
     if (braking || throttle < 0) {
       // Brake, adjusting for mobile throttle input, down to a minimum speed of -1 (reverse).
       speedRef.current = Math.max(
         -1,
         isMobileDevice()
-        ? speedRef.current - acceleration * 2 * Math.abs(throttle)
-        : speedRef.current - acceleration * 2,
+          ? speedRef.current - acceleration * 2 * Math.abs(throttle)
+          : speedRef.current - acceleration * 2,
       );
     }
-    
+
     // If speed is very close to zero, set it to zero and clear velocity to prevent tiny movements.
     if (Math.abs(speedRef.current) < 0.001) {
       speedRef.current = 0;
@@ -226,7 +223,7 @@ export function usePlayerController({
 
     // Call the onSpeedChange callback with the current speed.
     onSpeedChange?.(speedRef.current);
-    
+
     // Apply angular velocity to the ship's rotation.
     const deltaRotation = new THREE.Quaternion().setFromEuler(
       new THREE.Euler(
@@ -239,7 +236,7 @@ export function usePlayerController({
     ship.quaternion.multiply(deltaRotation);
     // Dampen angular velocity over time.
     angularVelocity.current.multiplyScalar(0.5);
-    
+
     // Calculate forward direction based on ship's current rotation.
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(ship.quaternion).normalize();
     // Calculate desired velocity based on forward direction and speed.
@@ -255,7 +252,7 @@ export function usePlayerController({
     }
     // Update ship position based on current velocity.
     ship.position.add(ship.userData.velocity);
-    
+
     // Playing field collision detection and correction.
     if (playingFieldRef?.current) {
       const field = playingFieldRef.current;
@@ -284,23 +281,22 @@ export function usePlayerController({
         }
       }
     }
-    
+
     // Obstacle collision detection.
     // const shipBox = new THREE.Box3().setFromObject(ship); // Get bounding box of the ship.
-    
+
     // for (const obsRef of obstacleRefs as RefObject<THREE.Mesh>[]) {
-      //   const obs = obsRef.current;
+    //   const obs = obsRef.current;
     //   if (!obs) continue;
     //   const obsBox = new THREE.Box3().setFromObject(obs); // Get bounding box of the obstacle.
     //   // Check for intersection between ship and obstacle bounding boxes.
     //   if (shipBox.intersectsBox(obsBox)) {
-      //     ship.userData.velocity.multiplyScalar(-3); // Drastically reverse velocity on collision.
-      //     speedRef.current = 0; // Stop movement immediately.
-      //     break; // Stop checking further obstacles after a collision.
-      //   }
-      // }
-      
-      if (shooting) fire();
-    });
-  }
-  
+    //     ship.userData.velocity.multiplyScalar(-3); // Drastically reverse velocity on collision.
+    //     speedRef.current = 0; // Stop movement immediately.
+    //     break; // Stop checking further obstacles after a collision.
+    //   }
+    // }
+
+    if (shooting) fire();
+  });
+}

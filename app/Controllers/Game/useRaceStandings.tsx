@@ -72,7 +72,7 @@ export function useRaceStandings() {
           id: parseInt(id), // Convert string ID back to number.
           // Calculate place by adding the number of already finished racers.
           place: idx + 1 + finishedList.length,
-          finished: false, 
+          finished: false,
           time: history?.reduce((sum, lap) => sum + lap.time, 0) || 0, // Total time so far.
           history, // Include full history.
         };

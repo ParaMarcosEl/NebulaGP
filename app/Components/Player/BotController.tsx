@@ -40,10 +40,10 @@ export function useBotController({
   const { raceStatus } = useGameStore((s) => s);
 
   useEffect(() => {
-      const bot = botRef.current;
-      if (bot && !bot.userData.impulseVelocity) {
-        bot.userData.impulseVelocity = new THREE.Vector3();
-      }
+    const bot = botRef.current;
+    if (bot && !bot.userData.impulseVelocity) {
+      bot.userData.impulseVelocity = new THREE.Vector3();
+    }
   }, [botRef]);
 
   useImperativeHandle(botRef, () => botRef.current as THREE.Group, [botRef]);
@@ -133,7 +133,7 @@ export function useBotController({
     bot.userData.velocity = forward.multiplyScalar(speedRef.current);
     // Calculate forward direction based on ship's current rotation.
     // Calculate desired velocity based on forward direction and speed.
-    
+
     // const desiredVelocity = forward.multiplyScalar(speedRef.current);
     // // Lerp (linear interpolate) the current velocity towards the desired velocity for smooth movement.
     // const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));

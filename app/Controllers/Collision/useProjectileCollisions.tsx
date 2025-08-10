@@ -17,7 +17,7 @@ export function useProjectileCollisions({
   projectiles,
   playerRefs,
   onCollide,
-  owner
+  owner,
 }: {
   projectiles: Projectile[];
   playerRefs: React.RefObject<THREE.Object3D | null>[];
@@ -36,7 +36,6 @@ export function useProjectileCollisions({
       tempBox.getCenter(tempOBB.center);
       tempBox.getSize(tempOBB.halfSize).multiplyScalar(0.5);
       tempOBB.rotation.setFromMatrix4(proj.mesh.matrixWorld);
-
 
       for (const ref of playerRefs) {
         const player = ref.current;

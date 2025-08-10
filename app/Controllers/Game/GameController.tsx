@@ -408,7 +408,7 @@ export const useGameStore = create(
      * Resets the entire game state to its initial values.
      * This is typically called when starting a new race or returning to a main menu.
      */
-    reset: () =>{
+    reset: () => {
       const initialRaceData: Record<number, RaceData> = {};
       for (let i = 0; i < 8; i++) {
         initialRaceData[i] = {
@@ -419,7 +419,7 @@ export const useGameStore = create(
           lapCount: 0,
           progress: 0,
           position: new THREE.Vector3(),
-          history: []
+          history: [],
         };
       }
 
@@ -432,7 +432,7 @@ export const useGameStore = create(
         finishedCrafts: [],
         raceData: initialRaceData,
         lastProgresses: {},
-      })
+      });
     },
 
     /**

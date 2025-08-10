@@ -35,8 +35,8 @@ const fragmentShader = `
 `;
 
 type PooledParticleSystemProps = {
-    targetRef: React.RefObject<THREE.Object3D>;
-    position?: THREE.Vector3;
+  targetRef: React.RefObject<THREE.Object3D>;
+  position?: THREE.Vector3;
   pool: ParticlePool;
   particlesPerEmitter?: number; // number of particles each emitter owns
   texturePath: string;
@@ -50,8 +50,8 @@ type PooledParticleSystemProps = {
 };
 
 export function PooledParticles({
-    targetRef,
-    // position,
+  targetRef,
+  // position,
   pool,
   particlesPerEmitter = 50,
   texturePath,
@@ -64,7 +64,7 @@ export function PooledParticles({
   endOpacity = 0.0,
 }: PooledParticleSystemProps) {
   const pointsRef = useRef<THREE.Points>(null);
-    const target = targetRef.current;
+  const target = targetRef.current;
   const capacity = pool.capacity;
   const totalParticles = capacity * particlesPerEmitter;
 
@@ -165,7 +165,11 @@ export function PooledParticles({
       // initialize emitter if particleLifetimes for its particles are all zero (simple heuristic)
       // This ensures that the origin/particleVelocities are set once at first update after spawn
       const firstParticleIndex = e * particlesPerEmitter;
-      if (particleLifetimes[firstParticleIndex] === 0 && particlePositions[firstParticleIndex * 3 + 0] === 0 && (now - (cfg.startTime ?? now)) < 1.0) {
+      if (
+        particleLifetimes[firstParticleIndex] === 0 &&
+        particlePositions[firstParticleIndex * 3 + 0] === 0 &&
+        now - (cfg.startTime ?? now) < 1.0
+      ) {
         initEmitterAtIndex(e, cfg);
       }
 
@@ -250,7 +254,5 @@ export function PooledParticles({
     lifeAttr.needsUpdate = true;
   });
 
-  return (
-    <points ref={pointsRef} geometry={geometry} material={material} />
-  );
+  return <points ref={pointsRef} geometry={geometry} material={material} />;
 }

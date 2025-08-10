@@ -9,7 +9,7 @@ export default function FollowCamera({
   const { camera } = useThree();
 
   // In front and slightly above
-  const offset = new THREE.Vector3(0, .5, 10);
+  const offset = new THREE.Vector3(0, 0.5, 10);
 
   useFrame(() => {
     const target = targetRef.current;

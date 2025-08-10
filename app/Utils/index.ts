@@ -426,50 +426,47 @@ export function chunkKey(pos: THREE.Vector2, size: number): string {
   return `${pos.x}_${pos.y}_${size}`;
 }
 
+export const onShipCollision = (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => {
+  console.log('collision');
+  // Check if both meshes have a velocity vector
+  if (!mesh1.userData.velocity || !mesh2.userData.velocity) {
+    return;
+  }
+  const velocity2 = mesh2.userData.velocity;
 
+  // Get the positions of the two meshes
+  const position1 = mesh1.position;
+  const position2 = mesh2.position;
 
- export const onShipCollision = (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => {
-      console.log('collision')
-      // Check if both meshes have a velocity vector
-      if (!mesh1.userData.velocity || !mesh2.userData.velocity) {
-          return;
-      }
-      const velocity2 = mesh2.userData.velocity;
+  // Calculate the vector from mesh2 to mesh1, which is the collision normal
+  const collisionNormal = new THREE.Vector3().subVectors(position1, position2).normalize();
 
-      // Get the positions of the two meshes
-      const position1 = mesh1.position;
-      const position2 = mesh2.position;
+  // Calculate the relative velocity of the two objects
+  const relativeVelocity = new THREE.Vector3().subVectors(mesh1.userData.velocity, velocity2);
 
-      // Calculate the vector from mesh2 to mesh1, which is the collision normal
-      const collisionNormal = new THREE.Vector3().subVectors(position1, position2).normalize();
+  // Calculate the speed of impact by finding the component of the relative velocity
+  // that is along the collision normal.
+  const speedOfImpact = relativeVelocity.dot(collisionNormal);
 
-      // Calculate the relative velocity of the two objects
-      const relativeVelocity = new THREE.Vector3().subVectors(mesh1.userData.velocity, velocity2);
+  // If the objects are moving away from each other, there's no new collision
+  if (speedOfImpact > 0) {
+    return;
+  }
 
-      // Calculate the speed of impact by finding the component of the relative velocity 
-      // that is along the collision normal.
-      const speedOfImpact = relativeVelocity.dot(collisionNormal);
+  // A restitution value (e.g., 1.0 for a perfect bounce, 0.0 for no bounce)
+  const restitution = 0.5;
 
-      // If the objects are moving away from each other, there's no new collision
-      if (speedOfImpact > 0) {
-          return;
-      }
+  // Calculate the impulse magnitude. It's proportional to the speed of impact.
+  const impulseMagnitude = -(1 + restitution) * speedOfImpact;
 
-      // A restitution value (e.g., 1.0 for a perfect bounce, 0.0 for no bounce)
-      const restitution = 0.5;
+  // The impulse vector for each mesh
+  const impulseVector = collisionNormal.clone().multiplyScalar(impulseMagnitude);
 
-      // Calculate the impulse magnitude. It's proportional to the speed of impact.
-      const impulseMagnitude = -(1 + restitution) * speedOfImpact;
-
-      // The impulse vector for each mesh
-      const impulseVector = collisionNormal.clone().multiplyScalar(impulseMagnitude);
-
-
-      mesh1.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(impulseMagnitude));
-      mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-impulseMagnitude));
-      // Apply the impulse to the velocities
-      // mesh1 gets an impulse away from mesh2
-      // velocity1.add(impulseVector);
-      // mesh1.userData.velocity.add(impulseVector);
-      // mesh2.userData.velocity.sub(impulseVector);
-  };
+  mesh1.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(impulseMagnitude));
+  mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-impulseMagnitude));
+  // Apply the impulse to the velocities
+  // mesh1 gets an impulse away from mesh2
+  // velocity1.add(impulseVector);
+  // mesh1.userData.velocity.add(impulseVector);
+  // mesh2.userData.velocity.sub(impulseVector);
+};

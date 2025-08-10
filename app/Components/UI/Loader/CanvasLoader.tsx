@@ -6,7 +6,7 @@ import { Spinner } from './Spinner';
 // CanvasLoader component to show loading progress
 export const useCanvasLoader = () => {
   const { active, progress: dreiProgress } = useProgress(); // drieProgress for general assets
-  const { MaterialLoaded, setMaterialLoaded } = useGameStore(s => s);
+  const { MaterialLoaded, setMaterialLoaded } = useGameStore((s) => s);
   // Determine if the loader should be active
   // It's active if general assets are loading, OR
   // if terrain chunks are still building, OR
@@ -39,12 +39,12 @@ export const useCanvasLoader = () => {
         }}
       >
         <p>Loading Scene Assets: {Math.floor(dreiProgress)}%</p>
-              {!MaterialLoaded &&  (
-                <>
-                  <Spinner />
-                  <p>Compiling Terrain Shaders...</p> 
-                </>
-              )}
+        {!MaterialLoaded && (
+          <>
+            <Spinner />
+            <p>Compiling Terrain Shaders...</p>
+          </>
+        )}
         {!isLoaderActive && <p>Loading Complete!</p>}
       </div>
     ),

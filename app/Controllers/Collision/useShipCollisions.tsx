@@ -8,8 +8,8 @@ export function useShipCollisions({
   playerRefs,
   onCollide,
 }: {
-  playerRefs: React.RefObject<THREE.Object3D>[],
-  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void,
+  playerRefs: React.RefObject<THREE.Object3D>[];
+  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
 }) {
   // Track ongoing collisions to detect 'enter' only
   const activeCollisions = useRef(new Set<string>());

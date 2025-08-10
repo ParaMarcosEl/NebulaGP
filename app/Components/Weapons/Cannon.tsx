@@ -13,10 +13,7 @@ type CannonProps = {
 const PROJECTILE_SPEED = 200;
 const FIRE_COOLDOWN = 0.25;
 
-export default function Cannon({
-  parentRef,
-  onShoot,
-}: CannonProps) {
+export default function Cannon({ parentRef, onShoot }: CannonProps) {
   const [projectiles, setProjectiles] = useState<THREE.Mesh[]>([]);
   const timeSinceLastShot = useRef(0);
   const cannonWorldPos = useRef(new THREE.Vector3());
