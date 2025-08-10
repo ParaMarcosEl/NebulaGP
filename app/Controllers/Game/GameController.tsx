@@ -12,6 +12,8 @@ import { RacerProgressType, TOTAL_LAPS } from '@/Constants'; // Import constants
  * @returns An object conforming to the `RaceData` type with default values.
  */
 const defaultRaceData = (): RaceData => ({
+  useCannon: false,
+  boosting: false,
   position: new THREE.Vector3(), // Initial position at (0,0,0).
   progress: 0, // Initial progress along the track.
   place: 0, // Initial race placement.
@@ -34,6 +36,8 @@ export type RaceStatus = 'idle' | 'countdown' | 'racing';
  * Defines the structure for a single racer's data within the game state.
  */
 type RaceData = {
+  boosting: boolean;
+  useCannon: boolean;
   position: THREE.Vector3; // Current 3D position of the racer's craft.
   progress: number; // Current progress along the track (normalized, e.g., 0 to 1).
   place: number; // Current ranking in the race.
@@ -132,7 +136,7 @@ type GameState = {
   totalTerrainChunks: number;
   loadedTerrainChunks: number;
 
-  litTerrainMaterialLoaded: boolean; // New state variable
+  MaterialLoaded: boolean; // New state variable
 };
 
 /**
@@ -149,7 +153,7 @@ export type RaceProgressesType = { id: number; progress: number };
  */
 type GameActions = {
   setCannon: (id: number, useCannon?: boolean) => void; // Sets whether the player can use the cannon.
-  setLitTerrainMaterialLoaded: (loaded: boolean) => void;
+  setMaterialLoaded: (loaded: boolean) => void;
   setTotalTerrainChunks: (count: number) => void;
   incrementLoadedTerrainChunks: () => void;
   resetTerrainLoading: () => void;
@@ -205,8 +209,10 @@ export const useGameStore = create(
     lapStartTime: performance.now(), // Set the initial lap start time to the current performance timestamp.
     lastProgresses: {}, // Empty object for last known progresses.
     finishedCrafts: [], // No crafts finished initially.
-    playerId: -1, // Player ID is -1 until set.
-    raceData: {}, // Empty object for all racers' data.
+    playerId: 0, // Player ID is -1 until set.
+    raceData: {
+      0: defaultRaceData(),
+    }, // Empty object for all racers' data.
     playerPhase: 'Idle', // Player starts in 'Idle' phase.
     // Default track: A simple 3D Catmull-Rom curve for initial state.
     track: new THREE.CatmullRomCurve3(
@@ -227,9 +233,9 @@ export const useGameStore = create(
     // New terrain loading state initialization
     totalTerrainChunks: 0,
     loadedTerrainChunks: 0,
-    litTerrainMaterialLoaded: false,
+    MaterialLoaded: false,
     // --- Actions (Functions to modify state) ---
-    setLitTerrainMaterialLoaded: (loaded: boolean) => set({ litTerrainMaterialLoaded: loaded }),
+    setMaterialLoaded: (loaded: boolean) => set({ MaterialLoaded: loaded }),
     setTotalTerrainChunks: (count) =>
       set({
         totalTerrainChunks: count,
@@ -402,7 +408,21 @@ export const useGameStore = create(
      * Resets the entire game state to its initial values.
      * This is typically called when starting a new race or returning to a main menu.
      */
-    reset: () =>
+    reset: () => {
+      const initialRaceData: Record<number, RaceData> = {};
+      for (let i = 0; i < 8; i++) {
+        initialRaceData[i] = {
+          place: Infinity,
+          boosting: false,
+          useCannon: false,
+          isPlayer: i === 0,
+          lapCount: 0,
+          progress: 0,
+          position: new THREE.Vector3(),
+          history: [],
+        };
+      }
+
       set({
         lapTime: 0,
         totalTime: 0,
@@ -410,9 +430,10 @@ export const useGameStore = create(
         lapHistory: [],
         lapStartTime: performance.now(),
         finishedCrafts: [],
-        raceData: {},
+        raceData: initialRaceData,
         lastProgresses: {},
-      }),
+      });
+    },
 
     /**
      * Sets the timestamp for when the current lap started.

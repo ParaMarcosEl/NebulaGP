@@ -2,7 +2,6 @@ import { useFrame } from '@react-three/fiber'; // Imports the useFrame hook from
 import * as THREE from 'three'; // Imports the entire Three.js library for 3D math and objects.
 import { useGameStore } from '@/Controllers/Game/GameController'; // Imports the Zustand game state store.
 import { useRef } from 'react'; // Imports the useRef hook from React for mutable references.
-import { getProgressAlongCurve } from '@/Utils'; // Imports a utility function to calculate progress along a 3D curve.
 import { TOTAL_LAPS } from '@/Constants'; // Imports the constant defining the total number of laps in the race.
 
 // Constants for controlling the update frequency of race progress.
@@ -21,15 +20,11 @@ const MAX_DELTA_MS = 200; // Maximum allowed delta time (in milliseconds) to pre
  * @param onRaceComplete - Optional callback function triggered when the player completes the entire race.
  */
 export function useRaceProgress({
-  playerRef,
   playerRefs,
-  curve,
   onLapComplete,
   onRaceComplete,
 }: {
-  playerRef: React.RefObject<THREE.Object3D>; // Reference to the player's 3D model.
   playerRefs: React.RefObject<THREE.Object3D>[]; // Array of references to bot 3D models.
-  curve: THREE.Curve<THREE.Vector3>; // The 3D curve defining the race track.
   onLapComplete?: () => void; // Callback for when any racer completes a lap.
   onRaceComplete?: () => void; // Callback for when the player completes the race.
 }) {
@@ -65,57 +60,38 @@ export function useRaceProgress({
       elapsedRef.current = 0; // Reset elapsed time for the next interval.
 
       // --- Update Player Position in Store ---
-      if (playerRef.current) {
-        setRacePosition(playerId, playerRef.current.position); // Update the player's 3D position in the game store.
+      if (playerRefs[0].current) {
+        setRacePosition(playerId, playerRefs[0].current.position); // Update the player's 3D position in the game store.
       }
 
       // --- Update Bot Positions in Store ---
       // Create an array of objects containing bot IDs and their current positions.
-      const botPositions = playerRefs.map((bot, idx) => ({
+      const playerPositions = playerRefs.map((bot, idx) => ({
         id: idx, // Assign ID based on array index.
         position: bot.current?.userData.curvePosition, // Get position from bot's userData (where it's stored by bot controller).
       }));
-      updateRacePositions(botPositions); // Dispatch action to update bot positions in the store.
+      updateRacePositions(playerPositions); // Dispatch action to update bot positions in the store.
 
       // --- Compute Progress for Bots ---
       // Map through bot refs to calculate and store their progress.
-      const botsProgress = playerRefs.map((ref, idx) => {
+      const playerProgresses = playerRefs.map((ref, idx) => {
         return {
           id: idx,
-          isPlayer: false,
+          isPlayer: idx === 0,
           progress: ref.current?.userData.progress ?? 0, // Get progress from bot's userData.
         };
       });
 
-      // --- Compute Progress for Player ---
-      // Calculate player's progress along the track curve.
-      const playerProgress = playerRef.current
-        ? {
-            id: playerRefs.length, // Assign a unique ID to the player (e.g., after all bot IDs).
-            isPlayer: true,
-            progress: getProgressAlongCurve(curve, playerRef.current.position), // Calculate player's progress.
-          }
-        : null; // If playerRef is not available, playerProgress is null.
-
-      // --- Combine and Sort Progresses ---
-      // Combine bot and player progress into a single array.
-      const combinedProgress = [...botsProgress, ...(playerProgress ? [playerProgress] : [])];
       // Sort the combined list in descending order of progress (higher progress first).
-      combinedProgress.sort((a, b) => b.progress - a.progress);
+      playerProgresses.sort((a, b) => b.progress - a.progress);
 
       // --- Store Sorted Progresses ---
-      updateProgresses(combinedProgress); // Dispatch action to update all racers' progresses in the store.
-
-      // --- Set Player ID (if not already set) ---
-      // This ensures the player's unique ID is registered in the store.
-      if (playerProgress) {
-        useGameStore.getState().setPlayerId(playerProgress.id);
-      }
+      updateProgresses(playerProgresses); // Dispatch action to update all racers' progresses in the store.
 
       // --- Lap and Race Completion Detection ---
       // Iterate through all racers in `raceData` to check for lap completions.
       Object.entries(raceData).forEach(([id, player]) => {
-        const last = lastProgresses[Number(id)] ?? 0; // Get the previous progress for this racer.
+        const last = lastProgresses[Number(id)]; // Get the previous progress for this racer.
 
         // Detect if the racer has crossed the finish line:
         // This is determined by their last progress being high (e.g., > 0.9)

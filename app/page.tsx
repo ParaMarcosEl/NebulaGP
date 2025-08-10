@@ -1,8 +1,26 @@
 'use client';
 
+import { Canvas } from '@react-three/fiber';
+import { useRef, useMemo, useState, useEffect, Suspense, CSSProperties } from 'react';
+import * as THREE from 'three';
+import Aircraft from '@/Components/Player/Aircraft';
+import Bot from '@/Components/Player/Bot';
+import Track from '@/Components/Track/Track';
+import FollowCamera from '@/Components/Camera/FollowCamera';
+import { getStartPoseFromCurve, onShipCollision } from '@/Utils';
+import { tracks } from '@/Lib/flightPath';
+import { curveType } from '@/Constants';
+import { Skybox } from '@/Components/Skybox/Skybox';
+import { useGameStore } from '@/Controllers/Game/GameController';
+import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import Link from 'next/link';
-import { CSSProperties } from 'react';
-import { GalaxyBackground } from '@/Components/UI/backgrounds/Galaxy';
+import { StartCountdown } from '@/Controllers/Game/StartTimer';
+import Planet from '@/Components/World/Planet';
+import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
+import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
+import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
+import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
+import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { blue } from '@/Constants/colors';
 
 const styles = {
@@ -93,82 +111,269 @@ const styles = {
   } as CSSProperties,
 };
 
-const keyboardControls = [
-  [['W', 'S'], 'Pitch Up / Down'],
-  [['A', 'D'], 'Roll Left / Right'],
-  [['I'], 'Accelerate'],
-  [['K'], 'Brake'],
-];
+function RaceProgressTracker({
+  playerRefs,
+}: {
+  playerRefs: React.RefObject<THREE.Group>[];
+  curve: curveType;
+}) {
+  useRaceProgress({ playerRefs: playerRefs as React.RefObject<THREE.Group>[] });
+  return null; // No rendering, just logic
+}
 
-const gamepadControls = [
-  [['X'], 'Accelerate'],
-  [['☐'], 'Brake'],
-  [['Left Stick'], 'Pitch / Roll'],
-];
+function ShipCollisionTracker({
+  playerRefs,
+  onCollide,
+}: {
+  playerRefs: React.RefObject<THREE.Object3D>[];
+  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
+}) {
+  useShipCollisions({
+    playerRefs,
+    onCollide,
+  });
+  return null;
+}
 
-export default function Home() {
+export default function Stage1() {
+  const aircraftRef = useRef<THREE.Group | null>(null);
+  const playingFieldRef = useRef<THREE.Mesh | null>(null);
+  const botRef1 = useRef<THREE.Group | null>(null);
+  const botRef2 = useRef<THREE.Group | null>(null);
+  const botRef3 = useRef<THREE.Group | null>(null);
+  const botRef4 = useRef<THREE.Group | null>(null);
+  const botRef5 = useRef<THREE.Group | null>(null);
+  const botRef6 = useRef<THREE.Group | null>(null);
+  const botRef7 = useRef<THREE.Group | null>(null);
+  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
+
+  const { loader, setMaterialLoaded } = useCanvasLoader();
+
+  const playerRefs = useMemo(
+    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
+    [],
+  );
+
+  const { reset, track: curve, setTrack } = useGameStore((state) => state);
+  // HUD state
+  const [, setSpeed] = useState(0);
+  const startPositions = useMemo(
+    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
+    [curve, playerRefs],
+  );
+
+  useEffect(() => {
+    setTrack(tracks[0]);
+    setMaterialLoaded(true);
+    reset();
+  }, [reset, setMaterialLoaded, setTrack]);
+
+  const players = playerRefs.map((player, id) =>
+    id === 0 ? (
+      <Aircraft
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        curve={curve}
+        playingFieldRef={playingFieldRef}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        acceleration={0.01}
+        damping={0.99}
+        onSpeedChange={setSpeed}
+        botSpeed={1.6}
+        isBot
+      />
+    ) : (
+      <Bot
+        key={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        curve={curve}
+        isBot
+        playingFieldRef={playingFieldRef}
+        acceleration={0.01}
+        damping={0.99}
+        botSpeed={0.9 + id * 0.1}
+      />
+    ),
+  );
+
+  const boosters = playerRefs.map((player, id) => (
+    <ParticleSystem
+      key={id}
+      target={player as React.RefObject<THREE.Object3D>}
+      size={400}
+      texturePath="/textures/explosion.png"
+      offset={thrusterOffset}
+      // useWorldSpace
+      // emissions={{
+      //   rateOverDistance: 100
+      // }}
+    />
+  ));
+
+  const keyboardControls = [
+    [['W', 'S'], 'Pitch Up / Down'],
+    [['A', 'D'], 'Roll Left / Right'],
+    [['I'], 'Accelerate'],
+    [['K'], 'Brake'],
+  ];
+
+  const gamepadControls = [
+    [['X'], 'Accelerate'],
+    [['☐'], 'Brake'],
+    [['Left Stick'], 'Pitch / Roll'],
+  ];
+  const UIStyles: CSSProperties = {
+    position: 'absolute',
+    width: '100%',
+    top: '20px',
+    left: '20px',
+    background: 'rgba(0, 0, 0, 0)',
+    zIndex: 100,
+    overflow: 'hidden',
+    overscrollBehavior: 'scroll',
+  };
+
   return (
     <>
-      <GalaxyBackground />
+      <StartCountdown />
+      {loader}
+
+      {/* Scene */}
+      <Canvas
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: -1,
+          width: '100%',
+          height: '100%',
+        }}
+        camera={{ position: [0, 5, 15], fov: 60 }}
+      >
+        <Suspense fallback={null}>
+          <RaceProgressTracker
+            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
+            curve={curve}
+          />
+
+          <ShipCollisionTracker
+            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
+            onCollide={onShipCollision}
+          />
+
+          {/* Lighting */}
+          <ambientLight intensity={0.2} />
+          <directionalLight
+            position={[150, 0, 0]}
+            intensity={0.8}
+            castShadow
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
+            shadow-camera-near={0.5}
+            shadow-camera-far={500}
+          />
+          <pointLight position={[-10, 5, -10]} intensity={0.3} />
+
+          {/* World */}
+          <Skybox stageName="stageI" />
+
+          <Track
+            ref={playingFieldRef}
+            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
+            curve={curve}
+          />
+
+          <SpeedPadSpawner
+            curve={curve}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
+
+          <WeaponsPadSpawner
+            curve={curve}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
+          <Planet size={350} />
+
+          {/* Players */}
+          {players}
+          {boosters}
+
+          {/* Camera */}
+          <FollowCamera targetRef={aircraftRef} />
+        </Suspense>
+      </Canvas>
       <main style={styles.main}>
-        <h1 style={styles.heading}>NEBULA GP</h1>
-        <p style={styles.paragraph}>Anti-gravity Racing</p>
+        {/* UI */}
+        <div style={UIStyles}>
+          <h1 style={styles.heading}>NEBULA GP</h1>
+          <p style={styles.paragraph}>Anti-gravity Racing</p>
 
-        <Link href="/stage-select" style={styles.link}>
-          Start Game
-        </Link>
+          <Link style={styles.link} href="/stage-select">
+            Start Game
+          </Link>
 
-        <section style={styles.controlsSection}>
-          <div style={styles.subheading}>🕹️ Controls</div>
+          <section style={styles.controlsSection}>
+            <div style={styles.subheading}>🕹️ Keyboard Controls</div>
 
-          <div style={styles.subheading}>Keyboard</div>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Key</th>
-                <th style={styles.th}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keyboardControls.map(([keys, action], i) => (
-                <tr key={i} style={i % 2 ? styles.evenRow : undefined}>
-                  <td style={styles.td}>
-                    {(keys as string[]).map((key) => (
-                      <kbd key={key} style={styles.kbd}>
-                        {key}
-                      </kbd>
-                    ))}
-                  </td>
-                  <td style={styles.td}>{action}</td>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Key</th>
+                  <th style={styles.th}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {keyboardControls.map(([keys, action], i) => (
+                  <tr key={i}>
+                    <td style={styles.td}>
+                      {(keys as string[]).map((key) => (
+                        <kbd style={styles.kbd} key={key}>
+                          {key}
+                        </kbd>
+                      ))}
+                    </td>
+                    <td style={styles.td}>{action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-          <h3 style={styles.subheading}>Gamepad (PlayStation-style)</h3>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Button</th>
-                <th style={styles.th}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gamepadControls.map(([keys, action], i) => (
-                <tr key={i} style={i % 2 ? styles.evenRow : undefined}>
-                  <td style={styles.td}>
-                    {(keys as string[]).map((key) => (
-                      <kbd key={key} style={styles.kbd}>
-                        {key}
-                      </kbd>
-                    ))}
-                  </td>
-                  <td style={styles.td}>{action}</td>
+            <h3 style={styles.subheading}>🎮 Gamepad (PlayStation-style)</h3>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Button</th>
+                  <th style={styles.th}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+              </thead>
+              <tbody>
+                {gamepadControls.map(([keys, action], i) => (
+                  <tr key={i}>
+                    <td style={styles.td}>
+                      {(keys as string[]).map((key) => (
+                        <kbd style={styles.kbd} key={key}>
+                          {key}
+                        </kbd>
+                      ))}
+                    </td>
+                    <td style={styles.td}>{action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </div>
       </main>
     </>
   );
