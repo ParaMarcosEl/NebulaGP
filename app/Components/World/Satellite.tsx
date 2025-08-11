@@ -30,6 +30,8 @@ export default function Satellite({
 }: SatelliteProps) {
   const satelliteRef = useRef<THREE.Group>(null);
   const angleRef = useRef(0);
+  const position = new THREE.Vector3();
+  const axisAngle = new THREE.Vector3(1, 0, 0);
 
   useFrame((_, delta) => {
     if (!planetRef.current || !satelliteRef.current) return;
@@ -39,8 +41,8 @@ export default function Satellite({
     const x = orbitRadius * Math.cos(angleRef.current);
     const z = orbitRadius * Math.sin(angleRef.current);
 
-    const position = new THREE.Vector3(x, 0, z);
-    position.applyAxisAngle(new THREE.Vector3(1, 0, 0), tilt);
+    position.set(x, 0, z);
+    position.applyAxisAngle(axisAngle, tilt);
 
     satelliteRef.current.position.copy(planetRef.current.position).add(position);
     satelliteRef.current.lookAt(planetRef.current.position);

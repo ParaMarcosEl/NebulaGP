@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OBB } from 'three/addons/math/OBB.js';
+import { useGameStore } from '../Game/GameController';
 
 type Projectile = {
   mesh: THREE.Group;
@@ -24,11 +25,13 @@ export function useProjectileCollisions({
   onCollide: CollisionCallback;
   owner: React.RefObject<THREE.Object3D | null>;
 }) {
-  useFrame(() => {
-    const tempBox = new THREE.Box3();
-    const tempOBB = new OBB();
-    const playerOBB = new OBB();
+  const tempBox = new THREE.Box3();
+  const tempOBB = new OBB();
+  const playerOBB = new OBB();
+  const playerBox = new THREE.Box3();
+  let shieldValue = 0;
 
+  useFrame(() => {
     for (const proj of projectiles) {
       if (!proj.active) continue;
 
@@ -41,13 +44,17 @@ export function useProjectileCollisions({
         const player = ref.current;
         if (!player || player === owner.current) continue;
 
-        const playerBox = new THREE.Box3().setFromObject(player);
+        playerBox.setFromObject(player);
         playerBox.getCenter(playerOBB.center);
         playerBox.getSize(playerOBB.halfSize).multiplyScalar(0.5);
         playerOBB.rotation.setFromMatrix4(player.matrixWorld);
 
         if (tempOBB.intersectsOBB(playerOBB)) {
-          onCollide(player);
+          shieldValue = useGameStore.getState().raceData[player.userData.id]?.shieldValue;
+          if (!shieldValue || shieldValue <= 0) {
+            onCollide(player);
+          }
+
           proj.active = false;
           proj.mesh.visible = false;
           break; // prevent multiple hits per projectile

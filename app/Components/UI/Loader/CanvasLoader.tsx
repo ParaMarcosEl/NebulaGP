@@ -38,13 +38,9 @@ export const useCanvasLoader = () => {
           gap: '10px',
         }}
       >
-        <p>Loading Scene Assets: {Math.floor(dreiProgress)}%</p>
-        {!MaterialLoaded && (
-          <>
-            <Spinner />
-            <p>Compiling Terrain Shaders...</p>
-          </>
-        )}
+        {active && <p>Loading Scene Assets: {Math.floor(dreiProgress)}%</p>}
+        <Spinner />
+        {!MaterialLoaded && <p>Compiling Terrain Shaders...</p>}
         {!isLoaderActive && <p>Loading Complete!</p>}
       </div>
     ),

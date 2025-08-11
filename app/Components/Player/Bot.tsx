@@ -5,8 +5,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { SHIP_SCALE } from '@/Constants';
 import { useBotController } from './BotController';
+import { useGameStore } from '@/Controllers/Game/GameController';
+import { Shield } from '../Shield/Shield';
 
 type AircraftProps = {
+  id: number;
   aircraftRef: React.RefObject<THREE.Group | null>;
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
@@ -24,6 +27,8 @@ type AircraftProps = {
 };
 
 export default function Bot({
+  id,
+  playerRefs,
   aircraftRef,
   startPosition,
   startQuaternion,
@@ -34,8 +39,11 @@ export default function Bot({
   const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
+  const { raceData } = useGameStore((s) => s);
 
   useBotController({
+    id,
+    playerRefs,
     botRef: aircraftRef as React.RefObject<THREE.Group>,
     curve,
     enabled: !!isBot,
@@ -46,8 +54,9 @@ export default function Bot({
     if (aircraftRef.current && startPosition && startQuaternion) {
       aircraftRef.current.position.set(...startPosition);
       aircraftRef.current.quaternion.copy(startQuaternion);
+      aircraftRef.current.userData.id = id;
     }
-  }, [startPosition, startQuaternion, aircraftRef]);
+  }, [startPosition, startQuaternion, aircraftRef, id]);
 
   return (
     <>
@@ -57,6 +66,10 @@ export default function Bot({
           <object3D ref={trailTarget} position={[0, 0.31, 1.8]} />
         </group>
       </group>
+      <Shield
+        target={aircraftRef as React.RefObject<THREE.Object3D>}
+        shieldValue={raceData[id].shieldValue}
+      />
       <Trail
         target={trailTarget as React.RefObject<THREE.Object3D>}
         width={10}

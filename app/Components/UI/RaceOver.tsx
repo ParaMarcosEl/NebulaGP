@@ -62,7 +62,10 @@ export function RaceOver() {
     <div style={styles.raceOver}>
       <h4>🏁 Race Over!</h4>
       <div>You placed: </div>
-      <div>{player?.place}</div>
+      <div style={{ fontSize: '4em' }}>
+        <span style={{ fontSize: '.5em' }}>#</span>
+        {player?.place}
+      </div>
       <div>Race Time: {formatTime(player?.time || 0)}</div>
       <hr />
       {history}

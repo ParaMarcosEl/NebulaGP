@@ -10,10 +10,15 @@ import {
   computePitchInput,
   computeRollInput,
 } from '@/Utils';
+import { onBulletCollision } from '@/Utils/projectiles';
 import { useGameStore } from '@/Controllers/Game/GameController';
+import { useProjectiles } from '../Weapons/useProjectiles';
+import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 
 interface UseBotControllerProps {
+  id: number;
   botRef: React.RefObject<THREE.Group | null>;
+  playerRefs: React.RefObject<THREE.Group | null>[];
   curve: THREE.Curve<THREE.Vector3>;
   speed?: number;
   enabled?: boolean;
@@ -24,7 +29,9 @@ const ROLL_TORQUE = 7;
 const PITCH_TORQUE = -1;
 
 export function useBotController({
+  id,
   botRef,
+  playerRefs,
   curve,
   speed = 0.05,
   enabled = true,
@@ -37,7 +44,23 @@ export function useBotController({
   const time = useRef(0);
   const t = useRef(0);
   const waypointIndexRef = useRef(8);
-  const { raceStatus } = useGameStore((s) => s);
+  const { raceStatus, raceData } = useGameStore((s) => s);
+  const forward = new THREE.Vector3(0, 0, -1);
+  const up = new THREE.Vector3(0, 1, 0);
+  const deltaQuat = new THREE.Quaternion();
+
+  const { fire, poolRef } = useProjectiles(botRef as React.RefObject<THREE.Object3D>, {
+    fireRate: 5,
+    maxProjectiles: 20,
+    velocity: 200,
+  });
+
+  useProjectileCollisions({
+    projectiles: poolRef.current,
+    playerRefs,
+    onCollide: onBulletCollision,
+    owner: botRef,
+  });
 
   useEffect(() => {
     const bot = botRef.current;
@@ -104,8 +127,8 @@ export function useBotController({
     }
 
     // === Orientation ===
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(bot.quaternion);
-    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(bot.quaternion);
+    forward.applyQuaternion(bot.quaternion);
+    up.applyQuaternion(bot.quaternion);
     const angle = forward.angleTo(toWaypoint.clone().normalize());
 
     const pitch = computePitchInput(forward, toWaypoint, up) * PITCH_TORQUE;
@@ -126,7 +149,7 @@ export function useBotController({
       'XYZ',
     );
 
-    const deltaQuat = new THREE.Quaternion().setFromEuler(rotationEuler);
+    deltaQuat.setFromEuler(rotationEuler);
     bot.quaternion.multiply(deltaQuat).normalize();
 
     // === Translation ===
@@ -153,6 +176,7 @@ export function useBotController({
     bot.position.add(bot.userData.velocity);
 
     if (onSpeedChange) onSpeedChange(speedRef.current);
+    if (raceData[id].useCannon) fire();
   });
 
   return { waypointMeshes };

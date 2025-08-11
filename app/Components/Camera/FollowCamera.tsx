@@ -10,13 +10,12 @@ export default function FollowCamera({
 
   // In front and slightly above
   const offset = new THREE.Vector3(0, 0.5, 10);
+  const targetPos = new THREE.Vector3();
+  const targetQuat = new THREE.Quaternion();
 
   useFrame(() => {
     const target = targetRef.current;
     if (!target) return;
-
-    const targetPos = new THREE.Vector3();
-    const targetQuat = new THREE.Quaternion();
 
     target.getWorldPosition(targetPos);
     target.getWorldQuaternion(targetQuat);

@@ -5,8 +5,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import { usePlayerController } from '@/Components/Player/PlayerController';
 import * as THREE from 'three';
 import { SHIP_SCALE } from '@/Constants';
+import { Shield } from '../Shield/Shield';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 type AircraftProps = {
+  id: number;
   aircraftRef: React.RefObject<THREE.Group | null>;
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
@@ -24,6 +27,7 @@ type AircraftProps = {
 };
 
 export default function Aircraft({
+  id,
   aircraftRef,
   playerRefs,
   startPosition,
@@ -42,15 +46,18 @@ export default function Aircraft({
   const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
+  const { raceData } = useGameStore((s) => s);
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
       aircraftRef.current.position.set(...startPosition);
       aircraftRef.current.quaternion.copy(startQuaternion);
+      (aircraftRef.current as THREE.Object3D).userData.id = id;
     }
-  }, [startPosition, startQuaternion, aircraftRef]);
+  }, [startPosition, startQuaternion, aircraftRef, id]);
 
   usePlayerController({
+    id,
     aircraftRef,
     playerRefs,
     obstacleRefs,
@@ -71,9 +78,13 @@ export default function Aircraft({
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
           <object3D ref={trailTarget} position={[0, 0.31, 2]} />
+          <group rotateY={Math.PI / 2}></group>
         </group>
       </group>
-
+      <Shield
+        target={aircraftRef as React.RefObject<THREE.Object3D>}
+        shieldValue={raceData[id].shieldValue}
+      />
       <Trail
         target={trailTarget as React.RefObject<THREE.Object3D>}
         width={10}

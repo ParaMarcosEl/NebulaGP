@@ -31,7 +31,7 @@ export function useRaceProgress({
   // Destructure state and actions from the game store.
   const {
     completeLap,
-    completeRace,
+    setRaceComplete,
     setPlayerPhase,
     lastProgresses, // Stores the previous progress values for all racers (used for lap detection).
     playerId, // The ID of the local player.
@@ -106,7 +106,7 @@ export function useRaceProgress({
           // Note: The condition `player.lapCount > TOTAL_LAPS` seems to imply laps are counted *after* completion.
           // If TOTAL_LAPS is the target, then `player.lapCount === TOTAL_LAPS` might be more accurate for detecting race completion.
           if (parseInt(id) === playerId && player.lapCount > TOTAL_LAPS) {
-            completeRace(); // Mark the player's race as completed in the store.
+            setRaceComplete(); // Mark the player's race as completed in the store.
             setPlayerPhase('Finished'); // Set the player's phase to 'Finished'.
             onRaceComplete?.(); // Call the optional `onRaceComplete` callback.
           }

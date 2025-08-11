@@ -177,6 +177,51 @@ function generateTrack3(num_pts = NUM_POINTS): THREE.Vector3[] {
   return points; // Return the array of points for the complete track.
 }
 
+export function getShortestFlightPath(
+  centerCurve: THREE.Curve<THREE.Vector3>,
+  tubeRadius: number,
+  segments = 200,
+  tangentWindow = 1 / 100, // smoothing window in curve parameter space
+) {
+  const pathPoints: THREE.Vector3[] = [];
+
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+
+    // Averaged tangent from two points
+    const tBack = (t - tangentWindow + 1) % 1;
+    const tForward = (t + tangentWindow) % 1;
+    const pBack = centerCurve.getPointAt(tBack);
+    const pForward = centerCurve.getPointAt(tForward);
+    const avgTangent = pForward.clone().sub(pBack).normalize();
+
+    // For curvature direction, we still use finite difference of tangents
+    const tNext = (t + 1 / segments) % 1;
+
+    const pCurr = centerCurve.getPointAt(t);
+    const pNext = centerCurve.getPointAt(tNext);
+
+    const tangentPrev = pNext.clone().add(pCurr).normalize();
+    const tangentNext = pForward.clone().add(centerCurve.getPointAt(tNext)).normalize();
+
+    const curvatureDir = tangentNext.clone().add(tangentPrev).normalize();
+
+    // Handle straight sections (no curvature)
+    if (curvatureDir.lengthSq() < 1e-8) {
+      const up = new THREE.Vector3(0, 1, 0);
+      curvatureDir.copy(up.clone().cross(avgTangent).normalize());
+    }
+
+    // Clamp inward offset to tubeRadius
+    const p = centerCurve.getPointAt(t);
+    const inwardPoint = p.clone().add(curvatureDir.multiplyScalar(-tubeRadius));
+
+    pathPoints.push(inwardPoint);
+  }
+
+  return new THREE.CatmullRomCurve3(pathPoints, true);
+}
+
 // Export a closed CatmullRomCurve3
 // The following line is commented out, but shows how a single curve could be exported.
 // export const spiralSquareCurve = new THREE.CatmullRomCurve3(generateSquareWithSpiralSide(), true);

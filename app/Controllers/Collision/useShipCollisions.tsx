@@ -3,14 +3,30 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OBB } from 'three/addons/math/OBB.js';
 import { useRef } from 'react';
+import { RaceDataType } from '../Game/GameController';
 
 export function useShipCollisions({
   playerRefs,
   onCollide,
+  raceData,
+  setShieldValue,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
-  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
+  onCollide: (
+    a: THREE.Object3D,
+    b: THREE.Object3D,
+    raceData: RaceDataType,
+    setShieldValue: (val: number, id: number) => void,
+  ) => void;
+  raceData: RaceDataType;
+  setShieldValue: (val: number, id: number) => void;
 }) {
+  const box = new THREE.Box3();
+  const center = new THREE.Vector3();
+  const halfSize = new THREE.Vector3();
+  const rotation = new THREE.Matrix3();
+  const obb = new OBB();
+
   // Track ongoing collisions to detect 'enter' only
   const activeCollisions = useRef(new Set<string>());
 
@@ -24,16 +40,12 @@ export function useShipCollisions({
 
       object.updateMatrixWorld();
 
-      const box = new THREE.Box3().setFromObject(object);
-      const center = new THREE.Vector3();
-      const halfSize = new THREE.Vector3();
-      const rotation = new THREE.Matrix3();
+      box.setFromObject(object);
 
       box.getCenter(center);
       box.getSize(halfSize).multiplyScalar(0.5);
       rotation.setFromMatrix4(object.matrixWorld);
 
-      const obb = new OBB();
       obb.center.copy(center);
       obb.halfSize.copy(halfSize);
       obb.rotation.copy(rotation);
@@ -60,7 +72,18 @@ export function useShipCollisions({
 
           if (!activeCollisions.current.has(pairKey)) {
             // Collision just started
-            onCollide(obbA.ref, obbB.ref);
+            // let tempShieldValue = raceData[obbA.ref.userData.id].shieldValue;
+            // if (tempShieldValue > 0) {
+            //   tempShieldValue -= .2;
+            //   setShieldValue(tempShieldValue, obbA.ref.userData.id);
+            // }
+
+            // tempShieldValue = raceData[obbB.ref.userData.id].shieldValue;
+            // if (tempShieldValue > 0) {
+            //   tempShieldValue -= .2;
+            //   setShieldValue(tempShieldValue, obbB.ref.userData.id);
+            // }
+            onCollide(obbA.ref, obbB.ref, raceData, setShieldValue);
           }
         }
       }
