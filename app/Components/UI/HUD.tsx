@@ -41,13 +41,8 @@ export default function HUD() {
     <>
       <hr />
       <div>Place:</div>
-      <div>{player?.place}</div>
       <div>
-        {inProgress.map((player, idx) => (
-          <div key={idx}>
-            {player.id === playerId ? 'You' : `Bot${player.id}`}:#{player.place}
-          </div>
-        ))}
+        <span style={{ fontSize: '2em' }}>{player?.place}</span>/8
       </div>
     </>
   );

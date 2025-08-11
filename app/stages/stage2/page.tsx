@@ -8,12 +8,13 @@ import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
 import HUD from '@/Components/UI/HUD';
-import { getStartPoseFromCurve, onShipCollision } from '@/Utils';
+import { onShipCollision } from '@/Utils/collisions';
+import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
 import MiniMap from '@/Components/UI/MiniMap/MiniMap';
-import { useGameStore } from '@/Controllers/Game/GameController';
+import { RaceDataType, useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import { StandingsUI } from '@/Components/UI/StandingsUI';
 import { RaceOver } from '@/Components/UI/RaceOver';
@@ -28,6 +29,7 @@ import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 // import Satellite from '@/Components/World/Satellite';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import Satellite from '@/Components/World/Satellite';
+import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 // import { Trail } from 'node_modules/@react-three/drei';
 
 function RaceProgressTracker({
@@ -43,13 +45,19 @@ function RaceProgressTracker({
 function ShipCollisionTracker({
   playerRefs,
   onCollide,
+  raceData,
+  setShieldValue,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
   onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
+  setShieldValue: (value: number, id: number) => void;
+  raceData: RaceDataType;
 }) {
   useShipCollisions({
     playerRefs,
     onCollide,
+    raceData,
+    setShieldValue,
   });
   return null;
 }
@@ -76,7 +84,14 @@ export default function Stage1() {
   );
 
   const bounds = { x: 500, y: 250, z: 500 };
-  const { raceData, reset, track: curve, setTrack } = useGameStore((state) => state);
+  const {
+    raceData,
+    reset,
+    track: curve,
+    setTrack,
+    setRaceComplete,
+    setShieldValue,
+  } = useGameStore((state) => state);
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
       isPlayer: player.isPlayer,
@@ -113,13 +128,17 @@ export default function Stage1() {
     setMaterialLoaded(true);
     setTrack(tracks[1]);
     reset();
-    return () => setMaterialLoaded(false);
-  }, [reset, setMaterialLoaded, setTrack]);
+    return () => {
+      setMaterialLoaded(false);
+      setRaceComplete(false);
+    };
+  }, [reset, setMaterialLoaded, setRaceComplete, setTrack]);
 
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
         key={id}
+        id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
         curve={curve}
@@ -135,6 +154,7 @@ export default function Stage1() {
     ) : (
       <Bot
         key={id}
+        id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
         startPosition={startPositions[id].position}
@@ -153,6 +173,8 @@ export default function Stage1() {
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
       key={id}
+      duration={Infinity}
+      direction={new THREE.Vector3(0, 0, 1)}
       target={player as React.RefObject<THREE.Object3D>}
       size={400}
       texturePath="/textures/explosion.png"
@@ -207,6 +229,8 @@ export default function Stage1() {
           <ShipCollisionTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             onCollide={onShipCollision}
+            raceData={raceData}
+            setShieldValue={setShieldValue}
           />
 
           {/* Lighting */}
@@ -222,42 +246,48 @@ export default function Stage1() {
           />
           <pointLight position={[-10, 5, -10]} intensity={0.3} />
 
+          {/* World */}
+          <Skybox stageName="stageF" />
+          <Track
+            ref={playingFieldRef}
+            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
+            curve={curve}
+          />
 
-        {/* World */}
-        <Skybox stageName="stageF" />
-        <Track
-          ref={playingFieldRef}
-          aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
-          curve={curve}
-        />
-
-        <Planet
-          ref={sunRef as React.RefObject<THREE.Mesh>}
-          position={new THREE.Vector3(500, 150, 500)}
-          size={300}
-          texturePath="sunsurface"
-          clouds={false}
-          emissive
-          emissiveColor="white"
-          emissiveIntensity={1}
-        />
-        <Satellite
-          planetRef={sunRef as React.RefObject<THREE.Mesh>}
-          orbitRadius={400}
-          orbitSpeed={0.3}
-          tilt={0}
-        >
-          <Planet ref={planetRef as React.RefObject<THREE.Mesh>} clouds={false} size={40} />
+          <Planet
+            ref={sunRef as React.RefObject<THREE.Mesh>}
+            position={new THREE.Vector3(500, 150, 500)}
+            size={300}
+            texturePath="sunsurface"
+            clouds={false}
+            emissive
+            emissiveColor="white"
+            emissiveIntensity={1}
+          />
           <Satellite
-            planetRef={planetRef as React.RefObject<THREE.Mesh>}
-            orbitRadius={50}
-            orbitSpeed={0.8}
-            tilt={Math.PI / 2}
+            planetRef={sunRef as React.RefObject<THREE.Mesh>}
+            orbitRadius={400}
+            orbitSpeed={0.3}
+            tilt={0}
           >
-            <Planet emissive color={'green'} size={3} clouds={false} />
+            <Planet ref={planetRef as React.RefObject<THREE.Mesh>} clouds={false} size={40} />
+            <Satellite
+              planetRef={planetRef as React.RefObject<THREE.Mesh>}
+              orbitRadius={50}
+              orbitSpeed={0.8}
+              tilt={Math.PI / 2}
+            >
+              <Planet emissive color={'green'} size={3} clouds={false} />
+            </Satellite>
           </Satellite>
-        </Satellite>
           <SpeedPadSpawner
+            curve={curve}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
+          <ShieldPadSpawner
             curve={curve}
             playerRefs={playerRefs.map((ref, id) => ({
               id,
@@ -284,4 +314,3 @@ export default function Stage1() {
     </main>
   );
 }
-

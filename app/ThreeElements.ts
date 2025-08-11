@@ -4,6 +4,7 @@ import { WorkerTerrainMaterial } from '@/Components/LODTerrain/Worker/WorkerTerr
 import { WorkerTerrainShader } from '@/Components/LODTerrain/Worker/WorkerTerrainShader';
 import * as THREE from 'three';
 import { SingleTextureMaterial } from '@/Components/LODTerrain/Worker/SingleTextureMaterial';
+import { ShieldMaterial } from './Components/WeaponPad/ShieldMaterial';
 
 extend({ LitTerrainMaterial });
 
@@ -79,6 +80,17 @@ declare module '@react-three/fiber' {
     singleTextureMaterial: ThreeElement<typeof THREE.MeshStandardMaterial> & {
       textureMap?: THREE.Texture;
       uTextureScale?: number;
+    };
+  }
+}
+
+extend({ ShieldMaterial });
+
+declare module '@react-three/fiber' {
+  interface ThreeElements {
+    shieldMaterial: ThreeElement<typeof THREE.ShaderMaterial> & {
+      uTime: number;
+      uShieldValue: number;
     };
   }
 }

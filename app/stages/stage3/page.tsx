@@ -8,12 +8,13 @@ import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
 import HUD from '@/Components/UI/HUD';
-import { getStartPoseFromCurve, onShipCollision } from '@/Utils';
+import { onShipCollision } from '@/Utils/collisions';
+import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
 import MiniMap from '@/Components/UI/MiniMap/MiniMap';
-import { useGameStore } from '@/Controllers/Game/GameController';
+import { RaceDataType, useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import { StandingsUI } from '@/Components/UI/StandingsUI';
 import { RaceOver } from '@/Components/UI/RaceOver';
@@ -43,13 +44,19 @@ function RaceProgressTracker({
 function ShipCollisionTracker({
   playerRefs,
   onCollide,
+  raceData,
+  setShieldValue,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
   onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
+  setShieldValue: (value: number, id: number) => void;
+  raceData: RaceDataType;
 }) {
   useShipCollisions({
     playerRefs,
     onCollide,
+    raceData,
+    setShieldValue,
   });
   return null;
 }
@@ -75,7 +82,14 @@ export default function Stage1() {
   );
 
   const bounds = { x: 500, y: 250, z: 500 };
-  const { raceData, reset, track: curve, setTrack } = useGameStore((state) => state);
+  const {
+    raceData,
+    reset,
+    track: curve,
+    setTrack,
+    setRaceComplete,
+    setShieldValue,
+  } = useGameStore((state) => state);
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
       isPlayer: player.isPlayer,
@@ -111,13 +125,17 @@ export default function Stage1() {
   useEffect(() => {
     setTrack(tracks[2]);
     reset();
-    return () => setMaterialLoaded(false);
-  }, [reset, setMaterialLoaded, setTrack]);
+    return () => {
+      setMaterialLoaded(false);
+      setRaceComplete(false);
+    };
+  }, [reset, setMaterialLoaded, setRaceComplete, setTrack]);
 
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
         key={id}
+        id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
         curve={curve}
@@ -133,6 +151,7 @@ export default function Stage1() {
     ) : (
       <Bot
         key={id}
+        id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
         startPosition={startPositions[id].position}
@@ -205,6 +224,8 @@ export default function Stage1() {
           <ShipCollisionTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             onCollide={onShipCollision}
+            raceData={raceData}
+            setShieldValue={setShieldValue}
           />
 
           {/* Lighting */}
@@ -236,9 +257,9 @@ export default function Stage1() {
             exponentiation={3}
             maxHeight={1024}
             octaves={8}
-            lowMapPath="/textures/planet_texture01.png"
-            highMapPath="/textures/planet_texture01.png"
-            midMapPath="/textures/planet_texture02.png"
+            midMapPath="/textures/icy_ground.png"
+            lowMapPath="/textures/molten_rock.png"
+            highMapPath="/textures/rocky_ground.png"
           />
           <Planet
             position={new THREE.Vector3(900, 0, 0)}

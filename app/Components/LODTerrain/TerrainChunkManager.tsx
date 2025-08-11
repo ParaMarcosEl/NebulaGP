@@ -1,14 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useTerrainChunkBuilder } from './useTerrainChunks';
 import { QuadtreeNode } from './quadTree';
 import * as THREE from 'three';
 import { DEFAULT_CHUNK_PROPS_BUILDER } from '@/Constants';
-import { Y_OFFSET } from '@/Constants';
-
-const CHUNK_SIZE = 128;
-const MAX_DEPTH = 8;
-const SPLIT_THRESHOLD = 3;
+import { Y_OFFSET, CHUNK_SIZE, MAX_DEPTH, SPLIT_THRESHOLD } from '@/Constants';
 
 const TerrainChunkManager = ({
   chunkSize = CHUNK_SIZE,
@@ -42,15 +38,19 @@ const TerrainChunkManager = ({
   const { camera } = useThree();
   const { chunks, enqueueChunks } = useTerrainChunkBuilder();
   const lastChunkCoords = useRef<THREE.Vector2 | null>(null);
+  const chunkCoord = useMemo(() => new THREE.Vector2(), []);
+  const rootCenter = useMemo(() => new THREE.Vector2(), []);
+  const forward = useMemo(() => new THREE.Vector3(0, 0, -1), []);
+
+  const getChunkCoord = useCallback(
+    (position: THREE.Vector3) => {
+      chunkCoord.set(Math.floor(position.x / chunkSize), Math.floor(position.z / chunkSize));
+      return chunkCoord;
+    },
+    [chunkCoord, chunkSize],
+  );
 
   useEffect(() => {
-    const getChunkCoord = (position: THREE.Vector3) => {
-      return new THREE.Vector2(
-        Math.floor(position.x / chunkSize),
-        Math.floor(position.z / chunkSize),
-      );
-    };
-
     const currentChunk = getChunkCoord(camera.position);
 
     // If we've already built terrain for this chunk, don't rebuild
@@ -62,15 +62,14 @@ const TerrainChunkManager = ({
     lastChunkCoords.current = currentChunk.clone();
 
     // Compute terrain root center in XZ plane, ahead of aircraft:
-    const forward = new THREE.Vector3(0, 0, -1);
     forward.applyQuaternion(camera.quaternion); // aircraft's forward direction
 
-    const rootCenter = new THREE.Vector2(camera.position.x, camera.position.z);
+    rootCenter.set(camera.position.x, camera.position.z);
 
     // Proceed with building the quadtree
     const rootSize = chunkSize * Math.pow(2, MAX_DEPTH);
     const root = new QuadtreeNode(rootCenter, rootSize);
-    splitNodeRecursively(root, new THREE.Vector2(camera.position.x, camera.position.z));
+    splitNodeRecursively(root, rootCenter);
     const leafNodes = root.getLeafNodes();
 
     const chunkProps = leafNodes.map((node) => ({
@@ -107,6 +106,10 @@ const TerrainChunkManager = ({
     lacunarity,
     persistence,
     exponentiation,
+    forward,
+    chunkCoord,
+    rootCenter,
+    getChunkCoord,
   ]);
 
   return <>{chunks}</>;

@@ -7,11 +7,12 @@ import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-import { getStartPoseFromCurve, onShipCollision } from '@/Utils';
+import { onShipCollision } from './Utils/collisions';
+import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
-import { useGameStore } from '@/Controllers/Game/GameController';
+import { RaceDataType, useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
@@ -22,6 +23,7 @@ import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { blue } from '@/Constants/colors';
+import ShieldPadSpawner from './Components/ShieldPad/ShieldPadSpawner';
 
 const styles = {
   main: {
@@ -124,13 +126,19 @@ function RaceProgressTracker({
 function ShipCollisionTracker({
   playerRefs,
   onCollide,
+  setShieldValue,
+  raceData,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
   onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
+  raceData: RaceDataType;
+  setShieldValue: (value: number, id: number) => void;
 }) {
   useShipCollisions({
     playerRefs,
     onCollide,
+    setShieldValue,
+    raceData,
   });
   return null;
 }
@@ -154,7 +162,13 @@ export default function Stage1() {
     [],
   );
 
-  const { reset, track: curve, setTrack } = useGameStore((state) => state);
+  const {
+    reset,
+    track: curve,
+    setTrack,
+    raceData,
+    setShieldValue,
+  } = useGameStore((state) => state);
   // HUD state
   const [, setSpeed] = useState(0);
   const startPositions = useMemo(
@@ -172,6 +186,7 @@ export default function Stage1() {
     id === 0 ? (
       <Aircraft
         key={id}
+        id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
         curve={curve}
@@ -187,6 +202,7 @@ export default function Stage1() {
     ) : (
       <Bot
         key={id}
+        id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
         startPosition={startPositions[id].position}
@@ -264,6 +280,8 @@ export default function Stage1() {
           <ShipCollisionTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             onCollide={onShipCollision}
+            setShieldValue={setShieldValue}
+            raceData={raceData}
           />
 
           {/* Lighting */}
@@ -286,6 +304,14 @@ export default function Stage1() {
             ref={playingFieldRef}
             aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
             curve={curve}
+          />
+
+          <ShieldPadSpawner
+            curve={curve}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
           />
 
           <SpeedPadSpawner

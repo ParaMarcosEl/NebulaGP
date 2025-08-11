@@ -7,6 +7,7 @@ import { TUBE_RADIUS } from '@/Constants';
 import { computeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { useCheckpointController } from '@/Controllers/Game/CheckPointController';
 import { useLapTimer } from '@/Controllers/Game/LapTimer';
+import { getShortestFlightPath } from '@/Lib/flightPath';
 
 // Setup BVH on BufferGeometry and raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -41,11 +42,16 @@ const Track = forwardRef<
     const geometry = useMemo(() => {
       const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
       tubeGeometry.computeBoundsTree();
-      return tubeGeometry;
+      const shortestFlightPath = getShortestFlightPath(curve, TUBE_RADIUS);
+      return { tubeGeometry, shortestFlightPath };
     }, [curve]);
 
     // Get points along the curve for rendering the line
     const curvePoints = useMemo(() => curve.getPoints(1000), [curve]);
+    const shortestFlightPath = useMemo(
+      () => geometry.shortestFlightPath.getPoints(2000),
+      [geometry],
+    );
 
     const { quaternion } = useMemo(() => {
       const tangent = curve.getTangentAt(0).normalize();
@@ -80,9 +86,10 @@ const Track = forwardRef<
 
         {/* Render the tube path line */}
         <Line points={curvePoints} color="#00ffff" lineWidth={2} dashed={false} />
+        <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} />
 
         {/* Render the tube mesh with texture */}
-        <mesh ref={ref} geometry={geometry}>
+        <mesh ref={ref} geometry={geometry.tubeGeometry}>
           <meshStandardMaterial map={texture} side={THREE.BackSide} wireframe />
         </mesh>
       </>

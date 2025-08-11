@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 
 export const onBulletCollision = (mesh2: THREE.Object3D) => {
-  console.log('collision');
   // Check if both meshes have a velocity vector
   if (!mesh2.userData.velocity) {
     return;

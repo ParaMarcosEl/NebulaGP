@@ -18,6 +18,7 @@ export default function Cannon({ parentRef, onShoot }: CannonProps) {
   const timeSinceLastShot = useRef(0);
   const cannonWorldPos = useRef(new THREE.Vector3());
   const cannonForward = useRef(new THREE.Vector3());
+  const offset = new THREE.Vector3(0, 0, 0);
 
   useEffect(() => {
     const shoot = () => {
@@ -52,7 +53,7 @@ export default function Cannon({ parentRef, onShoot }: CannonProps) {
     const parent = parentRef.current;
     // Update cannon's world position and forward direction based on parent
     if (parent) {
-      const offset = new THREE.Vector3(0, 0, 0).applyQuaternion(parent.quaternion);
+      offset.applyQuaternion(parent.quaternion);
       const desiredPosition = parent.position.clone().add(offset);
       // Get forward direction (-Z in local space)
       cannonForward.current.copy(desiredPosition);

@@ -4,6 +4,7 @@ import { create } from 'zustand'; // Import `create` function from Zustand for s
 import { devtools } from 'zustand/middleware'; // Import `devtools` middleware for Redux DevTools integration.
 import * as THREE from 'three'; // Import the Three.js library for 3D vector operations.
 import { RacerProgressType, TOTAL_LAPS } from '@/Constants'; // Import constants like total laps from a relative path.
+import { RaceOver } from '@/Components/UI/RaceOver';
 
 // --- Helpers ---
 /**
@@ -11,7 +12,9 @@ import { RacerProgressType, TOTAL_LAPS } from '@/Constants'; // Import constants
  * This ensures consistency when new racers are added to `raceData`.
  * @returns An object conforming to the `RaceData` type with default values.
  */
-const defaultRaceData = (): RaceData => ({
+const defaultRaceData = (id: number): RaceData => ({
+  shieldValue: 0,
+  id,
   useCannon: false,
   boosting: false,
   position: new THREE.Vector3(), // Initial position at (0,0,0).
@@ -36,6 +39,8 @@ export type RaceStatus = 'idle' | 'countdown' | 'racing';
  * Defines the structure for a single racer's data within the game state.
  */
 type RaceData = {
+  shieldValue: number;
+  id: number;
   boosting: boolean;
   useCannon: boolean;
   position: THREE.Vector3; // Current 3D position of the racer's craft.
@@ -80,6 +85,8 @@ export type LapRecord = {
 export type RaceDataType = Record<
   number,
   {
+    shieldValue: number;
+    id: number;
     position: THREE.Vector3;
     progress: number;
     place: number;
@@ -116,6 +123,8 @@ type GameState = {
     // Comprehensive data for all racers (player and bots).
     number,
     {
+      id: number;
+      shieldValue: number;
       useCannon?: boolean;
       boosting: boolean;
       position: THREE.Vector3;
@@ -152,6 +161,7 @@ export type RaceProgressesType = { id: number; progress: number };
  * Defines all the actions (functions) that can modify the game state.
  */
 type GameActions = {
+  setShieldValue: (value: number, id: number) => void;
   setCannon: (id: number, useCannon?: boolean) => void; // Sets whether the player can use the cannon.
   setMaterialLoaded: (loaded: boolean) => void;
   setTotalTerrainChunks: (count: number) => void;
@@ -163,7 +173,7 @@ type GameActions = {
   setPlayerId: (id: number) => void; // Sets the ID of the local player.
   setLapTime: (time: number) => void; // Updates the current lap time and total time.
   completeLap: (id: number) => void; // Records a completed lap for a specific racer.
-  completeRace: () => void; // Marks the local player's race as completed.
+  setRaceComplete: (complete?: boolean) => void; // Marks the local player's race as completed.
   reset: () => void; // Resets the entire game state to its initial values.
   setLapStartTime: (time: number) => void; // Sets the timestamp for the start of the current lap.
   setRacePosition: (id: number, pos: THREE.Vector3) => void; // Updates a racer's 3D position.
@@ -182,7 +192,6 @@ type GameActions = {
 /**
  * Combines `GameState` and `GameActions` to define the complete type of the Zustand store.
  */
-let timeout: NodeJS.Timeout = setTimeout(() => {}, 5000); // Default timeout for cannon use
 type GameStore = GameState & GameActions;
 
 // Default settings for the game.
@@ -211,7 +220,14 @@ export const useGameStore = create(
     finishedCrafts: [], // No crafts finished initially.
     playerId: 0, // Player ID is -1 until set.
     raceData: {
-      0: defaultRaceData(),
+      0: defaultRaceData(0),
+      1: defaultRaceData(1),
+      2: defaultRaceData(2),
+      3: defaultRaceData(3),
+      4: defaultRaceData(4),
+      5: defaultRaceData(5),
+      6: defaultRaceData(6),
+      7: defaultRaceData(7),
     }, // Empty object for all racers' data.
     playerPhase: 'Idle', // Player starts in 'Idle' phase.
     // Default track: A simple 3D Catmull-Rom curve for initial state.
@@ -235,6 +251,22 @@ export const useGameStore = create(
     loadedTerrainChunks: 0,
     MaterialLoaded: false,
     // --- Actions (Functions to modify state) ---
+    setShieldValue: (value: number, id: number) => {
+      // 1. Get the current raceData
+      const currentState = get().raceData;
+
+      // 2. Create a new object with the updated shieldValue
+      const newRaceData = {
+        ...currentState,
+        [id]: {
+          ...currentState[id],
+          shieldValue: value,
+        },
+      };
+
+      // 3. Set the new, immutable state
+      set({ raceData: newRaceData });
+    },
     setMaterialLoaded: (loaded: boolean) => set({ MaterialLoaded: loaded }),
     setTotalTerrainChunks: (count) =>
       set({
@@ -254,53 +286,84 @@ export const useGameStore = create(
     setBaseSpeed: (speed: number) => set({ baseSpeed: speed }),
 
     applyBoost: (id: number) => {
-      const { raceData } = get();
-
-      const player = raceData[id];
-      if (!player) return;
-
-      // Apply boost logic, e.g. increasing playerSpeed temporarily
-      // (You may want to store boost state in raceData or GameState)
-
-      // Basic approach: instantly increase playerSpeed for the local player only
+      // First state update: start the boost
+      const { raceData, playerId } = get();
+      const isPlayer = id === playerId;
       const currentSpeed = get().playerSpeed;
-      const newRaceData = get().raceData;
-      newRaceData[id].boosting = true;
-      const isPlayer = id === get().playerId;
+
+      // Create a new raceData object for the initial state change
+      const updatedRaceDataOnBoostStart = {
+        ...raceData,
+        [id]: {
+          ...raceData[id],
+          boosting: true,
+        },
+      };
+
+      // Set the initial state
       set({
         ...(isPlayer && { playerSpeed: currentSpeed + 1 }),
-        raceData: newRaceData,
+        raceData: updatedRaceDataOnBoostStart,
       });
 
-      // Optionally reset after timeout
-      if (isPlayer) {
-        newRaceData[id].boosting = false;
-        setTimeout(() => {
-          set({ playerSpeed: get().baseSpeed, raceData: newRaceData });
-        }, 2000);
-      }
+      // Second state update: end the boost after 2 seconds
+      setTimeout(() => {
+        // Get the latest state when the timeout fires to avoid using stale data
+        const latestRaceData = get().raceData;
+        const baseSpeed = get().baseSpeed;
+
+        // Create a new raceData object for the state change inside the timeout
+        const updatedRaceDataOnBoostEnd = {
+          ...latestRaceData,
+          [id]: {
+            ...latestRaceData[id],
+            boosting: false,
+          },
+        };
+
+        // Set the final state
+        set({
+          ...(isPlayer && { playerSpeed: baseSpeed }),
+          raceData: updatedRaceDataOnBoostEnd,
+        });
+      }, 2000);
     },
 
     setCannon: (id: number, useCannon?: boolean) => {
-      const { raceData } = get();
+      // First state update: start using the cannon
+      const currentRaceData = get().raceData;
 
-      const player = raceData[id];
-      if (!player) return;
+      // Create a new object for the initial state change
+      const updatedRaceDataOnCannonStart = {
+        ...currentRaceData,
+        [id]: {
+          ...currentRaceData[id],
+          useCannon: true,
+        },
+      };
 
-      // Basic approach: set a flag to indicate cannon use
-      const newRaceData = get().raceData;
-      newRaceData[id].useCannon = useCannon;
-      const isPlayer = id === get().playerId;
+      // Set the initial state
       set({
-        raceData: newRaceData,
+        raceData: updatedRaceDataOnCannonStart,
       });
 
-      clearTimeout(timeout);
-      // Optionally reset after timeout
-      timeout = setTimeout(() => {
-        newRaceData[id].useCannon = false;
-        set({ raceData: newRaceData });
-      }, 5000);
+      // Second state update: stop using the cannon after 2 seconds
+      setTimeout(() => {
+        // Get the latest state when the timeout fires to avoid stale data
+        const latestRaceData = get().raceData;
+
+        // Create a new raceData object for the state change inside the timeout
+        const updatedRaceDataOnCannonEnd = {
+          ...latestRaceData,
+          [id]: {
+            ...latestRaceData[id],
+            useCannon: false,
+          },
+        };
+
+        // Set the final state
+        set({ raceData: updatedRaceDataOnCannonEnd });
+      }, 2000);
     },
 
     setPlayerSpeed: (speed: number) => set({ playerSpeed: speed }),
@@ -402,7 +465,7 @@ export const useGameStore = create(
     /**
      * Marks the local player's race as completed.
      */
-    completeRace: () => set({ raceCompleted: true }),
+    setRaceComplete: (complete?: boolean) => set({ raceCompleted: !!complete }),
 
     /**
      * Resets the entire game state to its initial values.
@@ -412,6 +475,8 @@ export const useGameStore = create(
       const initialRaceData: Record<number, RaceData> = {};
       for (let i = 0; i < 8; i++) {
         initialRaceData[i] = {
+          shieldValue: 0,
+          id: i,
           place: Infinity,
           boosting: false,
           useCannon: false,
@@ -503,7 +568,7 @@ export const useGameStore = create(
         positions.forEach(({ id, position }) => {
           // For each position update, merge with existing data or use default.
           updated[id] = {
-            ...(updated[id] ?? defaultRaceData()), // Use existing data or default if new racer.
+            ...(updated[id] ?? defaultRaceData(id)), // Use existing data or default if new racer.
             position, // Apply the new position.
           };
         });
@@ -527,7 +592,7 @@ export const useGameStore = create(
         progresses.forEach((prog) => {
           // Update `raceData` for each racer with their new progress.
           updatedRaceData[prog.id] = {
-            ...(updatedRaceData[prog.id] ?? defaultRaceData()), // Use existing data or default.
+            ...(updatedRaceData[prog.id] ?? defaultRaceData(prog.id)), // Use existing data or default.
             progress: prog.progress, // Apply the new progress.
           };
         });

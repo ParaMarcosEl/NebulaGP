@@ -21,7 +21,8 @@ export function useCheckpointController({
     mesh: checkpointMeshRef.current as THREE.Mesh,
     didPass: false,
   });
-
+  const aircraftBox = new THREE.Box3();
+  const checkpointBox = new THREE.Box3();
   const cooldown = useRef(0);
   // const clock = new THREE.Clock(); // Clock for delta time calculation
 
@@ -32,8 +33,8 @@ export function useCheckpointController({
 
     cooldown.current -= delta;
 
-    const aircraftBox = new THREE.Box3().setFromObject(aircraft);
-    const checkpointBox = new THREE.Box3().setFromObject(checkpointMesh);
+    aircraftBox.setFromObject(aircraft);
+    checkpointBox.setFromObject(checkpointMesh);
 
     if (
       aircraftBox.intersectsBox(checkpointBox) &&

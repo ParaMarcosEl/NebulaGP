@@ -28,6 +28,7 @@ export const setThrottle = (value: number) => {
 };
 
 type PlayerSystemOptions = {
+  id: number;
   aircraftRef: React.RefObject<THREE.Group | null>; // Reference to the 3D model of the aircraft.
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[]; // Array of references to obstacle meshes.
@@ -45,6 +46,7 @@ type PlayerSystemOptions = {
 };
 
 export function usePlayerController({
+  id: playerId,
   aircraftRef,
   playerRefs,
   playingFieldRef,
@@ -63,7 +65,7 @@ export function usePlayerController({
   const angularVelocity = useRef(new THREE.Vector3());
   const previousInputState = useRef({ accelerating: false, braking: false });
   const gamepadIndex = useRef<number | null>(null);
-  const { raceStatus, playerId, playerSpeed, raceData } = useGameStore((state) => state);
+  const { raceStatus, playerSpeed, raceData } = useGameStore((state) => state);
   const controlsEnabled = raceStatus === 'racing';
   // const players = Array.isArray(playerRefs) ? playerRefs?.map(player => player.current) : [];
 
@@ -104,6 +106,8 @@ export function usePlayerController({
   // }
 
   useBotController({
+    id: playerId,
+    playerRefs,
     enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
     botRef: aircraftRef,
     curve,
@@ -296,7 +300,6 @@ export function usePlayerController({
     //     break; // Stop checking further obstacles after a collision.
     //   }
     // }
-
-    if (shooting) fire();
+    if (shooting && raceData[playerId].useCannon) fire();
   });
 }
