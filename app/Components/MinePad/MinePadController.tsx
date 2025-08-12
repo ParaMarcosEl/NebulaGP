@@ -5,29 +5,30 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 import { useGameStore } from '@/Controllers/Game/GameController';
 
-type ShieldPad = {
+type MinePad = {
   mesh: THREE.Mesh;
   didPass: boolean;
 };
 
-export function useShieldPadController({
+export function useMinePad({
   playerRefs,
-  shieldPadRef,
+  minePadRef,
   cooldownTime = 2,
 }: {
   playerRefs: {
     id: number;
     ref: React.RefObject<THREE.Object3D>;
   }[];
-  shieldPadRef: React.RefObject<THREE.Mesh>;
+  minePadRef: React.RefObject<THREE.Mesh>;
   cooldownTime?: number;
 }) {
-  const { setShieldValue, raceData } = useGameStore((s) => s);
+  const { setUseMine, raceData } = useGameStore((s) => s);
 
-  const shieldPad = useRef<ShieldPad>({
-    mesh: shieldPadRef.current as THREE.Mesh,
+  const minePad = useRef<MinePad>({
+    mesh: minePadRef.current as THREE.Mesh,
     didPass: false,
   });
+
   const cooldown = useRef(0);
   // const clock = new THREE.Clock(); // Clock for delta time calculation
 
@@ -38,8 +39,8 @@ export function useShieldPadController({
         mesh: ref.current,
       }),
     );
-    const shieldPadMesh = shieldPadRef.current;
-    if (!(players.length > 0) || !shieldPad) return;
+    const minePadMesh = minePadRef.current;
+    if (!(players.length > 0) || !minePad) return;
 
     cooldown.current -= delta;
 
@@ -47,21 +48,20 @@ export function useShieldPadController({
       id: player.id,
       box: new THREE.Box3().setFromObject(player.mesh),
     }));
-    const shieldPadBox = new THREE.Box3().setFromObject(shieldPadMesh);
-    const craft = playerBoxes.find((craft) => craft.box.intersectsBox(shieldPadBox));
-
+    const minePadBox = new THREE.Box3().setFromObject(minePadMesh);
+    const craft = playerBoxes.find((craft) => craft.box.intersectsBox(minePadBox));
     if (!!craft && cooldown.current <= 0) {
-      const { useMine, useCannon, shieldValue } = raceData[craft.id];
-      shieldPad.current.didPass = true;
+      const { id, useCannon, useMine, shieldValue } = raceData[craft.id];
+      minePad.current.didPass = true;
       cooldown.current = cooldownTime;
-      if (useMine || useCannon || shieldValue > 0) return;
-      setShieldValue(1, craft.id);
+      if (useCannon || shieldValue > 0 || useMine) return;
+      setUseMine(id, true);
     }
 
-    if (!craft && cooldown.current <= 0 && shieldPad.current.didPass) {
-      shieldPad.current.didPass = false;
+    if (!craft && cooldown.current <= 0 && minePad.current.didPass) {
+      minePad.current.didPass = false;
     }
   });
 
-  return shieldPad;
+  return minePad;
 }

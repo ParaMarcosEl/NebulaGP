@@ -13,6 +13,7 @@ import { RaceOver } from '@/Components/UI/RaceOver';
  * @returns An object conforming to the `RaceData` type with default values.
  */
 const defaultRaceData = (id: number): RaceData => ({
+  useMine: false,
   shieldValue: 0,
   id,
   useCannon: false,
@@ -39,6 +40,7 @@ export type RaceStatus = 'idle' | 'countdown' | 'racing';
  * Defines the structure for a single racer's data within the game state.
  */
 type RaceData = {
+  useMine: false;
   shieldValue: number;
   id: number;
   boosting: boolean;
@@ -85,6 +87,7 @@ export type LapRecord = {
 export type RaceDataType = Record<
   number,
   {
+    useMine: boolean;
     shieldValue: number;
     id: number;
     position: THREE.Vector3;
@@ -123,6 +126,7 @@ type GameState = {
     // Comprehensive data for all racers (player and bots).
     number,
     {
+      useMine: boolean;
       id: number;
       shieldValue: number;
       useCannon?: boolean;
@@ -161,6 +165,7 @@ export type RaceProgressesType = { id: number; progress: number };
  * Defines all the actions (functions) that can modify the game state.
  */
 type GameActions = {
+  setUseMine: (id: number, useMine: boolean) => void;
   setShieldValue: (value: number, id: number) => void;
   setCannon: (id: number, useCannon?: boolean) => void; // Sets whether the player can use the cannon.
   setMaterialLoaded: (loaded: boolean) => void;
@@ -251,22 +256,6 @@ export const useGameStore = create(
     loadedTerrainChunks: 0,
     MaterialLoaded: false,
     // --- Actions (Functions to modify state) ---
-    setShieldValue: (value: number, id: number) => {
-      // 1. Get the current raceData
-      const currentState = get().raceData;
-
-      // 2. Create a new object with the updated shieldValue
-      const newRaceData = {
-        ...currentState,
-        [id]: {
-          ...currentState[id],
-          shieldValue: value,
-        },
-      };
-
-      // 3. Set the new, immutable state
-      set({ raceData: newRaceData });
-    },
     setMaterialLoaded: (loaded: boolean) => set({ MaterialLoaded: loaded }),
     setTotalTerrainChunks: (count) =>
       set({
@@ -284,6 +273,23 @@ export const useGameStore = create(
       }),
     setPosition: (pos) => set(() => ({ position: pos })),
     setBaseSpeed: (speed: number) => set({ baseSpeed: speed }),
+
+    setShieldValue: (value: number, id: number) => {
+      // 1. Get the current raceData
+      const currentState = get().raceData;
+
+      // 2. Create a new object with the updated shieldValue
+      const newRaceData = {
+        ...currentState,
+        [id]: {
+          ...currentState[id],
+          shieldValue: value,
+        },
+      };
+
+      // 3. Set the new, immutable state
+      set({ raceData: newRaceData });
+    },
 
     applyBoost: (id: number) => {
       // First state update: start the boost
@@ -364,6 +370,22 @@ export const useGameStore = create(
         // Set the final state
         set({ raceData: updatedRaceDataOnCannonEnd });
       }, 2000);
+    },
+
+    setUseMine: (id: number, useMine: boolean) => {
+      const currentRaceData = get().raceData;
+
+      const updatedRaceDataOnCannonStart = {
+        ...currentRaceData,
+        [id]: {
+          ...currentRaceData[id],
+          useMine,
+        },
+      };
+
+      set({
+        raceData: updatedRaceDataOnCannonStart,
+      });
     },
 
     setPlayerSpeed: (speed: number) => set({ playerSpeed: speed }),
@@ -475,6 +497,7 @@ export const useGameStore = create(
       const initialRaceData: Record<number, RaceData> = {};
       for (let i = 0; i < 8; i++) {
         initialRaceData[i] = {
+          useMine: false,
           shieldValue: 0,
           id: i,
           place: Infinity,

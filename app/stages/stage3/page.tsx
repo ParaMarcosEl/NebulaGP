@@ -14,7 +14,7 @@ import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
 import MiniMap from '@/Components/UI/MiniMap/MiniMap';
-import { RaceDataType, useGameStore } from '@/Controllers/Game/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import { StandingsUI } from '@/Components/UI/StandingsUI';
 import { RaceOver } from '@/Components/UI/RaceOver';
@@ -29,6 +29,9 @@ import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 // import Satellite from '@/Components/World/Satellite';
 import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
+import { Mine } from '@/Components/Weapons/useMines';
+import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
+import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 // import { Trail } from 'node_modules/@react-three/drei';
 
 function RaceProgressTracker({
@@ -44,19 +47,13 @@ function RaceProgressTracker({
 function ShipCollisionTracker({
   playerRefs,
   onCollide,
-  raceData,
-  setShieldValue,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
   onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
-  setShieldValue: (value: number, id: number) => void;
-  raceData: RaceDataType;
 }) {
   useShipCollisions({
     playerRefs,
     onCollide,
-    raceData,
-    setShieldValue,
   });
   return null;
 }
@@ -64,6 +61,7 @@ function ShipCollisionTracker({
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
+  const minePoolRef = useRef<Mine[]>([]);
   const planetRef = useRef<THREE.Mesh>(null);
   const botRef1 = useRef<THREE.Group | null>(null);
   const botRef2 = useRef<THREE.Group | null>(null);
@@ -88,7 +86,6 @@ export default function Stage1() {
     track: curve,
     setTrack,
     setRaceComplete,
-    setShieldValue,
   } = useGameStore((state) => state);
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
@@ -134,6 +131,7 @@ export default function Stage1() {
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
+        minePoolRef={minePoolRef}
         key={id}
         id={id}
         aircraftRef={player}
@@ -151,6 +149,7 @@ export default function Stage1() {
     ) : (
       <Bot
         key={id}
+        minePoolRef={minePoolRef}
         id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
@@ -162,7 +161,7 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         acceleration={0.01}
         damping={0.99}
-        botSpeed={1.2}
+        botSpeed={1.2 + id * 0.1}
       />
     ),
   );
@@ -224,8 +223,6 @@ export default function Stage1() {
           <ShipCollisionTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             onCollide={onShipCollision}
-            raceData={raceData}
-            setShieldValue={setShieldValue}
           />
 
           {/* Lighting */}
@@ -282,8 +279,22 @@ export default function Stage1() {
             emissiveColor="lightblue"
             emissiveIntensity={1}
           />
+
+          <MinePadSpawner
+            curve={curve}
+            padCount={4}
+            startT={0.3}
+            endT={0.85}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
+
           <SpeedPadSpawner
             curve={curve}
+            padCount={16}
+            startT={0.16}
             playerRefs={playerRefs.map((ref, id) => ({
               id,
               ref: ref as React.RefObject<THREE.Group>,
@@ -292,6 +303,20 @@ export default function Stage1() {
 
           <WeaponsPadSpawner
             curve={curve}
+            padCount={4}
+            startT={0.2}
+            endT={0.9}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
+
+          <ShieldPadSpawner
+            curve={curve}
+            padCount={2}
+            startT={0.5}
+            endT={0.8}
             playerRefs={playerRefs.map((ref, id) => ({
               id,
               ref: ref as React.RefObject<THREE.Group>,

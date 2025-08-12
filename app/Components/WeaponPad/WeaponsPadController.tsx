@@ -22,7 +22,7 @@ export function useWeaponsPad({
   weaponsPadRef: React.RefObject<THREE.Mesh>;
   cooldownTime?: number;
 }) {
-  const { setCannon } = useGameStore((s) => s);
+  const { setCannon, raceData } = useGameStore((s) => s);
 
   const weaponsPad = useRef<WeaponsPad>({
     mesh: weaponsPadRef.current as THREE.Mesh,
@@ -50,10 +50,11 @@ export function useWeaponsPad({
     }));
     const WeaponsPadBox = new THREE.Box3().setFromObject(weaponsPadMesh);
     const craft = playerBoxes.find((craft) => craft.box.intersectsBox(WeaponsPadBox));
-
     if (!!craft && cooldown.current <= 0) {
+      const { useMine, useCannon, shieldValue } = raceData[craft.id];
       weaponsPad.current.didPass = true;
       cooldown.current = cooldownTime;
+      if (useMine || useCannon || shieldValue > 0) return;
       setCannon(craft.id, true);
     }
 

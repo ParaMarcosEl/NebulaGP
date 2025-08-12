@@ -1,7 +1,7 @@
 import { extend, useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
-import { ShieldMaterial } from '../WeaponPad/ShieldMaterial';
+import { ShieldMaterial } from './ShieldMaterial';
 
 extend({ ShieldMaterial });
 

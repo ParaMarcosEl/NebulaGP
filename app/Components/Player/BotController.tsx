@@ -10,17 +10,21 @@ import {
   computePitchInput,
   computeRollInput,
 } from '@/Utils';
-import { onBulletCollision } from '@/Utils/projectiles';
+import { onBulletCollision } from '@/Utils/collisions';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
+import { Mine, useMines } from '../Weapons/useMines';
 
 interface UseBotControllerProps {
   id: number;
   botRef: React.RefObject<THREE.Group | null>;
+  minePoolRef: React.RefObject<Mine[]>;
   playerRefs: React.RefObject<THREE.Group | null>[];
   curve: THREE.Curve<THREE.Vector3>;
   speed?: number;
+  maxSpeed?: number;
+  acceleration?: number;
   enabled?: boolean;
   onSpeedChange?: (speed: number) => void;
 }
@@ -32,8 +36,11 @@ export function useBotController({
   id,
   botRef,
   playerRefs,
+  minePoolRef,
   curve,
   speed = 0.05,
+  maxSpeed = 2,
+  acceleration = 0.2,
   enabled = true,
   onSpeedChange,
 }: UseBotControllerProps) {
@@ -44,7 +51,7 @@ export function useBotController({
   const time = useRef(0);
   const t = useRef(0);
   const waypointIndexRef = useRef(8);
-  const { raceStatus, raceData } = useGameStore((s) => s);
+  const { raceStatus, raceData, setUseMine } = useGameStore((s) => s);
   const forward = new THREE.Vector3(0, 0, -1);
   const up = new THREE.Vector3(0, 1, 0);
   const deltaQuat = new THREE.Quaternion();
@@ -54,6 +61,8 @@ export function useBotController({
     maxProjectiles: 20,
     velocity: 200,
   });
+
+  const { drop } = useMines(botRef as React.RefObject<THREE.Object3D>, minePoolRef);
 
   useProjectileCollisions({
     projectiles: poolRef.current,
@@ -127,6 +136,9 @@ export function useBotController({
     }
 
     // === Orientation ===
+    const desiredDirection = toWaypoint.normalize();
+    const accelerationVector = desiredDirection.multiplyScalar(acceleration);
+
     forward.applyQuaternion(bot.quaternion);
     up.applyQuaternion(bot.quaternion);
     const angle = forward.angleTo(toWaypoint.clone().normalize());
@@ -167,16 +179,31 @@ export function useBotController({
     const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
     bot.userData.velocity.lerp(desiredVelocity, lerpFactor);
 
+    // Update velocity by adding the acceleration
+
     // Apply impulse velocity and decay
     bot.userData.velocity.add(bot.userData.impulseVelocity);
 
     // Apply decay to impulse
     bot.userData.impulseVelocity.multiplyScalar(0.9); // Tune this for bounce recovery
 
+    bot.userData.velocity.add(accelerationVector);
+
+    // Clamp the velocity to the max speed
+    if (bot.userData.velocity.length() > maxSpeed) {
+      bot.userData.velocity.normalize().multiplyScalar(maxSpeed);
+    }
+
     bot.position.add(bot.userData.velocity);
 
     if (onSpeedChange) onSpeedChange(speedRef.current);
     if (raceData[id].useCannon) fire();
+    if (raceData[id].useMine) {
+      setTimeout(() => {
+        drop();
+        setUseMine(id, false);
+      }, 1500);
+    }
   });
 
   return { waypointMeshes };
