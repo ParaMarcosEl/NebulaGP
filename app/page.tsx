@@ -29,7 +29,7 @@ import MinePadSpawner from './Components/MinePad/MinePadSpawner';
 
 const styles = {
   main: {
-    width: '100vw',
+    width: 'calc(100vw - 40px)',
     height: '100vh',
     margin: 0,
     padding: 0,
@@ -180,6 +180,7 @@ export default function Stage1() {
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
+        trackId={0}
         minePoolRef={minePoolRef}
         key={id}
         id={id}
@@ -357,7 +358,7 @@ export default function Stage1() {
         {/* UI */}
         <div style={UIStyles}>
           <h1 style={styles.heading}>NEBULA GP</h1>
-          <p style={styles.paragraph}>Anti-gravity Racing</p>
+          <p style={styles.paragraph}>Zero-Gravity Racing</p>
 
           <Link style={styles.link} href="/stage-select">
             Start Game

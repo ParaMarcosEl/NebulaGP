@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Canvas } from '@react-three/fiber';
@@ -28,6 +29,7 @@ import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
+import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 
 function RaceProgressTracker({
   playerRefs,
@@ -57,17 +59,20 @@ export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
-  const botRef1 = useRef<THREE.Group | null>(null);
-  const botRef2 = useRef<THREE.Group | null>(null);
-  const botRef3 = useRef<THREE.Group | null>(null);
-  const botRef4 = useRef<THREE.Group | null>(null);
-  const botRef5 = useRef<THREE.Group | null>(null);
-  const botRef6 = useRef<THREE.Group | null>(null);
-  const botRef7 = useRef<THREE.Group | null>(null);
+  // const botRef1 = useRef<THREE.Group | null>(null);
+  // const botRef2 = useRef<THREE.Group | null>(null);
+  // const botRef3 = useRef<THREE.Group | null>(null);
+  // const botRef4 = useRef<THREE.Group | null>(null);
+  // const botRef5 = useRef<THREE.Group | null>(null);
+  // const botRef6 = useRef<THREE.Group | null>(null);
+  // const botRef7 = useRef<THREE.Group | null>(null);
   const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
 
   const playerRefs = useMemo(
-    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
+    () => [
+      aircraftRef, 
+      // botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7
+    ],
     [],
   );
 
@@ -110,7 +115,7 @@ export default function Stage1() {
   // HUD state
   const [speed, setSpeed] = useState(0);
   const startPositions = useMemo(
-    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
+    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01)),
     [curve, playerRefs],
   );
 
@@ -123,11 +128,12 @@ export default function Stage1() {
       setMaterialLoaded(false);
       setRaceComplete(false);
     };
-  }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
+  }, []);
 
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
+        trackId={0}
         key={id}
         id={id}
         minePoolRef={minePoolRef}
@@ -252,7 +258,7 @@ export default function Stage1() {
           }))}
         />
 
-        <WeaponsPadSpawner
+        {/* <WeaponsPadSpawner
           curve={curve}
           padCount={4}
           startT={0.2}
@@ -272,10 +278,11 @@ export default function Stage1() {
             id,
             ref: ref as React.RefObject<THREE.Group>,
           }))}
-        />
+        /> */}
         <Planet size={350} />
 
         {/* Players */}
+        <GhostShip trackId={0} />
         {players}
         {boosters}
 

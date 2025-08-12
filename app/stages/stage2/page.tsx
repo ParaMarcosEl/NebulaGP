@@ -134,6 +134,7 @@ export default function Stage1() {
     id === 0 ? (
       <Aircraft
         key={id}
+        trackId={1}
         id={id}
         minePoolRef={minePoolRef}
         aircraftRef={player}
