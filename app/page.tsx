@@ -12,7 +12,7 @@ import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
-import { RaceDataType, useGameStore } from '@/Controllers/Game/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
@@ -128,19 +128,13 @@ function RaceProgressTracker({
 function ShipCollisionTracker({
   playerRefs,
   onCollide,
-  setShieldValue,
-  raceData,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
   onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
-  raceData: RaceDataType;
-  setShieldValue: (value: number, id: number) => void;
 }) {
   useShipCollisions({
     playerRefs,
     onCollide,
-    setShieldValue,
-    raceData,
   });
   return null;
 }
@@ -169,8 +163,6 @@ export default function Stage1() {
     reset,
     track: curve,
     setTrack,
-    raceData,
-    setShieldValue,
   } = useGameStore((state) => state);
   // HUD state
   const [, setSpeed] = useState(0);
@@ -285,8 +277,6 @@ export default function Stage1() {
           <ShipCollisionTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             onCollide={onShipCollision}
-            setShieldValue={setShieldValue}
-            raceData={raceData}
           />
 
           {/* Lighting */}
