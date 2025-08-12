@@ -24,6 +24,8 @@ import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { blue } from '@/Constants/colors';
 import ShieldPadSpawner from './Components/ShieldPad/ShieldPadSpawner';
+import { Mine } from './Components/Weapons/useMines';
+import MinePadSpawner from './Components/MinePad/MinePadSpawner';
 
 const styles = {
   main: {
@@ -146,6 +148,7 @@ function ShipCollisionTracker({
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
+  const minePoolRef = useRef<Mine[]>([]);
   const botRef1 = useRef<THREE.Group | null>(null);
   const botRef2 = useRef<THREE.Group | null>(null);
   const botRef3 = useRef<THREE.Group | null>(null);
@@ -185,6 +188,7 @@ export default function Stage1() {
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
+        minePoolRef={minePoolRef}
         key={id}
         id={id}
         aircraftRef={player}
@@ -203,6 +207,7 @@ export default function Stage1() {
       <Bot
         key={id}
         id={id}
+        minePoolRef={minePoolRef}
         aircraftRef={player}
         playerRefs={playerRefs}
         startPosition={startPositions[id].position}
@@ -306,8 +311,11 @@ export default function Stage1() {
             curve={curve}
           />
 
-          <ShieldPadSpawner
+          <MinePadSpawner
             curve={curve}
+            padCount={4}
+            startT={0.3}
+            endT={0.85}
             playerRefs={playerRefs.map((ref, id) => ({
               id,
               ref: ref as React.RefObject<THREE.Group>,
@@ -316,6 +324,8 @@ export default function Stage1() {
 
           <SpeedPadSpawner
             curve={curve}
+            padCount={16}
+            startT={0.16}
             playerRefs={playerRefs.map((ref, id) => ({
               id,
               ref: ref as React.RefObject<THREE.Group>,
@@ -324,6 +334,20 @@ export default function Stage1() {
 
           <WeaponsPadSpawner
             curve={curve}
+            padCount={4}
+            startT={0.2}
+            endT={0.9}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
+
+          <ShieldPadSpawner
+            curve={curve}
+            padCount={2}
+            startT={0.5}
+            endT={0.8}
             playerRefs={playerRefs.map((ref, id) => ({
               id,
               ref: ref as React.RefObject<THREE.Group>,

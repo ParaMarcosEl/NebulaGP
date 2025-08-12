@@ -7,9 +7,11 @@ import * as THREE from 'three';
 import { SHIP_SCALE } from '@/Constants';
 import { Shield } from '../Shield/Shield';
 import { useGameStore } from '@/Controllers/Game/GameController';
+import { Mine } from '../Weapons/useMines';
 
 type AircraftProps = {
   id: number;
+  minePoolRef: React.RefObject<Mine[]>;
   aircraftRef: React.RefObject<THREE.Group | null>;
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
@@ -28,6 +30,7 @@ type AircraftProps = {
 
 export default function Aircraft({
   id,
+  minePoolRef,
   aircraftRef,
   playerRefs,
   startPosition,
@@ -58,6 +61,7 @@ export default function Aircraft({
 
   usePlayerController({
     id,
+    minePoolRef,
     aircraftRef,
     playerRefs,
     obstacleRefs,

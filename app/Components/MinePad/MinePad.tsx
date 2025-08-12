@@ -1,10 +1,10 @@
 'use client';
 // components/WeaponPad.tsx
 import { useRef } from 'react';
-import { useWeaponsPad } from './WeaponsPadController';
+import { useMinePad } from './MinePadController';
 import * as THREE from 'three';
 
-type WeaponPadProps = {
+type MinePadProps = {
   position: THREE.Vector3;
   quaternion: THREE.Quaternion;
   playerRefs: {
@@ -13,13 +13,13 @@ type WeaponPadProps = {
   }[];
 };
 
-export default function WeaponPad({ position, quaternion, playerRefs }: WeaponPadProps) {
+export default function MinePad({ position, quaternion, playerRefs }: MinePadProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the WeaponPadController logic
-  const WeaponPad = useWeaponsPad({
+  const WeaponPad = useMinePad({
     playerRefs,
-    weaponsPadRef: meshRef as React.RefObject<THREE.Mesh>,
+    minePadRef: meshRef as React.RefObject<THREE.Mesh>,
     cooldownTime: 2,
   });
 
@@ -27,8 +27,8 @@ export default function WeaponPad({ position, quaternion, playerRefs }: WeaponPa
     <mesh ref={meshRef} position={position} quaternion={quaternion}>
       <boxGeometry args={[5, 5, 5]} />
       <meshStandardMaterial
-        color={!WeaponPad.current.didPass ? 'orange' : 'white'}
-        emissive={!WeaponPad.current.didPass ? 'orange' : 'darkgrey'}
+        color={!WeaponPad.current.didPass ? 'crimson' : 'white'}
+        emissive={!WeaponPad.current.didPass ? 'crimson' : 'darkgrey'}
         emissiveIntensity={1}
         transparent
         opacity={0.6}

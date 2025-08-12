@@ -29,7 +29,7 @@ export function useProjectileCollisions({
   const tempOBB = new OBB();
   const playerOBB = new OBB();
   const playerBox = new THREE.Box3();
-  let shieldValue = 0;
+  const { setShieldValue } = useGameStore((s) => s);
 
   useFrame(() => {
     for (const proj of projectiles) {
@@ -50,9 +50,11 @@ export function useProjectileCollisions({
         playerOBB.rotation.setFromMatrix4(player.matrixWorld);
 
         if (tempOBB.intersectsOBB(playerOBB)) {
-          shieldValue = useGameStore.getState().raceData[player.userData.id]?.shieldValue;
+          const { shieldValue, id } = useGameStore.getState().raceData[player.userData.id];
           if (!shieldValue || shieldValue <= 0) {
             onCollide(player);
+          } else {
+            setShieldValue(shieldValue - 0.2, id);
           }
 
           proj.active = false;

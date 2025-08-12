@@ -4,7 +4,7 @@ import { WorkerTerrainMaterial } from '@/Components/LODTerrain/Worker/WorkerTerr
 import { WorkerTerrainShader } from '@/Components/LODTerrain/Worker/WorkerTerrainShader';
 import * as THREE from 'three';
 import { SingleTextureMaterial } from '@/Components/LODTerrain/Worker/SingleTextureMaterial';
-import { ShieldMaterial } from './Components/WeaponPad/ShieldMaterial';
+import { ShieldMaterial } from './Components/Shield/ShieldMaterial';
 
 extend({ LitTerrainMaterial });
 

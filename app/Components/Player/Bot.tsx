@@ -7,10 +7,12 @@ import { SHIP_SCALE } from '@/Constants';
 import { useBotController } from './BotController';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
+import { Mine } from '../Weapons/useMines';
 
 type AircraftProps = {
   id: number;
   aircraftRef: React.RefObject<THREE.Group | null>;
+  minePoolRef: React.RefObject<Mine[]>;
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
   playingFieldRef?: React.RefObject<THREE.Mesh | null>;
@@ -29,6 +31,7 @@ type AircraftProps = {
 export default function Bot({
   id,
   playerRefs,
+  minePoolRef,
   aircraftRef,
   startPosition,
   startQuaternion,
@@ -44,6 +47,7 @@ export default function Bot({
   useBotController({
     id,
     playerRefs,
+    minePoolRef,
     botRef: aircraftRef as React.RefObject<THREE.Group>,
     curve,
     enabled: !!isBot,

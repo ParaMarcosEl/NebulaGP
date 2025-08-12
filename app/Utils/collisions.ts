@@ -1,5 +1,20 @@
 import * as THREE from 'three';
 
+export const onBulletCollision = (mesh2: THREE.Object3D, restitution = 0.2, multiplier = 1) => {
+  // Check if both meshes have a velocity vector
+  if (!mesh2.userData.velocity) {
+    return;
+  }
+
+  // Calculate the impulse magnitude
+  const impulseMagnitude = -(1 + restitution) * multiplier;
+
+  // The impulse vector for each mesh
+  const impulseVector = mesh2.userData.velocity.clone().multiplyScalar(impulseMagnitude);
+
+  mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-impulseMagnitude));
+};
+
 export const onShipCollision = (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => {
   // Check if both meshes have a velocity vector
   if (!mesh1.userData.velocity || !mesh2.userData.velocity) {
@@ -37,9 +52,4 @@ export const onShipCollision = (mesh1: THREE.Object3D, mesh2: THREE.Object3D) =>
 
   mesh1.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(impulseMagnitude));
   mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-impulseMagnitude));
-  // Apply the impulse to the velocities
-  // mesh1 gets an impulse away from mesh2
-  // velocity1.add(impulseVector);
-  // mesh1.userData.velocity.add(impulseVector);
-  // mesh2.userData.velocity.sub(impulseVector);
 };

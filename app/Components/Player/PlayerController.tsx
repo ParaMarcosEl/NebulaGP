@@ -9,8 +9,9 @@ import { getNearestCurveT, isMobileDevice } from '@/Utils';
 import { useBotController } from '@/Components/Player/BotController';
 // import { useCollisions } from '@/Controllers/Collision/useCollisions';
 import { useProjectiles } from '../Weapons/useProjectiles';
+import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
-import { onBulletCollision } from '@/Utils/projectiles';
+import { onBulletCollision } from '@/Utils/collisions';
 import { TOTAL_LAPS } from '@/Constants';
 
 // --- Shared input ref for touch joystick ---
@@ -29,6 +30,7 @@ export const setThrottle = (value: number) => {
 
 type PlayerSystemOptions = {
   id: number;
+  minePoolRef: React.RefObject<Mine[]>;
   aircraftRef: React.RefObject<THREE.Group | null>; // Reference to the 3D model of the aircraft.
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[]; // Array of references to obstacle meshes.
@@ -47,6 +49,7 @@ type PlayerSystemOptions = {
 
 export function usePlayerController({
   id: playerId,
+  minePoolRef,
   aircraftRef,
   playerRefs,
   playingFieldRef,
@@ -65,7 +68,9 @@ export function usePlayerController({
   const angularVelocity = useRef(new THREE.Vector3());
   const previousInputState = useRef({ accelerating: false, braking: false });
   const gamepadIndex = useRef<number | null>(null);
-  const { raceStatus, playerSpeed, raceData } = useGameStore((state) => state);
+  const { raceStatus, playerSpeed, raceData, setUseMine, setShieldValue } = useGameStore(
+    (state) => state,
+  );
   const controlsEnabled = raceStatus === 'racing';
   // const players = Array.isArray(playerRefs) ? playerRefs?.map(player => player.current) : [];
 
@@ -73,6 +78,11 @@ export function usePlayerController({
     fireRate: 5,
     maxProjectiles: 20,
     velocity: 200,
+  });
+
+  const { drop } = useMines(aircraftRef as React.RefObject<THREE.Object3D>, minePoolRef, {
+    maxMines: 16,
+    dropOffset: 6,
   });
 
   useProjectileCollisions({
@@ -108,7 +118,8 @@ export function usePlayerController({
   useBotController({
     id: playerId,
     playerRefs,
-    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
+    minePoolRef,
+    enabled: controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
     botRef: aircraftRef,
     curve,
     speed: botSpeed,
@@ -278,6 +289,9 @@ export function usePlayerController({
           // If the distance to the closest point is greater than 10 (meaning it's far off),
           // snap the ship back to the closest point and reverse/stop its velocity.
           if (dist > 10) {
+            if (raceData[playerId].shieldValue > 0) {
+              setShieldValue(raceData[playerId].shieldValue - 0.5, playerId);
+            }
             ship.position.copy(hitInfo.point);
             ship.userData.velocity.multiplyScalar(-1); // Reverse velocity.
             speedRef.current = 0; // Stop movement.
@@ -301,5 +315,9 @@ export function usePlayerController({
     //   }
     // }
     if (shooting && raceData[playerId].useCannon) fire();
+    if (shooting && raceData[playerId].useMine) {
+      drop();
+      setUseMine(playerId, false);
+    }
   });
 }
