@@ -12,6 +12,8 @@ import { useProjectiles } from '../Weapons/useProjectiles';
 import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { onBulletCollision } from '@/Utils/collisions';
+import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
+import { saveBestLap } from '@/Utils/ghost';
 import { TOTAL_LAPS } from '@/Constants';
 
 // --- Shared input ref for touch joystick ---
@@ -30,6 +32,7 @@ export const setThrottle = (value: number) => {
 
 type PlayerSystemOptions = {
   id: number;
+  trackId: number;
   minePoolRef: React.RefObject<Mine[]>;
   aircraftRef: React.RefObject<THREE.Group | null>; // Reference to the 3D model of the aircraft.
   playerRefs: React.RefObject<THREE.Group | null>[];
@@ -49,6 +52,7 @@ type PlayerSystemOptions = {
 
 export function usePlayerController({
   id: playerId,
+  trackId,
   minePoolRef,
   aircraftRef,
   playerRefs,
@@ -73,7 +77,25 @@ export function usePlayerController({
   );
   const controlsEnabled = raceStatus === 'racing';
   // const players = Array.isArray(playerRefs) ? playerRefs?.map(player => player.current) : [];
-
+  useBotController({
+    id: playerId,
+    playerRefs,
+    minePoolRef,
+    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
+    botRef: aircraftRef,
+    curve,
+    speed: botSpeed,
+  });
+  
+  const { stopRecording } = useGhostRecorder({ 
+    mode: 'record', 
+    targetRef: aircraftRef as React.RefObject<THREE.Object3D>,
+    onRecordingComplete: (data) => {
+      const { history } = raceData[playerId];
+      saveBestLap(trackId, history[history.length - 1].time, data);
+    }
+  });
+  
   const { fire, poolRef } = useProjectiles(aircraftRef as React.RefObject<THREE.Object3D>, {
     fireRate: 5,
     maxProjectiles: 20,
@@ -91,6 +113,13 @@ export function usePlayerController({
     onCollide: onBulletCollision,
     owner: aircraftRef,
   });
+  const playerHistory = raceData[playerId].history;
+
+  useEffect(() => {
+    if (playerHistory.length >= TOTAL_LAPS){
+      stopRecording();
+    }
+  }, [playerHistory, playerId, stopRecording]);
 
   useEffect(() => {
     const ship = aircraftRef.current;
@@ -114,16 +143,6 @@ export function usePlayerController({
   //   // Apply the restitution to dampen the bounce.
   //   velocity.current.multiplyScalar(restitution);
   // }
-
-  useBotController({
-    id: playerId,
-    playerRefs,
-    minePoolRef,
-    enabled: controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
-    botRef: aircraftRef,
-    curve,
-    speed: botSpeed,
-  });
 
   useEffect(() => {
     if (!enabled) return;

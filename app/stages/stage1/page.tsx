@@ -131,6 +131,7 @@ export default function Stage1() {
       <Aircraft
         key={id}
         id={id}
+        trackId={0}
         aircraftRef={player}
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}

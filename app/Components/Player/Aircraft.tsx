@@ -11,6 +11,7 @@ import { Mine } from '../Weapons/useMines';
 
 type AircraftProps = {
   id: number;
+  trackId: number;
   minePoolRef: React.RefObject<Mine[]>;
   aircraftRef: React.RefObject<THREE.Group | null>;
   playerRefs: React.RefObject<THREE.Group | null>[];
@@ -30,6 +31,7 @@ type AircraftProps = {
 
 export default function Aircraft({
   id,
+  trackId,
   minePoolRef,
   aircraftRef,
   playerRefs,
@@ -61,6 +63,7 @@ export default function Aircraft({
 
   usePlayerController({
     id,
+    trackId,
     minePoolRef,
     aircraftRef,
     playerRefs,

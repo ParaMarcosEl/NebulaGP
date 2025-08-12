@@ -131,6 +131,7 @@ export default function Stage1() {
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
+        trackId={2}
         minePoolRef={minePoolRef}
         key={id}
         id={id}

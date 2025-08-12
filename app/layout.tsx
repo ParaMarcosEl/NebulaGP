@@ -6,10 +6,11 @@ import OrientationLock from '@/Components/UI/OrientationLock';
 import { TextureLoader } from './Components/TextureLoader/TextureLoader';
 
 export const metadata = {
-  title: 'Nebula GP | Anti-Gravity Racing',
+  title: 'Nebula GP | Zero-Gravity Racing',
   description:
     'Experience high-speed, zero-gravity races across the stars in Nebula GP. Compete, customize, and conquer the galaxy!',
   keywords: [
+    'zero-g racing',
     'anti-gravity racing',
     'space racing game',
     'nebula GP',
@@ -60,10 +61,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <Head>
         <title>Nebula GP</title>
-        <meta name="description" content="Anti-Gravity Racing" />
+        <meta name="description" content="Zero-Gravity Racing" />
         <meta property="og:title" content="Nebula GP" />
-        <meta property="og:description" content="Anti-Gravity Racing" />
-        <meta property="og:url" content="https://flight-game-lake.vercel.app" />
+        <meta property="og:description" content="Zero-Gravity Racing" />
+        <meta property="og:url" content="https://nebulagp.vercel.app" />
         <meta property="og:type" content="website" />
       </Head>
       <body>
