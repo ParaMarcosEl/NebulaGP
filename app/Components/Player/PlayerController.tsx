@@ -86,16 +86,20 @@ export function usePlayerController({
     curve,
     speed: botSpeed,
   });
-  
-  const { stopRecording } = useGhostRecorder({ 
-    mode: 'record', 
+
+  const { stopRecording } = useGhostRecorder({
+    mode: 'record',
     targetRef: aircraftRef as React.RefObject<THREE.Object3D>,
     onRecordingComplete: (data) => {
       const { history } = raceData[playerId];
-      saveBestLap(trackId, history[history.length - 1].time, data);
-    }
+      saveBestLap(
+        trackId,
+        history.reduce((prev, laptime) => prev + laptime.time, 0),
+        data,
+      );
+    },
   });
-  
+
   const { fire, poolRef } = useProjectiles(aircraftRef as React.RefObject<THREE.Object3D>, {
     fireRate: 5,
     maxProjectiles: 20,
@@ -116,7 +120,7 @@ export function usePlayerController({
   const playerHistory = raceData[playerId].history;
 
   useEffect(() => {
-    if (playerHistory.length >= TOTAL_LAPS){
+    if (playerHistory.length >= TOTAL_LAPS) {
       stopRecording();
     }
   }, [playerHistory, playerId, stopRecording]);

@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import { useEffect, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 
 type GhostRecorderOptions = {
-  mode: "record" | "playback";
+  mode: 'record' | 'playback';
   targetRef: React.RefObject<THREE.Object3D>;
   ghostData?: Float32Array; // playback mode
   sampleRate?: number; // ms between samples (default 50ms)
@@ -17,7 +17,7 @@ export function useGhostRecorder({
   ghostData,
   sampleRate = 50,
   maxFrames = 20000, // ~16 minutes at 20fps
-  onRecordingComplete
+  onRecordingComplete,
 }: GhostRecorderOptions) {
   const bufferRef = useRef<Float32Array>(new Float32Array(maxFrames * 7));
   const frameCount = useRef(0);
@@ -26,7 +26,7 @@ export function useGhostRecorder({
 
   // RECORD MODE
   useFrame((state) => {
-    if (mode !== "record" || !targetRef.current) return;
+    if (mode !== 'record' || !targetRef.current) return;
     if (startTime.current === null) startTime.current = state.clock.elapsedTime * 1000;
 
     const elapsed = state.clock.elapsedTime * 1000 - startTime.current;
@@ -47,7 +47,7 @@ export function useGhostRecorder({
 
   // PLAYBACK MODE
   useFrame((state) => {
-    if (mode !== "playback" || !targetRef.current || !ghostData) return;
+    if (mode !== 'playback' || !targetRef.current || !ghostData) return;
     if (startTime.current === null) startTime.current = state.clock.elapsedTime * 1000;
 
     const elapsed = state.clock.elapsedTime * 1000 - startTime.current;
@@ -75,19 +75,19 @@ export function useGhostRecorder({
     targetRef.current.position.set(
       ghostData[base1 + 1] + (ghostData[base2 + 1] - ghostData[base1 + 1]) * alpha,
       ghostData[base1 + 2] + (ghostData[base2 + 2] - ghostData[base1 + 2]) * alpha,
-      ghostData[base1 + 3] + (ghostData[base2 + 3] - ghostData[base1 + 3]) * alpha
+      ghostData[base1 + 3] + (ghostData[base2 + 3] - ghostData[base1 + 3]) * alpha,
     );
 
     targetRef.current.rotation.set(
       ghostData[base1 + 4] + (ghostData[base2 + 4] - ghostData[base1 + 4]) * alpha,
       ghostData[base1 + 5] + (ghostData[base2 + 5] - ghostData[base1 + 5]) * alpha,
-      ghostData[base1 + 6] + (ghostData[base2 + 6] - ghostData[base1 + 6]) * alpha
+      ghostData[base1 + 6] + (ghostData[base2 + 6] - ghostData[base1 + 6]) * alpha,
     );
   });
 
   // Stop & save recording
   const stopRecording = () => {
-    if (mode === "record" && onRecordingComplete) {
+    if (mode === 'record' && onRecordingComplete) {
       const recorded = bufferRef.current.slice(0, frameCount.current * 7);
       onRecordingComplete(recorded);
     }

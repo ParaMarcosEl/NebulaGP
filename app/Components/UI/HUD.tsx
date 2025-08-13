@@ -1,14 +1,29 @@
 import { useRaceStandings } from '@/Controllers/Game/useRaceStandings';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { formatTime } from '@/Utils';
-import { CSSProperties } from 'react';
+import { CSSProperties, useEffect, useRef } from 'react';
 import { TOTAL_LAPS } from '@/Constants';
+import * as THREE from 'three';
 
-export default function HUD() {
+export default function HUD({
+  trackId,
+  playerRefs,
+}: {
+  trackId: number;
+  playerRefs: React.RefObject<THREE.Object3D | null>[];
+}) {
   const { lapTime, totalTime, raceData, playerId } = useGameStore((state) => {
     return state;
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allGhostsRef = useRef<any>({});
 
+  useEffect(() => {
+    allGhostsRef.current = JSON.parse(localStorage?.getItem('ghosts') ?? '{}');
+  }, []);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bestTime = allGhostsRef?.current?.[`${trackId}`] || 0;
   const { inProgress, finished, raceOver } = useRaceStandings();
 
   const playerHistory = raceData[playerId]?.history || [];
@@ -42,7 +57,7 @@ export default function HUD() {
       <hr />
       <div>Place:</div>
       <div>
-        <span style={{ fontSize: '2em' }}>{player?.place}</span>/8
+        <span style={{ fontSize: '2em' }}>{player?.place}</span>/{playerRefs.length}
       </div>
     </>
   );
@@ -57,10 +72,11 @@ export default function HUD() {
         </>
       ) : (
         <>
+          {bestTime?.time && <div>Best Time: {formatTime(bestTime.time)}</div>}
+          <div>Current Time: {formatTime(lapTime)}</div>
           <div>
             Current Lap: {(raceData[playerId]?.history?.length || 0) + 1}/{TOTAL_LAPS}
           </div>
-          <div>Current Time: {formatTime(lapTime)}</div>
           {history}
         </>
       )}

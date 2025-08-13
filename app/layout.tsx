@@ -1,7 +1,6 @@
 // app/layout.tsx
 import Head from 'next/head';
 import './globals.css';
-import { isMobileDevice } from '@/Utils';
 import OrientationLock from '@/Components/UI/OrientationLock';
 import { TextureLoader } from './Components/TextureLoader/TextureLoader';
 
@@ -54,7 +53,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  if (isMobileDevice() && document.documentElement.requestFullscreen) {
+  if (typeof window !== 'undefined' && document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen();
   }
   return (

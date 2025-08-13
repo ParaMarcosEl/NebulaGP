@@ -70,7 +70,7 @@ export default function Stage1() {
 
   const playerRefs = useMemo(
     () => [
-      aircraftRef, 
+      aircraftRef,
       // botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7
     ],
     [],
@@ -208,7 +208,7 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUD />
+      <HUD playerRefs={playerRefs} trackId={0} />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
       <RaceOver />
