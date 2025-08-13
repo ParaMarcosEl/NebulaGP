@@ -11,23 +11,25 @@ export default function Planet({
   emissiveIntensity = 1.5,
   texturePath = 'planet_texture01',
   cloudsPath = 'clouds',
+  cloudRadius = 150,
   emissive = false,
   emissiveColor = 'white',
   clouds = true,
 }: {
-  ref?: React.RefObject<THREE.Mesh>;
+  ref?: React.RefObject<THREE.Object3D>;
   size?: number;
   color?: string;
   position?: THREE.Vector3;
   emissiveIntensity?: number;
   texturePath?: string;
   cloudsPath?: string;
+  cloudRadius?: number;
   emissive?: boolean;
   emissiveColor?: string;
   clouds?: boolean;
 }) {
-  const planetRef = useRef<THREE.Mesh>(null!);
-  const cloudRef = useRef<THREE.Mesh>(null!);
+  const planetRef = useRef<THREE.Object3D>(null!);
+  const cloudRef = useRef<THREE.Object3D>(null!);
 
   const planetTexture = useTexture(`/textures/${texturePath}.png`);
   const cloudTexture = useTexture(`/textures/${cloudsPath}.png`);
@@ -39,7 +41,7 @@ export default function Planet({
   useEffect(() => {
     planetTexture.wrapS = THREE.RepeatWrapping;
     planetTexture.wrapT = THREE.RepeatWrapping;
-    planetTexture.repeat.set(10, 1);
+    planetTexture.repeat.set(10, 5);
     planetTexture.needsUpdate = true;
   }, [planetTexture]);
 
@@ -47,7 +49,7 @@ export default function Planet({
     if (!clouds) return;
     cloudTexture.wrapS = THREE.RepeatWrapping;
     cloudTexture.wrapT = THREE.RepeatWrapping;
-    cloudTexture.repeat.set(10, 1);
+    cloudTexture.repeat.set(5, 5);
     cloudTexture.anisotropy = 16;
     cloudTexture.needsUpdate = true;
   }, [cloudTexture, clouds]);
@@ -60,13 +62,13 @@ export default function Planet({
 
   return (
     <>
+      {/* Base planet */}
       <directionalLight
         position={[position.x + 100, position.y + 50, position.z + 100]}
         intensity={1.5}
         color="#fffde4"
         castShadow
       />
-      {/* Base planet */}
       <mesh ref={planetRef} position={position}>
         <sphereGeometry args={[size, 64, 64]} />
         <meshStandardMaterial
@@ -82,21 +84,23 @@ export default function Planet({
       {clouds && (
         <>
           {/* Cloud layer */}
-          <mesh ref={cloudRef} position={position}>
-            <sphereGeometry args={[size + 150, 64, 64]} /> {/* Slightly larger radius */}
-            <meshStandardMaterial
-              map={cloudTexture}
-              transparent
-              opacity={0.4}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-              blending={THREE.AdditiveBlending}
-            />
-          </mesh>
+          <group ref={cloudRef} position={position}>
+            <mesh>
+              <sphereGeometry args={[size + cloudRadius, 64, 64]} /> {/* Slightly larger radius */}
+              <meshStandardMaterial
+                map={cloudTexture}
+                transparent
+                opacity={0.4}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          </group>
 
           {/* Atmosphere layer */}
           <mesh position={position}>
-            <sphereGeometry args={[size + 160, 64, 64]} />
+            <sphereGeometry args={[size + cloudRadius + cloudRadius * 0.1, 64, 64]} />
             <meshBasicMaterial
               color="#6ec6ff"
               transparent

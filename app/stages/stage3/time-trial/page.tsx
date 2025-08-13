@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Canvas } from '@react-three/fiber';
 import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
-import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
 import HUD from '@/Components/UI/HUD';
-import { getStartPoseFromCurve } from '@/Utils';
 import { onShipCollision } from '@/Utils/collisions';
+import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
@@ -23,12 +23,11 @@ import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
-import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
-import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
-import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { Mine } from '@/Components/Weapons/useMines';
+import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
+import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 
 function RaceProgressTracker({
@@ -57,23 +56,24 @@ function ShipCollisionTracker({
 
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
+  const ghostRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
-  const botRef1 = useRef<THREE.Group | null>(null);
-  const botRef2 = useRef<THREE.Group | null>(null);
-  const botRef3 = useRef<THREE.Group | null>(null);
-  const botRef4 = useRef<THREE.Group | null>(null);
-  const botRef5 = useRef<THREE.Group | null>(null);
-  const botRef6 = useRef<THREE.Group | null>(null);
-  const botRef7 = useRef<THREE.Group | null>(null);
+  const planetRef = useRef<THREE.Mesh>(null);
   const minePoolRef = useRef<Mine[]>([]);
   const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
   const { loader } = useCanvasLoader();
+
   const playerRefs = useMemo(
-    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
+    () => [
+      aircraftRef,
+      ghostRef,
+      // botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7
+    ],
     [],
   );
 
   const bounds = { x: 500, y: 250, z: 500 };
+
   const {
     raceData,
     reset,
@@ -111,30 +111,29 @@ export default function Stage1() {
   // HUD state
   const [speed, setSpeed] = useState(0);
   const startPositions = useMemo(
-    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
+    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01)),
     [curve, playerRefs],
   );
 
   useEffect(() => {
-    setMaterialLoaded(true);
-    setTrack(tracks[0]);
+    setTrack(tracks[2]);
     reset();
 
     return () => {
       setMaterialLoaded(false);
       setRaceComplete(false);
     };
-  }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
+  }, []);
 
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
+        trackId={2}
         key={id}
         id={id}
-        trackId={0}
+        minePoolRef={minePoolRef}
         aircraftRef={player}
         playerRefs={playerRefs}
-        minePoolRef={minePoolRef}
         curve={curve}
         obstacleRefs={obstacleRefs.current}
         playingFieldRef={playingFieldRef}
@@ -146,22 +145,7 @@ export default function Stage1() {
         botSpeed={1.6}
       />
     ) : (
-      <Bot
-        key={id}
-        minePoolRef={minePoolRef}
-        id={id}
-        aircraftRef={player}
-        playerRefs={playerRefs}
-        startPosition={startPositions[id].position}
-        startQuaternion={startPositions[id].quaternion}
-        curve={curve}
-        isBot
-        obstacleRefs={obstacleRefs.current}
-        playingFieldRef={playingFieldRef}
-        acceleration={0.01}
-        damping={0.99}
-        botSpeed={1.4 + id * 0.1}
-      />
+      <GhostShip key={id} shipRef={ghostRef as React.RefObject<THREE.Object3D>} trackId={2} />
     ),
   );
 
@@ -204,7 +188,7 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUD playerRefs={playerRefs} trackId={0} />
+      <HUD trackId={2} playerRefs={playerRefs} />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
       <RaceOver />
@@ -213,17 +197,7 @@ export default function Stage1() {
       {loader}
 
       {/* Scene */}
-      <Canvas
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: -1,
-          width: '100%',
-          height: '100%',
-        }}
-        camera={{ position: [0, 5, 15], fov: 60 }}
-      >
+      <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
         <Suspense fallback={null}>
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
@@ -236,9 +210,9 @@ export default function Stage1() {
           />
 
           {/* Lighting */}
-          <ambientLight intensity={0.2} />
+          <ambientLight intensity={0.4} />
           <directionalLight
-            position={[150, 0, 0]}
+            position={[5, 10, 7]}
             intensity={0.8}
             castShadow
             shadow-mapSize-width={1024}
@@ -249,25 +223,47 @@ export default function Stage1() {
           <pointLight position={[-10, 5, -10]} intensity={0.3} />
 
           {/* World */}
-          <Skybox stageName="stageI" />
+          <Skybox stageName="stageD" />
 
           <Track
             ref={playingFieldRef}
             aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
             curve={curve}
           />
-
-          <MinePadSpawner
-            curve={curve}
-            padCount={4}
-            startT={0.3}
-            endT={0.85}
-            playerRefs={playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>,
-            }))}
+          <TerrainChunkManager
+            yOffset={-300}
+            chunkSize={512}
+            segments={128}
+            frequency={0.001}
+            amplitude={1}
+            exponentiation={3}
+            maxHeight={1024}
+            octaves={8}
+            midMapPath="/textures/icy_ground.png"
+            lowMapPath="/textures/molten_rock.png"
+            highMapPath="/textures/rocky_ground.png"
           />
-
+          <Planet
+            position={new THREE.Vector3(900, 0, 0)}
+            texturePath="/stage_texture"
+            size={50}
+            ref={planetRef as React.RefObject<THREE.Mesh>}
+            clouds={false}
+            emissive
+            emissiveColor="lightblue"
+            emissiveIntensity={1}
+          />
+          <Planet
+            position={new THREE.Vector3(400, 150, 800)}
+            texturePath="/planet_texture01"
+            size={50}
+            color="purple"
+            ref={planetRef as React.RefObject<THREE.Mesh>}
+            clouds={false}
+            emissive
+            emissiveColor="lightblue"
+            emissiveIntensity={1}
+          />
           <SpeedPadSpawner
             curve={curve}
             padCount={16}
@@ -277,29 +273,6 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-
-          <WeaponsPadSpawner
-            curve={curve}
-            padCount={4}
-            startT={0.2}
-            endT={0.9}
-            playerRefs={playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>,
-            }))}
-          />
-
-          <ShieldPadSpawner
-            curve={curve}
-            padCount={2}
-            startT={0.5}
-            endT={0.8}
-            playerRefs={playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>,
-            }))}
-          />
-          <Planet size={350} />
 
           {/* Players */}
           {players}

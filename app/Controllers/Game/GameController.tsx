@@ -13,6 +13,7 @@ import { RaceOver } from '@/Components/UI/RaceOver';
  * @returns An object conforming to the `RaceData` type with default values.
  */
 const defaultRaceData = (id: number): RaceData => ({
+  boostTimeout: null,
   useMine: false,
   shieldValue: 0,
   id,
@@ -40,6 +41,7 @@ export type RaceStatus = 'idle' | 'countdown' | 'racing';
  * Defines the structure for a single racer's data within the game state.
  */
 type RaceData = {
+  boostTimeout: ReturnType<typeof setTimeout> | null;
   useMine: false;
   shieldValue: number;
   id: number;
@@ -126,6 +128,7 @@ type GameState = {
     // Comprehensive data for all racers (player and bots).
     number,
     {
+      boostTimeout: ReturnType<typeof setTimeout> | null;
       useMine: boolean;
       id: number;
       shieldValue: number;
@@ -296,24 +299,11 @@ export const useGameStore = create(
       const { raceData, playerId } = get();
       const isPlayer = id === playerId;
       const currentSpeed = get().playerSpeed;
+      let { boostTimeout } = raceData[id];
 
-      // Create a new raceData object for the initial state change
-      const updatedRaceDataOnBoostStart = {
-        ...raceData,
-        [id]: {
-          ...raceData[id],
-          boosting: true,
-        },
-      };
-
-      // Set the initial state
-      set({
-        ...(isPlayer && { playerSpeed: currentSpeed + 1 }),
-        raceData: updatedRaceDataOnBoostStart,
-      });
-
+      if (boostTimeout) clearTimeout(boostTimeout);
       // Second state update: end the boost after 2 seconds
-      setTimeout(() => {
+      boostTimeout = setTimeout(() => {
         // Get the latest state when the timeout fires to avoid using stale data
         const latestRaceData = get().raceData;
         const baseSpeed = get().baseSpeed;
@@ -333,6 +323,22 @@ export const useGameStore = create(
           raceData: updatedRaceDataOnBoostEnd,
         });
       }, 2000);
+
+      // Create a new raceData object for the initial state change
+      const updatedRaceDataOnBoostStart = {
+        ...raceData,
+        [id]: {
+          ...raceData[id],
+          boosting: true,
+          boostTimeout,
+        },
+      };
+
+      // Set the initial state
+      set({
+        ...(isPlayer && { playerSpeed: currentSpeed + 0.48 }),
+        raceData: updatedRaceDataOnBoostStart,
+      });
     },
 
     setCannon: (id: number, useCannon?: boolean) => {
@@ -497,6 +503,7 @@ export const useGameStore = create(
       const initialRaceData: Record<number, RaceData> = {};
       for (let i = 0; i < 8; i++) {
         initialRaceData[i] = {
+          boostTimeout: null,
           useMine: false,
           shieldValue: 0,
           id: i,

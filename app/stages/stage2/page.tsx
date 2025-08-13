@@ -210,7 +210,7 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUD />
+      <HUD playerRefs={playerRefs} trackId={1} />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
       <RaceOver />

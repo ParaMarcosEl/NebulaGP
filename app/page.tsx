@@ -159,11 +159,7 @@ export default function Stage1() {
     [],
   );
 
-  const {
-    reset,
-    track: curve,
-    setTrack,
-  } = useGameStore((state) => state);
+  const { reset, track: curve, setTrack } = useGameStore((state) => state);
   // HUD state
   const [, setSpeed] = useState(0);
   const startPositions = useMemo(
@@ -243,7 +239,7 @@ export default function Stage1() {
   ];
   const UIStyles: CSSProperties = {
     position: 'absolute',
-    width: '100%',
+    width: 'calc(100% - 40px)',
     top: '20px',
     left: '20px',
     background: 'rgba(0, 0, 0, 0)',
