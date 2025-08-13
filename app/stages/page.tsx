@@ -59,7 +59,7 @@ export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
-  // const botRef1 = useRef<THREE.Group | null>(null);
+  const ghostRef = useRef<THREE.Group | null>(null);
   // const botRef2 = useRef<THREE.Group | null>(null);
   // const botRef3 = useRef<THREE.Group | null>(null);
   // const botRef4 = useRef<THREE.Group | null>(null);
@@ -148,24 +148,9 @@ export default function Stage1() {
         damping={0.99}
         onSpeedChange={setSpeed}
         botSpeed={1.6}
-      />
+        />
     ) : (
-      <Bot
-        key={id}
-        id={id}
-        minePoolRef={minePoolRef}
-        aircraftRef={player}
-        playerRefs={playerRefs}
-        startPosition={startPositions[id].position}
-        startQuaternion={startPositions[id].quaternion}
-        curve={curve}
-        isBot
-        obstacleRefs={obstacleRefs.current}
-        playingFieldRef={playingFieldRef}
-        acceleration={0.01}
-        damping={0.99}
-        botSpeed={1.2 + id * 0.1}
-      />
+      <GhostShip key={id} shipRef={ghostRef as React.RefObject<THREE.Object3D>} trackId={0} />
     ),
   );
 
@@ -282,7 +267,6 @@ export default function Stage1() {
         <Planet size={350} />
 
         {/* Players */}
-        <GhostShip trackId={0} />
         {players}
         {boosters}
 
