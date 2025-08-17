@@ -1,6 +1,10 @@
 .controls {
   position: absolute;
-  bottom: 40px;
-  left: 15;
-  z-index: 1000;
+  inset: 0;
+  touch-action: none; /* prevent browser gestures */
+}
+
+.floating-joystick {
+  position: absolute;
+  pointer-events: auto; /* joystick must accept touches */
 }

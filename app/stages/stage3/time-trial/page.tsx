@@ -31,6 +31,7 @@ import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import TouchControls from '@/Components/UI/TouchControls/TouchController';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
+import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
 
 function RaceProgressTracker({
   playerRefs,
@@ -195,7 +196,7 @@ export default function Stage1() {
       <RaceOver />
       <Speedometer speed={speed} />
       <StartCountdown />
-      <TouchControls /> <ControlButtons />
+            <RadialTouchInput /> <ControlButtons />
       {loader}
       {/* Scene */}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>

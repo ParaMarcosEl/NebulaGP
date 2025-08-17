@@ -30,8 +30,8 @@ import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
-import TouchControls from '@/Components/UI/TouchControls/TouchController';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
+import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
 
 function RaceProgressTracker({
   playerRefs,
@@ -207,7 +207,8 @@ export default function Stage1() {
         EXIT RACE
       </Link>
       <HUD playerRefs={playerRefs} trackId={0} />
-      <TouchControls />
+      {/* <TouchControls /> */}
+      <RadialTouchInput />
       <ControlButtons />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
