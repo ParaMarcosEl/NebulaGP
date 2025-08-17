@@ -4,6 +4,7 @@ import { formatTime } from '@/Utils';
 import { CSSProperties, useEffect, useRef } from 'react';
 import { TOTAL_LAPS } from '@/Constants';
 import * as THREE from 'three';
+import { useUserStore } from '@/Controllers/Users/useUserStore';
 
 export default function HUD({
   trackId,
@@ -25,6 +26,7 @@ export default function HUD({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bestTime = allGhostsRef?.current?.[`${trackId}`] || 0;
   const { inProgress, finished, raceOver } = useRaceStandings();
+  const { user } = useUserStore();
 
   const playerHistory = raceData[playerId]?.history || [];
   const player =
@@ -64,6 +66,7 @@ export default function HUD({
 
   return (
     <div style={hudStyle}>
+      <div>{user?.displayName}</div>
       {raceOver ? (
         <>
           <div>🎉 RACE COMPLETED!</div>

@@ -13,7 +13,6 @@ import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { onBulletCollision } from '@/Utils/collisions';
 import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
-import { saveBestLap } from '@/Utils/ghost';
 import { TOTAL_LAPS } from '@/Constants';
 
 // --- Shared input ref for touch joystick ---
@@ -81,23 +80,17 @@ export function usePlayerController({
     id: playerId,
     playerRefs,
     minePoolRef,
-    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
+    enabled: controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
     botRef: aircraftRef,
     curve,
     speed: botSpeed,
   });
 
   const { stopRecording } = useGhostRecorder({
+    trackId,
     mode: 'record',
     targetRef: aircraftRef as React.RefObject<THREE.Object3D>,
-    onRecordingComplete: (data) => {
-      const { history } = raceData[playerId];
-      saveBestLap(
-        trackId,
-        history.reduce((prev, laptime) => prev + laptime.time, 0),
-        data,
-      );
-    },
+    onRecordingComplete: () => {},
   });
 
   const { fire, poolRef } = useProjectiles(aircraftRef as React.RefObject<THREE.Object3D>, {

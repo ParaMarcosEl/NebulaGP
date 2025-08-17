@@ -1,0 +1,91 @@
+/* Navbar container */
+.navbar {
+  background-color: none;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  position: relative;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+  font-family: sans-serif;
+}
+
+/* Inner container */
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+
+/* Logo */
+.navbar-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+  letter-spacing: 1px;
+}
+
+/* Desktop links */
+.navbar-links.desktop {
+  display: flex;
+  gap: 24px;
+}
+
+/* Mobile button */
+.mobile-button {
+  display: none;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Nav links */
+.nav-link {
+  text-decoration: none;
+  color: white;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #6366f1; /* Indigo */
+}
+
+/* Mobile menu */
+.navbar-links.mobile {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+  gap: 12px;
+  background-color: #1a1a1a;
+}
+
+/* Mobile link style */
+.mobile-link {
+  display: block;
+  padding: 8px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .navbar-links.desktop {
+    display: none;
+  }
+
+  .mobile-button {
+    display: block;
+  }
+}

@@ -3,6 +3,7 @@ import Head from 'next/head';
 import './globals.css';
 import OrientationLock from '@/Components/UI/OrientationLock';
 import { TextureLoader } from './Components/TextureLoader/TextureLoader';
+import UserProvider from './Components/UI/Auth/UserProvider';
 
 export const metadata = {
   title: 'Nebula GP | Zero-Gravity Racing',
@@ -55,7 +56,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   if (typeof window !== 'undefined' && document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen();
-  }
+  } 
+
+
   return (
     <html lang="en">
       <Head>
@@ -80,7 +83,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             '/textures/sunsurface.png',
           ]}
         />
-        {children}
+        <UserProvider>
+          {children}
+        </UserProvider>
         <OrientationLock />
         {/* </TransitionLayout> */}
       </body>
