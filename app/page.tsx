@@ -16,18 +16,18 @@ import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
-import Planet from '@/Components/World/Planet';
+import { useFullscreen } from '@/Controllers/UI/useFullscreen';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
+import Planet from '@/Components/World/Planet';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
-import ShieldPadSpawner from './Components/ShieldPad/ShieldPadSpawner';
 import { Mine } from './Components/Weapons/useMines';
+import ShieldPadSpawner from './Components/ShieldPad/ShieldPadSpawner';
 import MinePadSpawner from './Components/MinePad/MinePadSpawner';
-import NavBar from './Components/UI/Navigation/TopNav';
 import './page.css';
-import { useFullscreen } from '@/Controllers/UI/useFullscreen';
+import NavBar from './Components/UI/Navigation/NavBar';
 
 function RaceProgressTracker({
   playerRefs,
@@ -62,15 +62,12 @@ export default function Home() {
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
   const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
-  
+
   useFullscreen();
 
   const { loader, setMaterialLoaded } = useCanvasLoader();
   const playerRefs = useMemo(
-    () => [
-      aircraftRef, 
-      botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7
-    ],
+    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
 
@@ -86,7 +83,10 @@ export default function Home() {
     setTrack(tracks[0]);
     setMaterialLoaded(true);
     reset();
-  }, [reset, setMaterialLoaded, setTrack]);
+    return () => {
+      setMaterialLoaded(false);
+    };
+  }, []);
 
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
@@ -153,44 +153,66 @@ export default function Home() {
     <>
       <StartCountdown />
       {loader}
-      <div className='canvas'>
+      <div className="canvas">
         <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
           <Suspense fallback={null}>
-            <RaceProgressTracker playerRefs={playerRefs as React.RefObject<THREE.Group>[]} curve={curve} />
-            <ShipCollisionTracker playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]} onCollide={onShipCollision} />
+            <RaceProgressTracker
+              playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
+              curve={curve}
+            />
+            <ShipCollisionTracker
+              playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
+              onCollide={onShipCollision}
+            />
 
             <ambientLight intensity={0.2} />
             <directionalLight position={[150, 0, 0]} intensity={0.8} castShadow />
             <pointLight position={[-10, 5, -10]} intensity={0.3} />
 
             <Skybox stageName="stageI" />
-            <Track ref={playingFieldRef} aircraftRef={aircraftRef as React.RefObject<THREE.Object3D>} curve={curve} />
+            <Track
+              ref={playingFieldRef}
+              aircraftRef={aircraftRef as React.RefObject<THREE.Object3D>}
+              curve={curve}
+            />
 
             <MinePadSpawner
               curve={curve}
               padCount={4}
               startT={0.3}
-              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({ id, ref }))}
+              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({
+                id,
+                ref,
+              }))}
             />
             <SpeedPadSpawner
               curve={curve}
               padCount={16}
               startT={0.16}
-              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({ id, ref }))}
+              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({
+                id,
+                ref,
+              }))}
             />
             <WeaponsPadSpawner
               curve={curve}
               padCount={4}
               startT={0.2}
               endT={0.9}
-              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({ id, ref }))}
+              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({
+                id,
+                ref,
+              }))}
             />
             <ShieldPadSpawner
               curve={curve}
               padCount={2}
               startT={0.5}
               endT={0.8}
-              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({ id, ref }))}
+              playerRefs={(playerRefs as React.RefObject<THREE.Object3D>[]).map((ref, id) => ({
+                id,
+                ref,
+              }))}
             />
 
             <Planet size={350} />
@@ -203,8 +225,7 @@ export default function Home() {
         </Canvas>
       </div>
 
-
-      <main className="main-content">
+      <main className="main">
         <NavBar />
         <div className="ui-container">
           <h1 className="heading">Zero-Gravity Racing</h1>

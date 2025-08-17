@@ -31,14 +31,12 @@ export function GhostShip({
   const { scene: sceneModel } = useGLTF('/models/ghostship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
 
-
-
   useGhostMaterial(model, 0.4);
 
   useGhostRecorder({
     mode: 'playback',
     targetRef: shipRef as React.RefObject<THREE.Object3D>,
-    trackId
+    trackId,
   });
 
   return (

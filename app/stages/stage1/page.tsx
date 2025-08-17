@@ -7,7 +7,7 @@ import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-import HUD from '@/Components/UI/HUD';
+import HUD from '@/Components/UI/HUD/HUD';
 import { getStartPoseFromCurve } from '@/Utils';
 import { onShipCollision } from '@/Utils/collisions';
 import { tracks } from '@/Lib/flightPath';
@@ -16,7 +16,7 @@ import { Skybox } from '@/Components/Skybox/Skybox';
 import MiniMap from '@/Components/UI/MiniMap/MiniMap';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
-import { StandingsUI } from '@/Components/UI/StandingsUI';
+import { StandingsUI } from '@/Components/UI/Standings/StandingsUI';
 import { RaceOver } from '@/Components/UI/RaceOver';
 import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
@@ -30,6 +30,8 @@ import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
+import TouchControls from '@/Components/UI/TouchControls/TouchController';
+import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 
 function RaceProgressTracker({
   playerRefs,
@@ -205,6 +207,8 @@ export default function Stage1() {
         EXIT RACE
       </Link>
       <HUD playerRefs={playerRefs} trackId={0} />
+      <TouchControls />
+      <ControlButtons />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
       <RaceOver />

@@ -10,9 +10,11 @@ export function useFullscreen() {
 
       if (elem.requestFullscreen) {
         elem.requestFullscreen();
-      } else if ((elem as any).webkitRequestFullscreen) { // Safari
+      } else if ((elem as any).webkitRequestFullscreen) {
+        // Safari
         (elem as any).webkitRequestFullscreen();
-      } else if ((elem as any).msRequestFullscreen) { // IE11
+      } else if ((elem as any).msRequestFullscreen) {
+        // IE11
         (elem as any).msRequestFullscreen();
       }
     };
@@ -24,12 +26,11 @@ export function useFullscreen() {
     };
 
     const handleChange = () => {
-      const fullscreenNow =
-        !!(
-          document.fullscreenElement ||
-          (document as any).webkitFullscreenElement ||
-          (document as any).msFullscreenElement
-        );
+      const fullscreenNow = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
 
       setIsFullscreen(fullscreenNow);
 

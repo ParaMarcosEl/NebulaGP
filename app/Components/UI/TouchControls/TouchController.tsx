@@ -6,7 +6,7 @@ import { Joystick } from 'react-joystick-component';
 import { isMobileDevice } from '@/Utils';
 // import styles from './TouchControls.module.css'; // optional styling
 import { playerInputAxis } from '@/Components/Player/PlayerController';
-
+import './TouchControlls.css';
 export default function TouchControls() {
   const [showControls, setShowControls] = useState(false);
 
@@ -19,18 +19,11 @@ export default function TouchControls() {
   if (!showControls) return null;
 
   return (
-    <div
-      className="touch-controls"
-      style={{
-        position: 'absolute',
-        bottom: 60,
-        left: 30,
-        zIndex: 1000,
-      }}
-    >
+    <div className="controls">
       <Joystick
-        size={80}
-        baseColor="rgba(255,255,255,0.2)"
+        size={230}
+        stickSize={70}
+        baseColor="rgba(255,255,255,0.1)"
         stickColor="white"
         throttle={100}
         move={(e) => {

@@ -17,6 +17,7 @@
     "@react-three/rapier": "^2.1.0",
     "alea": "^1.0.1",
     "babel-plugin-glsl": "^1.0.0",
+    "classnames": "^2.5.1",
     "comlink": "^4.4.2",
     "cookie": "^1.0.2",
     "cookies": "^0.9.1",

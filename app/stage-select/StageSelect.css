@@ -1,0 +1,36 @@
+/* StageSelect.css */
+
+.main {
+  height: 100vh;
+  margin: 0;
+  padding: 20px;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+.stage-select-heading {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  color: #0af; /* use CSS variable if you have one */
+}
+
+.stage-select-link {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--blue);
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid white;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  margin: 0.5rem;
+  min-width: 100px;
+}
+
+.stage-select-link:hover {
+  opacity: 0.85;
+}

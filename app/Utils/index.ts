@@ -30,7 +30,7 @@ export function getStartPoseFromCurve(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function formatDate(createdAt: any): string {
-  if (!createdAt) return "";
+  if (!createdAt) return '';
 
   // Firestore Timestamp (serialized form with _seconds)
   if (createdAt._seconds) {
@@ -53,9 +53,8 @@ export function formatDate(createdAt: any): string {
     return parsed.toLocaleDateString();
   }
 
-  return "";
+  return '';
 }
-
 
 export function formatTime(ms: number): string {
   const minutes = Math.floor(ms / 60000);
