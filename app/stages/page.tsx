@@ -200,7 +200,6 @@ export default function Stage1() {
       <RaceOver />
       <Speedometer speed={speed} />
       <StartCountdown />
-      <RadialTouchInput />
       <ControlButtons />
 
       {/* Scene */}

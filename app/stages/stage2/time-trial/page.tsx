@@ -88,7 +88,20 @@ export default function Stage1() {
     setTrack,
     setMaterialLoaded,
     setRaceComplete,
+    setTouchEnabled,
   } = useGameStore((state) => state);
+
+  useEffect(() => {
+    // Enable touch only if device supports touch
+    if ('ontouchstart' in window) {
+      setTouchEnabled(true);
+    }
+
+    // Optional: cleanup / disable on unmount
+    return () => {
+      setTouchEnabled(false);
+    };
+  }, []);
 
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
@@ -196,7 +209,6 @@ export default function Stage1() {
         EXIT RACE
       </Link>
       <HUD playerRefs={playerRefs} trackId={1} />
-            <RadialTouchInput />
       <ControlButtons />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
