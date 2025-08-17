@@ -17,7 +17,7 @@ const defaultRaceData = (id: number): RaceData => ({
   useMine: false,
   shieldValue: 0,
   id,
-  useCannon: false,
+  cannonValue: 0,
   boosting: false,
   position: new THREE.Vector3(), // Initial position at (0,0,0).
   progress: 0, // Initial progress along the track.
@@ -46,7 +46,7 @@ type RaceData = {
   shieldValue: number;
   id: number;
   boosting: boolean;
-  useCannon: boolean;
+  cannonValue: number;
   position: THREE.Vector3; // Current 3D position of the racer's craft.
   progress: number; // Current progress along the track (normalized, e.g., 0 to 1).
   place: number; // Current ranking in the race.
@@ -133,7 +133,7 @@ type GameState = {
       useMine: boolean;
       id: number;
       shieldValue: number;
-      useCannon?: boolean;
+      cannonValue: number;
       boosting: boolean;
       position: THREE.Vector3;
       progress: number;
@@ -174,7 +174,7 @@ type GameActions = {
   setTouchEnabled: (enabled: boolean) => void;
   setUseMine: (id: number, useMine: boolean) => void;
   setShieldValue: (value: number, id: number) => void;
-  setCannon: (id: number, useCannon?: boolean) => void; // Sets whether the player can use the cannon.
+  setCannon: (id: number, cannonValue: number) => void; // Sets whether the player can use the cannon.
   setMaterialLoaded: (loaded: boolean) => void;
   setTotalTerrainChunks: (count: number) => void;
   incrementLoadedTerrainChunks: () => void;
@@ -354,7 +354,7 @@ export const useGameStore = create(
       });
     },
 
-    setCannon: (id: number, useCannon?: boolean) => {
+    setCannon: (id: number, cannonValue: number) => {
       // First state update: start using the cannon
       const currentRaceData = get().raceData;
 
@@ -363,7 +363,7 @@ export const useGameStore = create(
         ...currentRaceData,
         [id]: {
           ...currentRaceData[id],
-          useCannon: true,
+          cannonValue,
         },
       };
 
@@ -372,23 +372,23 @@ export const useGameStore = create(
         raceData: updatedRaceDataOnCannonStart,
       });
 
-      // Second state update: stop using the cannon after 2 seconds
-      setTimeout(() => {
-        // Get the latest state when the timeout fires to avoid stale data
-        const latestRaceData = get().raceData;
+      // // Second state update: stop using the cannon after 2 seconds
+      // setTimeout(() => {
+      //   // Get the latest state when the timeout fires to avoid stale data
+      //   const latestRaceData = get().raceData;
 
-        // Create a new raceData object for the state change inside the timeout
-        const updatedRaceDataOnCannonEnd = {
-          ...latestRaceData,
-          [id]: {
-            ...latestRaceData[id],
-            useCannon: false,
-          },
-        };
+      //   // Create a new raceData object for the state change inside the timeout
+      //   const updatedRaceDataOnCannonEnd = {
+      //     ...latestRaceData,
+      //     [id]: {
+      //       ...latestRaceData[id],
+      //       cannonValue,
+      //     },
+      //   };
 
-        // Set the final state
-        set({ raceData: updatedRaceDataOnCannonEnd });
-      }, 2000);
+      //   // Set the final state
+      //   set({ raceData: updatedRaceDataOnCannonEnd });
+      // }, 2000);
     },
 
     setUseMine: (id: number, useMine: boolean) => {
@@ -522,7 +522,7 @@ export const useGameStore = create(
           id: i,
           place: Infinity,
           boosting: false,
-          useCannon: false,
+          cannonValue: 0,
           isPlayer: i === 0,
           lapCount: 0,
           progress: 0,

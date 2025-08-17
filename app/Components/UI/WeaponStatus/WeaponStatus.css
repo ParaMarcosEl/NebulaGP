@@ -1,0 +1,32 @@
+.weapon-status {
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 1em;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 50px;
+  height: 50px;
+
+  border-top: 1px solid rgb(255, 255, 255);
+  border-bottom: 1px solid white;
+  border-right: 0;
+  border-left: 0;
+
+  border-radius: 50%;
+}
+
+.cannon {
+    color: orange;
+}
+
+.shield {
+    color: #0af;
+}
+
+.mine {
+    color: rgb(255, 0, 0);
+}

@@ -51,11 +51,11 @@ export function useWeaponsPad({
     const WeaponsPadBox = new THREE.Box3().setFromObject(weaponsPadMesh);
     const craft = playerBoxes.find((craft) => craft.box.intersectsBox(WeaponsPadBox));
     if (!!craft && cooldown.current <= 0) {
-      const { useMine, useCannon, shieldValue } = raceData[craft.id];
+      const { useMine, cannonValue, shieldValue } = raceData[craft.id];
       weaponsPad.current.didPass = true;
       cooldown.current = cooldownTime;
-      if (useMine || useCannon || shieldValue > 0) return;
-      setCannon(craft.id, true);
+      if (useMine || !!cannonValue || shieldValue > 0) return;
+      setCannon(craft.id, 10);
     }
 
     if (!craft && cooldown.current <= 0 && weaponsPad.current.didPass) {

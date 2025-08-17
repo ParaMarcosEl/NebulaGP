@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from 'node_modules/@react-three/drei';
 import { SkeletonUtils } from 'three-stdlib';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 export type Projectile = {
   mesh: THREE.Group;
@@ -18,6 +19,7 @@ export function useProjectiles(
   { fireRate = 2, maxProjectiles = 20, velocity = 200 },
 ) {
   const { scene } = useThree();
+  const { setCannon, raceData } = useGameStore(s => s);
   const poolRef = useRef<Projectile[]>([]);
   const lastFiredRef = useRef(0); // seconds
   const cooldown = 1 / fireRate;
@@ -43,9 +45,10 @@ export function useProjectiles(
     }
   }
 
-  const fire = (currentTime: number) => {
+  const fire = (currentTime: number, id: number) => {
     if (!shipRef.current) return;
     if (currentTime - lastFiredRef.current < cooldown) return;
+    setCannon(id, raceData[id].cannonValue - 1);
     lastFiredRef.current = currentTime;
 
     const available = poolRef.current.find((p) => !p.active);
@@ -86,7 +89,7 @@ export function useProjectiles(
   });
 
   return {
-    fire: () => fire(performance.now() / 1000),
+    fire: (id: number) => fire(performance.now() / 1000, id),
     poolRef,
   };
 }
