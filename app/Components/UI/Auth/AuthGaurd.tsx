@@ -21,10 +21,6 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
     return () => unsubscribe();
   }, []);
 
-  if (userSession === undefined) {
-    return <p style={{ color: "#fff", textAlign: "center" }}>Checking authentication...</p>;
-  }
-
   if (!userSession) {
     return fallback || null;
   }
