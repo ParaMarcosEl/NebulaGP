@@ -153,6 +153,7 @@ type GameState = {
   loadedTerrainChunks: number;
 
   MaterialLoaded: boolean; // New state variable
+  GhostLoaded: boolean;
 };
 
 /**
@@ -195,6 +196,7 @@ type GameActions = {
   setTrack: (track: THREE.Curve<THREE.Vector3>) => void; // Sets the active 3D track curve.
   setRaceStatus: (status: RaceStatus) => void; // Sets the overall race status.
   setBaseSpeed: (speed: number) => void;
+  setGhostLoaded: (loaded: boolean) => void;
 };
 
 /**
@@ -217,6 +219,7 @@ export const useGameStore = create(
   devtools<GameStore>((set, get) => ({
     // --- Initial State ---
     baseSpeed: 2,
+    GhostLoaded: false,
     playerSpeed: 2,
     lapTime: 0, // Current lap time, initialized to 0.
     totalTime: 0, // Total race time, initialized to 0.
@@ -259,6 +262,7 @@ export const useGameStore = create(
     loadedTerrainChunks: 0,
     MaterialLoaded: false,
     // --- Actions (Functions to modify state) ---
+    setGhostLoaded: (loaded: boolean) => set({ GhostLoaded: loaded }),
     setMaterialLoaded: (loaded: boolean) => set({ MaterialLoaded: loaded }),
     setTotalTerrainChunks: (count) =>
       set({

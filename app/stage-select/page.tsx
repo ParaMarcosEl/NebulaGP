@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CSSProperties, Suspense, useEffect, useRef } from 'react';
+import { CSSProperties, Suspense, useEffect, useRef, useState } from 'react';
 // import { GalaxyBackground } from '@/Components/UI/backgrounds/Galaxy';
 import { blue } from '@/Constants/colors';
 import { Canvas } from '@react-three/fiber';
@@ -12,6 +12,8 @@ import Satellite from '@/Components/World/Satellite';
 import { Trail } from '@react-three/drei';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { useGameStore } from '@/Controllers/Game/GameController';
+import Modal from '@/Components/UI/Modal/Modal';
+import Leaderboard from '@/Components/UI/Leaderboard/Leaderboard';
 
 const styles = {
   main: {
@@ -45,6 +47,9 @@ const styles = {
 };
 
 export default function StageSelect() {
+  const [leaderboard1, setLeaderboard1] = useState(false);
+  const [leaderboard2, setLeaderboard2] = useState(false);
+  const [leaderboard3, setLeaderboard3] = useState(false);
   const sunRef = useRef<THREE.Object3D>(null);
   const cometRef = useRef<THREE.Object3D>(null);
   const purpleRef = useRef<THREE.Object3D>(null);
@@ -196,8 +201,8 @@ export default function StageSelect() {
             <Link href="/stages/stage1/time-trial" style={styles.link}>
               Time Trial
             </Link>
+            <button onClick={() => setLeaderboard1(true)}>Leaderboard</button>
           </div>
-          <div>
             <span>Stage 2</span>
             <Link href="/stages/stage2" style={styles.link}>
               Race
@@ -205,7 +210,9 @@ export default function StageSelect() {
             <Link href="/stages/stage2/time-trial" style={styles.link}>
               Time Trial
             </Link>
+            <button onClick={() => setLeaderboard2(true)}>Leaderboard</button>
           </div>
+          <div>
           <div>
             <span>Stage 3</span>
             <Link href="/stages/stage3" style={styles.link}>
@@ -214,8 +221,18 @@ export default function StageSelect() {
             <Link href="/stages/stage3/time-trial" style={styles.link}>
               Time Trial
             </Link>
+            <button onClick={() => setLeaderboard3(true)}>Leaderboard</button>
           </div>
         </div>
+        <Modal isOpen={leaderboard1} onClose={() => setLeaderboard1(false)}>
+          <Leaderboard trackId='0' />
+        </Modal>
+        <Modal isOpen={leaderboard2} onClose={() => setLeaderboard2(false)}>
+          <Leaderboard trackId='1' />
+        </Modal>
+        <Modal isOpen={leaderboard3} onClose={() => setLeaderboard3(false)}>
+          <Leaderboard trackId='2' />
+        </Modal>
       </main>
     </>
   );

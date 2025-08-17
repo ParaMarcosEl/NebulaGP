@@ -28,6 +28,35 @@ export function getStartPoseFromCurve(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function formatDate(createdAt: any): string {
+  if (!createdAt) return "";
+
+  // Firestore Timestamp (serialized form with _seconds)
+  if (createdAt._seconds) {
+    return new Date(createdAt._seconds * 1000).toLocaleDateString();
+  }
+
+  // Firestore Timestamp (live SDK object)
+  if (createdAt.seconds) {
+    return new Date(createdAt.seconds * 1000).toLocaleDateString();
+  }
+
+  // Already a Date
+  if (createdAt instanceof Date) {
+    return createdAt.toLocaleDateString();
+  }
+
+  // ISO string or number
+  const parsed = new Date(createdAt);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString();
+  }
+
+  return "";
+}
+
+
 export function formatTime(ms: number): string {
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);

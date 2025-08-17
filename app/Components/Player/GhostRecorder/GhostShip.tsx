@@ -1,9 +1,8 @@
 'use client';
 import * as THREE from 'three';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useGhostRecorder } from './useGhostRecorder';
 import { useGLTF } from 'node_modules/@react-three/drei';
-import { loadGhost } from '@/Utils/ghost';
 
 function useGhostMaterial(model: THREE.Object3D, opacity = 0.4) {
   useEffect(() => {
@@ -31,20 +30,15 @@ export function GhostShip({
 }) {
   const { scene: sceneModel } = useGLTF('/models/ghostship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
-  const [ghostInfo, setGhostInfo] = useState<{ time: number; frames: Float32Array } | null>(null);
 
-  useEffect(() => {
-    // Safe to call here — only runs in browser
-    const ghost = loadGhost(trackId);
-    setGhostInfo(ghost);
-  }, [trackId]);
+
 
   useGhostMaterial(model, 0.4);
 
   useGhostRecorder({
     mode: 'playback',
     targetRef: shipRef as React.RefObject<THREE.Object3D>,
-    ghostData: ghostInfo?.frames,
+    trackId
   });
 
   return (
