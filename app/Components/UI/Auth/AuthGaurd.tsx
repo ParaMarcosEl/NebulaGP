@@ -3,7 +3,6 @@
 import { useEffect, useState, ReactNode, ReactElement } from "react";
 import { auth } from "@/Lib/Firebase"; // must be client SDK
 import { onAuthStateChanged, User } from "firebase/auth";
-import { useUser } from "@/Controllers/Users/useUser";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -11,14 +10,13 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const [userSession, setUserSession] = useState<User | null | undefined>(undefined);
-  const { setUser } = useUser(); 
+  const [userSession, setUserSession] = useState<User | undefined>(undefined);
   // undefined = loading, null = not logged in, User = logged in
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if(!currentUser) return;
       setUserSession(currentUser);
-      setUser(currentUser)
     });
     return () => unsubscribe();
   }, []);
