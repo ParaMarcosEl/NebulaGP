@@ -1,8 +1,8 @@
 // /hooks/useUser.ts
-import { useState, useCallback, useEffect } from "react";
-import type { User } from "@/Constants/types";
-import {onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from "@/Lib/Firebase";
+import { useState, useCallback, useEffect } from 'react';
+import type { User } from '@/Constants/types';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '@/Lib/Firebase';
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -23,9 +23,9 @@ export function useUser() {
       const data: User = await res.json();
       setUser(data);
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to fetch user");
+      setError(err.message || 'Failed to fetch user');
       throw err;
     } finally {
       setLoading(false);
@@ -41,22 +41,22 @@ export function useUser() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUser),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to create user");
+        throw new Error(err.error || 'Failed to create user');
       }
       const data: { message: string; uid: string } = await res.json();
       // The API returns { message, uid }, not a full User object.
       // We don't set user state here since we don't have the full data.
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to create user");
+      setError(err.message || 'Failed to create user');
       throw err;
     } finally {
       setLoading(false);
@@ -74,22 +74,22 @@ export function useUser() {
     setError(null);
     try {
       const res = await fetch(`/api/users?uid=${uid}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to update user");
+        throw new Error(err.error || 'Failed to update user');
       }
       const data: { message: string } = await res.json();
       // The API returns a message, not a full User object.
       // You would typically refetch the user to update the state.
       // For now, we'll just return the message.
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to update user");
+      setError(err.message || 'Failed to update user');
       throw err;
     } finally {
       setLoading(false);
@@ -104,21 +104,21 @@ export function useUser() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/users?uid=${uid}`, { method: "DELETE" });
+      const res = await fetch(`/api/users?uid=${uid}`, { method: 'DELETE' });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to delete user");
+        throw new Error(err.error || 'Failed to delete user');
       }
       setUser(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to delete user");
+      setError(err.message || 'Failed to delete user');
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
-  
+
   /**
    * Signs the current user out.
    */
@@ -127,37 +127,36 @@ export function useUser() {
       await signOut(auth);
       setUser(null);
       setError(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to sign out");
+      setError(err.message || 'Failed to sign out');
       throw err;
     }
   }, []);
 
   useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-    if (firebaseUser) {
-      try {
-        // First try to fetch full user from backend
-        const dbUser = await fetchUser(firebaseUser.uid);
-        setUser(dbUser);
-      } catch {
-        // If backend has no record yet, fallback to Firebase auth data
-        setUser({
-          id: firebaseUser.uid,
-          email: firebaseUser.email || undefined,
-          displayName: firebaseUser.displayName,
-          name: firebaseUser.displayName,
-        });
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // First try to fetch full user from backend
+          const dbUser = await fetchUser(firebaseUser.uid);
+          setUser(dbUser);
+        } catch {
+          // If backend has no record yet, fallback to Firebase auth data
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email || undefined,
+            displayName: firebaseUser.displayName,
+            name: firebaseUser.displayName,
+          });
+        }
+      } else {
+        setUser(null);
       }
-    } else {
-      setUser(null);
-    }
-  });
+    });
 
-  return () => unsubscribe();
-}, [fetchUser]);
-
+    return () => unsubscribe();
+  }, [fetchUser]);
 
   return {
     user,
@@ -168,6 +167,6 @@ export function useUser() {
     updateUser,
     deleteUser,
     setUser,
-    signOutUser
+    signOutUser,
   };
 }

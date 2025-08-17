@@ -17,7 +17,7 @@ const serviceAccountString = process.env.FIREBASE_ADMIN_KEY;
 if (!serviceAccountString) {
   // In Next.js, this error will occur during build or server startup if missing
   // It's critical for security that this is available only on the server
-  console.error("FIREBASE_ADMIN_KEY environment variable is not set.");
+  console.error('FIREBASE_ADMIN_KEY environment variable is not set.');
   // Consider throwing an error to prevent server startup if vital
   // throw new Error("Firebase Admin SDK credentials missing.");
 }
@@ -29,12 +29,16 @@ if (serviceAccountString) {
     serviceAccount = JSON.parse(serviceAccountString) as ServiceAccount;
     // Basic validation: ensure critical fields are present
     if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
-        console.error("Parsed Firebase Admin Service Account is missing required fields (projectId, privateKey, clientEmail).");
-        serviceAccount = undefined; // Invalidate if malformed
+      console.error(
+        'Parsed Firebase Admin Service Account is missing required fields (projectId, privateKey, clientEmail).',
+      );
+      serviceAccount = undefined; // Invalidate if malformed
     }
   } catch (error) {
-    console.error("Error parsing FIREBASE_ADMIN_KEY:", error);
-    console.error("Please ensure it is a valid JSON string and newlines in private_key are escaped (e.g., \\n).");
+    console.error('Error parsing FIREBASE_ADMIN_KEY:', error);
+    console.error(
+      'Please ensure it is a valid JSON string and newlines in private_key are escaped (e.g., \\n).',
+    );
     serviceAccount = undefined; // Invalidate if parsing fails
   }
 }
@@ -42,10 +46,13 @@ if (serviceAccountString) {
 // Initialize Firebase Admin SDK
 // This singleton pattern ensures it's initialized only once
 function initializeFirebaseAdmin() {
-  if (!getApps().length) { // Check if an app is already initialized
+  if (!getApps().length) {
+    // Check if an app is already initialized
     if (!serviceAccount) {
       // This case should ideally be caught by the checks above during app startup
-      throw new Error("Firebase Admin SDK cannot initialize: Service account credentials are invalid or missing.");
+      throw new Error(
+        'Firebase Admin SDK cannot initialize: Service account credentials are invalid or missing.',
+      );
     }
 
     initializeApp({

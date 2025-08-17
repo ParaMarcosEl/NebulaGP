@@ -1,25 +1,14 @@
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { formatTime } from '@/Utils';
 import { useRaceStandings } from '@/Controllers/Game/useRaceStandings';
+import './Standings.css';
 
 export function StandingsUI() {
   const { finished } = useRaceStandings();
 
   return (
     finished.length > 0 && (
-      <div
-        style={{
-          zIndex: 1,
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          background: 'rgba(0,0,0,0)',
-          padding: 10,
-          color: 'white',
-          fontFamily: 'monospace',
-          textAlign: 'right',
-        }}
-      >
+      <div className="standings">
         <h4>🏁 Standings</h4>
         <ol>
           {finished.map(({ id, time, place }, i) => (

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { ReactNode, useEffect } from "react";
-import { createPortal } from "react-dom";
-import styles from "./Modal.module.css"; // CSS module
+import { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import styles from './Modal.module.css'; // CSS module
 
 interface ModalProps {
   isOpen: boolean;
@@ -14,12 +14,12 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
   // Prevent background scroll
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [isOpen]);
 
@@ -37,6 +37,6 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
         {children}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

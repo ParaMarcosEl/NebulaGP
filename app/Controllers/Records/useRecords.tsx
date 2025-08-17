@@ -1,7 +1,6 @@
 // /hooks/useRecords.ts
-import { useState, useCallback } from "react";
-import { Record } from '@/Constants/types'
-
+import { useState, useCallback } from 'react';
+import { Record } from '@/Constants/types';
 
 export function useRecords() {
   const [records, setRecords] = useState<Record[]>([]);
@@ -19,8 +18,8 @@ export function useRecords() {
     setError(null);
     try {
       const queryParams = new URLSearchParams();
-      if (userId) queryParams.append("userId", userId);
-      if (trackId) queryParams.append("trackId", trackId);
+      if (userId) queryParams.append('userId', userId);
+      if (trackId) queryParams.append('trackId', trackId);
 
       const res = await fetch(`/api/records?${queryParams.toString()}`);
       if (!res.ok) {
@@ -29,9 +28,9 @@ export function useRecords() {
       const data: Record[] = await res.json();
       setRecords(data);
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to fetch records");
+      setError(err.message || 'Failed to fetch records');
       throw err;
     } finally {
       setLoading(false);
@@ -43,26 +42,26 @@ export function useRecords() {
    * @param newRecord The record data to be created.
    * @returns A promise that resolves with the new record's ID.
    */
-  const createRecord = useCallback(async (newRecord: Omit<Record, "id" | "createdAt">) => {
+  const createRecord = useCallback(async (newRecord: Omit<Record, 'id' | 'createdAt'>) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/records", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRecord),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to create record");
+        throw new Error(err.error || 'Failed to create record');
       }
       const data: { message: string; recordId: string } = await res.json();
       // Optionally refetch records to update the list
       // await fetchRecords(newRecord.userId, newRecord.trackId);
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to create record");
+      setError(err.message || 'Failed to create record');
       throw err;
     } finally {
       setLoading(false);
@@ -80,22 +79,22 @@ export function useRecords() {
     setError(null);
     try {
       const res = await fetch(`/api/records?id=${recordId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to update record");
+        throw new Error(err.error || 'Failed to update record');
       }
       const data: { message: string } = await res.json();
       // Optionally refetch to update local state
       // This is a good place to optimistically update the state before refetching.
       return data;
-    // eslint-disable-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to update record");
+      setError(err.message || 'Failed to update record');
       throw err;
     } finally {
       setLoading(false);
@@ -111,18 +110,18 @@ export function useRecords() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/records?id=${recordId}`, { method: "DELETE" });
+      const res = await fetch(`/api/records?id=${recordId}`, { method: 'DELETE' });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to delete record");
+        throw new Error(err.error || 'Failed to delete record');
       }
       // Update state to remove the deleted record
-      setRecords(prevRecords => prevRecords.filter(record => record.id !== recordId));
+      setRecords((prevRecords) => prevRecords.filter((record) => record.id !== recordId));
       const data: { message: string } = await res.json();
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "Failed to delete record");
+      setError(err.message || 'Failed to delete record');
       throw err;
     } finally {
       setLoading(false);

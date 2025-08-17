@@ -1,9 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CSSProperties, Suspense, useEffect, useRef, useState } from 'react';
-// import { GalaxyBackground } from '@/Components/UI/backgrounds/Galaxy';
-import { blue } from '@/Constants/colors';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Skybox } from '@/Components/Skybox/Skybox';
 import Planet from '@/Components/World/Planet';
@@ -14,52 +12,28 @@ import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import Modal from '@/Components/UI/Modal/Modal';
 import Leaderboard from '@/Components/UI/Leaderboard/Leaderboard';
-
-const styles = {
-  main: {
-    width: '100vw',
-    height: '100vh',
-    margin: 0,
-    padding: '20px',
-    overflow: 'hidden',
-    touchAction: 'none',
-    overscrollBehavior: 'none',
-    WebkitOverflowScrolling: 'auto',
-  } as CSSProperties,
-  heading: {
-    fontSize: '2.5rem',
-    marginBottom: '2rem',
-    color: blue,
-  } as CSSProperties,
-  link: {
-    display: 'inline-block',
-    padding: '0.75rem 1.5rem',
-    backgroundColor: blue,
-    color: '#000',
-    textDecoration: 'none',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    borderRadius: '6px',
-    transition: 'all 0.3s ease',
-    margin: '0.5rem',
-    minWidth: '100px',
-  } as CSSProperties,
-};
+import NavBar from '@/Components/UI/Navigation/NavBar';
+import './StageSelect.css';
 
 export default function StageSelect() {
   const [leaderboard1, setLeaderboard1] = useState(false);
   const [leaderboard2, setLeaderboard2] = useState(false);
   const [leaderboard3, setLeaderboard3] = useState(false);
+
   const sunRef = useRef<THREE.Object3D>(null);
   const cometRef = useRef<THREE.Object3D>(null);
   const purpleRef = useRef<THREE.Object3D>(null);
+
   const { loader } = useCanvasLoader();
   const { setMaterialLoaded } = useGameStore((s) => s);
 
   useEffect(() => {
     setMaterialLoaded(true);
-    return () => setMaterialLoaded(false);
-  }, []);
+    return () => {
+      setMaterialLoaded(false);
+    };
+  }, [setMaterialLoaded]);
+
   return (
     <>
       {loader}
@@ -87,6 +61,7 @@ export default function StageSelect() {
             shadow-camera-far={500}
           />
           <pointLight position={[-10, 5, -10]} intensity={0.3} />
+
           <Planet
             clouds={false}
             texturePath="sunsurface"
@@ -98,6 +73,7 @@ export default function StageSelect() {
             ref={sunRef as React.RefObject<THREE.Object3D>}
             position={new THREE.Vector3(-60, 0, -250)}
           />
+
           <Satellite
             planetRef={sunRef as React.RefObject<THREE.Object3D>}
             orbitRadius={100}
@@ -106,6 +82,7 @@ export default function StageSelect() {
           >
             <Planet color="lime" size={5} cloudRadius={0.5} />
           </Satellite>
+
           <Satellite
             planetRef={sunRef as React.RefObject<THREE.Object3D>}
             orbitRadius={150}
@@ -114,6 +91,7 @@ export default function StageSelect() {
           >
             <Planet color="red" size={10} cloudRadius={0.5} />
           </Satellite>
+
           <Satellite
             planetRef={sunRef as React.RefObject<THREE.Object3D>}
             orbitRadius={250}
@@ -160,6 +138,7 @@ export default function StageSelect() {
               />
             </Satellite>
           </Satellite>
+
           <Satellite
             planetRef={sunRef as React.RefObject<THREE.Object3D>}
             orbitRadius={300}
@@ -185,53 +164,54 @@ export default function StageSelect() {
           </Satellite>
         </Suspense>
       </Canvas>
-      <main style={styles.main}>
-        <h1 style={styles.heading}> Select Stage</h1>
+
+      <main className="main">
+        <NavBar />
+        <h1 className="stage-select-heading">Select Stage</h1>
+
         <div>
           <div>
-            <Link href="/" style={styles.link}>
-              Home
-            </Link>
-          </div>
-          <div>
             <span>Stage 1</span>
-            <Link href="/stages/stage1" style={styles.link}>
+            <Link href="/stages/stage1" className="stage-select-link">
               Race
             </Link>
-            <Link href="/stages/stage1/time-trial" style={styles.link}>
+            <Link href="/stages/stage1/time-trial" className="stage-select-link">
               Time Trial
             </Link>
             <button onClick={() => setLeaderboard1(true)}>Leaderboard</button>
           </div>
+
+          <div>
             <span>Stage 2</span>
-            <Link href="/stages/stage2" style={styles.link}>
+            <Link href="/stages/stage2" className="stage-select-link">
               Race
             </Link>
-            <Link href="/stages/stage2/time-trial" style={styles.link}>
+            <Link href="/stages/stage2/time-trial" className="stage-select-link">
               Time Trial
             </Link>
             <button onClick={() => setLeaderboard2(true)}>Leaderboard</button>
           </div>
-          <div>
+
           <div>
             <span>Stage 3</span>
-            <Link href="/stages/stage3" style={styles.link}>
+            <Link href="/stages/stage3" className="stage-select-link">
               Race
             </Link>
-            <Link href="/stages/stage3/time-trial" style={styles.link}>
+            <Link href="/stages/stage3/time-trial" className="stage-select-link">
               Time Trial
             </Link>
             <button onClick={() => setLeaderboard3(true)}>Leaderboard</button>
           </div>
         </div>
+
         <Modal isOpen={leaderboard1} onClose={() => setLeaderboard1(false)}>
-          <Leaderboard trackId='0' />
+          <Leaderboard trackId="0" />
         </Modal>
         <Modal isOpen={leaderboard2} onClose={() => setLeaderboard2(false)}>
-          <Leaderboard trackId='1' />
+          <Leaderboard trackId="1" />
         </Modal>
         <Modal isOpen={leaderboard3} onClose={() => setLeaderboard3(false)}>
-          <Leaderboard trackId='2' />
+          <Leaderboard trackId="2" />
         </Modal>
       </main>
     </>

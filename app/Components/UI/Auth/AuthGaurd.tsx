@@ -1,8 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState, ReactNode, ReactElement } from "react";
-import { auth } from "@/Lib/Firebase"; // must be client SDK
-import { onAuthStateChanged, User } from "firebase/auth";
+import { ReactNode, ReactElement } from 'react';
+import { useUserStore } from '@/Controllers/Users/useUserStore';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -10,18 +9,8 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const [userSession, setUserSession] = useState<User | undefined>(undefined);
-  // undefined = loading, null = not logged in, User = logged in
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if(!currentUser) return;
-      setUserSession(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  if (!userSession) {
+  const { user } = useUserStore();
+  if (!user) {
     return fallback || null;
   }
 

@@ -113,6 +113,7 @@ type PlayerPhaseType = 'Idle' | 'Race' | 'Finished';
  * Defines the entire state structure of the game store.
  */
 type GameState = {
+  showNav: boolean;
   baseSpeed: number;
   playerSpeed: number;
   lapTime: number; // Current time for the active lap (for the local player).
@@ -197,6 +198,7 @@ type GameActions = {
   setRaceStatus: (status: RaceStatus) => void; // Sets the overall race status.
   setBaseSpeed: (speed: number) => void;
   setGhostLoaded: (loaded: boolean) => void;
+  setShowNav: (loaded: boolean) => void;
 };
 
 /**
@@ -218,6 +220,7 @@ const defaultSettings: GameSettings = {
 export const useGameStore = create(
   devtools<GameStore>((set, get) => ({
     // --- Initial State ---
+    showNav: true,
     baseSpeed: 2,
     GhostLoaded: false,
     playerSpeed: 2,
@@ -262,6 +265,7 @@ export const useGameStore = create(
     loadedTerrainChunks: 0,
     MaterialLoaded: false,
     // --- Actions (Functions to modify state) ---
+    setShowNav: (show: boolean) => set({ showNav: show }),
     setGhostLoaded: (loaded: boolean) => set({ GhostLoaded: loaded }),
     setMaterialLoaded: (loaded: boolean) => set({ MaterialLoaded: loaded }),
     setTotalTerrainChunks: (count) =>

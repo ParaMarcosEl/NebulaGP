@@ -56,8 +56,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   if (typeof window !== 'undefined' && document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen();
-  } 
-
+  }
 
   return (
     <html lang="en">
@@ -83,9 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             '/textures/sunsurface.png',
           ]}
         />
-        <UserProvider>
-          {children}
-        </UserProvider>
+        <UserProvider>{children}</UserProvider>
         <OrientationLock />
         {/* </TransitionLayout> */}
       </body>

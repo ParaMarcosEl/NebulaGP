@@ -23,12 +23,15 @@ export function useGhostRecorder({
   onRecordingComplete,
 }: GhostRecorderOptions) {
   const [recorded, setRecorded] = useState(false);
-  const [racePlayback, setRacePlayback] = useState<{ time: number; frames: Float32Array<ArrayBuffer> } | null>(null);
+  const [racePlayback, setRacePlayback] = useState<{
+    time: number;
+    frames: Float32Array<ArrayBuffer>;
+  } | null>(null);
   const bufferRef = useRef<Float32Array>(new Float32Array(maxFrames * 7));
   const frameCount = useRef(0);
   const lastSampleTime = useRef(0);
   const startTime = useRef<number | null>(null);
-  const { raceData, setGhostLoaded } = useGameStore(s => s);
+  const { raceData, setGhostLoaded } = useGameStore((s) => s);
   const { createRecord, records, updateRecord, loading, fetchRecords } = useRecords();
   const { user } = useUserStore();
   const bestTime = racePlayback?.time;
@@ -42,10 +45,10 @@ export function useGhostRecorder({
     if (loading || !records || !records.length) return;
 
     const { ghostFrames, totalTime } = records?.[0];
-    if(!ghostFrames || !totalTime) return;
-    setRacePlayback({time: totalTime, frames: new Float32Array(ghostFrames || [])})
+    if (!ghostFrames || !totalTime) return;
+    setRacePlayback({ time: totalTime, frames: new Float32Array(ghostFrames || []) });
     setGhostLoaded(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [records, loading]);
 
   // RECORD MODE
@@ -75,7 +78,7 @@ export function useGhostRecorder({
     if (startTime.current === null) startTime.current = state.clock.elapsedTime * 1000;
 
     const elapsed = state.clock.elapsedTime * 1000 - startTime.current;
-    
+
     let idx = -1;
     for (let i = 0; i < playback.length; i += 7) {
       if (playback[i] > elapsed) {
@@ -113,13 +116,13 @@ export function useGhostRecorder({
   const stopRecording = () => {
     if (recorded || !user) return;
     setRecorded(true);
-  
+
     if (mode === 'record' && onRecordingComplete) {
       const recorded = bufferRef.current.slice(0, frameCount.current * 7);
       const history = raceData[0].history;
       const lapTimes = history.map(({ time }) => time);
       const totalTime = history.reduce((prev, curr) => prev + curr.time, 0);
-      console.log({totalTime, bestTime, user, records })
+      console.log({ totalTime, bestTime, user, records });
       const userRecord = records.find((record) => record.userId === user?.id);
 
       if (totalTime > (userRecord?.totalTime || Infinity)) return;
@@ -130,14 +133,14 @@ export function useGhostRecorder({
         trackId: trackId.toString(),
         totalTime,
         lapTimes,
-        ghostFrames: Array.from(recorded)
-      }
-      
+        ghostFrames: Array.from(recorded),
+      };
+
       if (userRecord) {
-        console.log('user record found. updating record.')
+        console.log('user record found. updating record.');
         updateRecord(userRecord.id, recordData);
       } else {
-        console.log('no record found for user. creating record.')
+        console.log('no record found for user. creating record.');
         createRecord(recordData);
       }
     }

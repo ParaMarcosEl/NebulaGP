@@ -18,6 +18,7 @@ import { TOTAL_LAPS } from '@/Constants';
 // --- Shared input ref for touch joystick ---
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
+const firingRef = { current: false };
 
 export const playerInputAxis = {
   set: (axis: { x: number; y: number }) => {
@@ -27,6 +28,10 @@ export const playerInputAxis = {
 
 export const setThrottle = (value: number) => {
   throttleRef.current = value;
+};
+
+export const setFiringRef = (value: boolean) => {
+  firingRef.current = value;
 };
 
 type PlayerSystemOptions = {
@@ -80,7 +85,7 @@ export function usePlayerController({
     id: playerId,
     playerRefs,
     minePoolRef,
-    enabled: controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
+    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
     botRef: aircraftRef,
     curve,
     speed: botSpeed,
@@ -176,6 +181,7 @@ export function usePlayerController({
 
     // Player control logic
     const throttle = throttleRef.current; // Throttle input from touch screens.
+    const shouldFire = firingRef.current;
     const DEAD_ZONE = 0.1; // Dead zone for gamepad analog sticks.
     const gamepads = navigator.getGamepads?.();
     // Get the connected gamepad, preferring the one with a stored index or the first available.
@@ -330,8 +336,8 @@ export function usePlayerController({
     //     break; // Stop checking further obstacles after a collision.
     //   }
     // }
-    if (shooting && raceData[playerId].useCannon) fire();
-    if (shooting && raceData[playerId].useMine) {
+    if ((shooting || shouldFire) && raceData[playerId].useCannon) fire();
+    if ((shooting || shouldFire) && raceData[playerId].useMine) {
       drop();
       setUseMine(playerId, false);
     }

@@ -1,9 +1,9 @@
 // types/User.ts
 export interface User {
-  id?: string;        // Firestore document ID
+  id?: string; // Firestore document ID
   email?: string | undefined;
   name?: string | null;
-  displayName?: string | null,
+  displayName?: string | null;
   age?: number;
   role?: string;
   createdAt?: string;
@@ -20,12 +20,11 @@ export interface Record {
   lapTimes: number[];
   createdAt: string;
   ghostFrames?: number[]; // converted Float32Array
-  history?: unknown;      // raceData[id].history type
+  history?: unknown; // raceData[id].history type
 }
 
-
 export type RecordMessage =
-  | { type: "records:init"; data: Record[] }
-  | { type: "records:new"; data: Record }
-  | { type: "records:update"; data: Record }
-  | { type: "records:delete"; id: string };
+  | { type: 'records:init'; data: Record[] }
+  | { type: 'records:new'; data: Record }
+  | { type: 'records:update'; data: Record }
+  | { type: 'records:delete'; id: string };

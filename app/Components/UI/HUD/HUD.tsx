@@ -1,10 +1,11 @@
 import { useRaceStandings } from '@/Controllers/Game/useRaceStandings';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { formatTime } from '@/Utils';
-import { CSSProperties, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { TOTAL_LAPS } from '@/Constants';
 import * as THREE from 'three';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
+import './HUD.css';
 
 export default function HUD({
   trackId,
@@ -65,8 +66,8 @@ export default function HUD({
   );
 
   return (
-    <div style={hudStyle}>
-      <div>{user?.displayName}</div>
+    <div className="hud">
+      {user && <div>Player: {user?.displayName}</div>}
       {raceOver ? (
         <>
           <div>🎉 RACE COMPLETED!</div>
@@ -88,17 +89,3 @@ export default function HUD({
     </div>
   );
 }
-
-const hudStyle: CSSProperties = {
-  position: 'absolute',
-  top: 20,
-  left: 20,
-  padding: '10px 15px',
-  background: 'rgba(0, 0, 0, 0)',
-  color: 'white',
-  fontFamily: 'monospace',
-  fontSize: '14px',
-  borderRadius: '8px',
-  pointerEvents: 'none',
-  zIndex: 10,
-};

@@ -1,0 +1,48 @@
+.throttle-container {
+  z-index: 1000;
+  user-select: none;
+  flex-direction: column;
+  gap: 12px;
+  display: flex;
+  position: absolute;
+  bottom: 1.5em;
+  right: 1em;
+}
+
+.throttle-btn,
+.brake-btn,
+.fire-btn {
+  width: 80px;
+  height: 50px;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.6);
+  color: rgb(0, 10, 70);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.1s;
+}
+
+.throttle-btn:active,
+.throttle-btn.active {
+  background: #00ff11;
+  color: black;
+  transform: scale(0.95);
+}
+
+.brake-btn:active,
+.brake-btn.active {
+  background: #5500ff;
+  color: black;
+  transform: scale(0.95);
+}
+
+.fire-btn:active,
+.fire-btn.active {
+  background: #990000;
+  color: black;
+  transform: scale(0.95);
+}
