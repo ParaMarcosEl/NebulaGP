@@ -145,7 +145,7 @@ export function useUser() {
         // If backend has no record yet, fallback to Firebase auth data
         setUser({
           id: firebaseUser.uid,
-          email: firebaseUser.email,
+          email: firebaseUser.email || undefined,
           displayName: firebaseUser.displayName,
           name: firebaseUser.displayName,
         });
