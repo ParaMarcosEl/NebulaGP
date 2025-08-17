@@ -32,8 +32,8 @@ import Satellite from '@/Components/World/Satellite';
 import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
 import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
-import TouchControls from '@/Components/UI/TouchControls/TouchController';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
+import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
 // import { Trail } from 'node_modules/@react-three/drei';
 
 function RaceProgressTracker({
@@ -218,7 +218,7 @@ export default function Stage1() {
       <RaceOver />
       <Speedometer speed={speed} />
       <StartCountdown />
-      <TouchControls />
+            <RadialTouchInput />
       <ControlButtons />
       {loader}
       {/* Scene */}

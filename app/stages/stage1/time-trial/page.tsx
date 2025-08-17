@@ -31,8 +31,8 @@ import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
 import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
-import TouchControls from '@/Components/UI/TouchControls/TouchController';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
+import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
 
 function RaceProgressTracker({
   playerRefs,
@@ -198,7 +198,7 @@ export default function Stage1() {
       <StandingsUI />
       <RaceOver />
       <Speedometer speed={speed} />
-      <TouchControls />
+            <RadialTouchInput />
       <ControlButtons />
       <StartCountdown />
       {loader}
