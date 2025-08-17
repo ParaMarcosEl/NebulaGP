@@ -29,9 +29,7 @@ import { Mine } from '@/Components/Weapons/useMines';
 import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
-import TouchControls from '@/Components/UI/TouchControls/TouchController';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
-import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
 
 function RaceProgressTracker({
   playerRefs,
@@ -84,7 +82,20 @@ export default function Stage1() {
     setTrack,
     setMaterialLoaded,
     setRaceComplete,
+    setTouchEnabled,
   } = useGameStore((state) => state);
+
+  useEffect(() => {
+    // Enable touch only if device supports touch
+    if ('ontouchstart' in window) {
+      setTouchEnabled(true);
+    }
+
+    // Optional: cleanup / disable on unmount
+    return () => {
+      setTouchEnabled(false);
+    };
+  }, []);
 
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
@@ -196,7 +207,7 @@ export default function Stage1() {
       <RaceOver />
       <Speedometer speed={speed} />
       <StartCountdown />
-            <RadialTouchInput /> <ControlButtons />
+      <ControlButtons />
       {loader}
       {/* Scene */}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>

@@ -34,11 +34,7 @@ export default function TouchControls() {
   };
 
   return (
-    <div
-      className="controls"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleStop}
-    >
+    <div className="controls" onTouchStart={handleTouchStart} onTouchEnd={handleStop}>
       <div
         className="floating-joystick"
         style={{

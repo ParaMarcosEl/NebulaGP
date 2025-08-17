@@ -155,8 +155,8 @@ type GameState = {
 
   MaterialLoaded: boolean; // New state variable
   GhostLoaded: boolean;
+  touchEnabled: boolean;
 };
-
 /**
  * Type for updating multiple racer positions.
  */
@@ -168,8 +168,10 @@ export type RaceProgressesType = { id: number; progress: number };
 
 /**
  * Defines all the actions (functions) that can modify the game state.
+
  */
 type GameActions = {
+  setTouchEnabled: (enabled: boolean) => void;
   setUseMine: (id: number, useMine: boolean) => void;
   setShieldValue: (value: number, id: number) => void;
   setCannon: (id: number, useCannon?: boolean) => void; // Sets whether the player can use the cannon.
@@ -264,7 +266,10 @@ export const useGameStore = create(
     totalTerrainChunks: 0,
     loadedTerrainChunks: 0,
     MaterialLoaded: false,
+    touchEnabled: false,
     // --- Actions (Functions to modify state) ---
+
+    setTouchEnabled: (enabled) => set({ touchEnabled: enabled }),
     setShowNav: (show: boolean) => set({ showNav: show }),
     setGhostLoaded: (loaded: boolean) => set({ GhostLoaded: loaded }),
     setMaterialLoaded: (loaded: boolean) => set({ MaterialLoaded: loaded }),

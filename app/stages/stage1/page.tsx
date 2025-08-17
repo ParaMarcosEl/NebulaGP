@@ -31,7 +31,6 @@ import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
-import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
 
 function RaceProgressTracker({
   playerRefs,
@@ -83,7 +82,20 @@ export default function Stage1() {
     setTrack,
     setMaterialLoaded,
     setRaceComplete,
+    setTouchEnabled,
   } = useGameStore((state) => state);
+
+  useEffect(() => {
+    // Enable touch only if device supports touch
+    if ('ontouchstart' in window) {
+      setTouchEnabled(true);
+    }
+
+    // Optional: cleanup / disable on unmount
+    return () => {
+      setTouchEnabled(false);
+    };
+  }, []);
 
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
@@ -208,7 +220,6 @@ export default function Stage1() {
       </Link>
       <HUD playerRefs={playerRefs} trackId={0} />
       {/* <TouchControls /> */}
-      <RadialTouchInput />
       <ControlButtons />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
