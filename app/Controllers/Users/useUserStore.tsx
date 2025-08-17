@@ -87,7 +87,7 @@ export function initUserStore() {
         // fallback if backend has no record
         setUser({
           id: firebaseUser.uid,
-          email: firebaseUser.email,
+          email: firebaseUser.email || undefined,
           displayName: firebaseUser.displayName ?? "",
           name: firebaseUser.displayName ?? "",
         });
