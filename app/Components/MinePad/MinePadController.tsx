@@ -51,10 +51,10 @@ export function useMinePad({
     const minePadBox = new THREE.Box3().setFromObject(minePadMesh);
     const craft = playerBoxes.find((craft) => craft.box.intersectsBox(minePadBox));
     if (!!craft && cooldown.current <= 0) {
-      const { id, useCannon, useMine, shieldValue } = raceData[craft.id];
+      const { id, cannonValue, useMine, shieldValue } = raceData[craft.id];
       minePad.current.didPass = true;
       cooldown.current = cooldownTime;
-      if (useCannon || shieldValue > 0 || useMine) return;
+      if (cannonValue > 0 || shieldValue > 0 || useMine) return;
       setUseMine(id, true);
     }
 

@@ -115,7 +115,7 @@ export function usePlayerController({
     onCollide: onBulletCollision,
     owner: aircraftRef,
   });
-  const playerHistory = raceData[playerId].history;
+  const playerHistory = history;
 
   useEffect(() => {
     if (playerHistory.length >= TOTAL_LAPS) {
@@ -215,6 +215,7 @@ export function usePlayerController({
     const accelerating = !!(keys.current['i'] || gp?.buttons?.[0]?.pressed || throttle > 0);
     const braking = !!(keys.current['k'] || gp?.buttons?.[2]?.pressed || throttle < 0);
     const shooting = !!(keys.current['j'] || gp?.buttons?.[7]?.pressed);
+    const { cannonValue, useMine, shieldValue } = raceData[playerId];
 
     // Trigger onAcceleratingChange callback if the accelerating state has changed.
     if (accelerating !== previousInputState.current.accelerating) {
@@ -311,8 +312,8 @@ export function usePlayerController({
           // If the distance to the closest point is greater than 10 (meaning it's far off),
           // snap the ship back to the closest point and reverse/stop its velocity.
           if (dist > 10) {
-            if (raceData[playerId].shieldValue > 0) {
-              setShieldValue(raceData[playerId].shieldValue - 0.5, playerId);
+            if (shieldValue > 0) {
+              setShieldValue(shieldValue - 0.5, playerId);
             }
             ship.position.copy(hitInfo.point);
             ship.userData.velocity.multiplyScalar(-1); // Reverse velocity.
@@ -336,8 +337,11 @@ export function usePlayerController({
     //     break; // Stop checking further obstacles after a collision.
     //   }
     // }
-    if ((shooting || shouldFire) && raceData[playerId].useCannon) fire();
-    if ((shooting || shouldFire) && raceData[playerId].useMine) {
+    const value = cannonValue || 0;
+    if ((shooting || shouldFire) && value > 0) {
+      fire(playerId);
+    }
+    if ((shooting || shouldFire) && useMine) {
       drop();
       setUseMine(playerId, false);
     }

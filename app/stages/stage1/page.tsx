@@ -31,6 +31,7 @@ import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
+import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 
 function RaceProgressTracker({
   playerRefs,
@@ -219,6 +220,7 @@ export default function Stage1() {
         EXIT RACE
       </Link>
       <HUD playerRefs={playerRefs} trackId={0} />
+      <WeaponStatus />
       {/* <TouchControls /> */}
       <ControlButtons />
       <MiniMap positions={positions} curve={curve} />

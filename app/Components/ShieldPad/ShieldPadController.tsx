@@ -51,10 +51,10 @@ export function useShieldPadController({
     const craft = playerBoxes.find((craft) => craft.box.intersectsBox(shieldPadBox));
 
     if (!!craft && cooldown.current <= 0) {
-      const { useMine, useCannon, shieldValue } = raceData[craft.id];
+      const { useMine, cannonValue, shieldValue } = raceData[craft.id];
       shieldPad.current.didPass = true;
       cooldown.current = cooldownTime;
-      if (useMine || useCannon || shieldValue > 0) return;
+      if (useMine || cannonValue > 0 || shieldValue > 0) return;
       setShieldValue(1, craft.id);
     }
 

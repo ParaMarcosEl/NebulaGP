@@ -20,7 +20,7 @@ export default function Leaderboard({ trackId }: LeaderboardProps) {
   if (loading) return <p className={styles.message}>Loading leaderboard...</p>;
   if (error) return <p className={styles.message}>Error loading leaderboard</p>;
   if (!records || records.length === 0) return <p className={styles.message}>No records yet.</p>;
-  console.log(records[0].createdAt);
+
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Leaderboard</h2>

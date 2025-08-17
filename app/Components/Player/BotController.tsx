@@ -197,7 +197,9 @@ export function useBotController({
     bot.position.add(bot.userData.velocity);
 
     if (onSpeedChange) onSpeedChange(speedRef.current);
-    if (raceData[id].useCannon) fire();
+    if (raceData[id].cannonValue > 0) {
+      fire(id);
+    }
     if (raceData[id].useMine) {
       setTimeout(() => {
         drop();
