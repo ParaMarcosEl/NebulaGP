@@ -30,6 +30,7 @@ import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
+import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 
 function RaceProgressTracker({
   playerRefs,
@@ -202,6 +203,7 @@ export default function Stage1() {
         EXIT RACE
       </Link>
       <HUD trackId={2} playerRefs={playerRefs} />
+      <WeaponStatus />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
       <RaceOver />

@@ -5,7 +5,7 @@ export default function WeaponStatus() {
     const { raceData } = useGameStore(s => s);
     const {useMine, cannonValue, shieldValue } = raceData[0];
 
-    if (!useMine && cannonValue > 0 && shieldValue > 0) return null;
+if (!useMine && !cannonValue && !shieldValue) return null;
 
     return (
         <div className="weapon-status">

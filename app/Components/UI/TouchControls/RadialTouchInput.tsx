@@ -22,6 +22,11 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
+    const screenMid = window.innerWidth / 2;
+
+    // Only allow touches starting on the left half
+    if (touch.clientX > screenMid) return;
+
     const pos = { x: touch.clientX, y: touch.clientY };
     setCenter(pos);
     setStick(pos);
@@ -32,6 +37,11 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
     if (!active.current || !center) return;
 
     const touch = e.touches[0];
+    const screenMid = window.innerWidth * .7;
+
+    // If the finger moves past the middle, you can either stop tracking or clamp it
+    if (touch.clientX > screenMid) return;
+
     const dx = touch.clientX - center.x;
     const dy = touch.clientY - center.y;
 
@@ -45,12 +55,11 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
 
     setStick({ x: stickX, y: stickY });
 
-    // normalize to 0–1 scale
+    // normalize to -1–1 scale
     const normX = (clampedDist / radius) * Math.cos(angle);
     const normY = (clampedDist / radius) * Math.sin(angle);
 
-    // send to player controller
-    playerInputAxis.set({ x: normX, y: -normY });
+    playerInputAxis.set({ x: normX, y: normY });
   };
 
   const handleTouchEnd = () => {
@@ -96,3 +105,5 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
     </div>
   );
 }
+
+

@@ -34,6 +34,7 @@ import { Mine } from '@/Components/Weapons/useMines';
 import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
+import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 // import { Trail } from 'node_modules/@react-three/drei';
 
 function RaceProgressTracker({
@@ -226,6 +227,7 @@ export default function Stage1() {
         EXIT RACE
       </Link>
       <HUD playerRefs={playerRefs} trackId={1} />
+      <WeaponStatus />
       <RadialTouchInput />
       <ControlButtons />
       <MiniMap positions={positions} curve={curve} />
