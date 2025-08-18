@@ -37,13 +37,11 @@ export default function HUD({
     playerHistory.length === 0 ? (
       <>
         <hr />
-        <div>Lap History:</div>
         <div>No laps completed.</div>
       </>
     ) : (
       <>
         <hr />
-        <div>Lap History:</div>
         {playerHistory.map(
           (lap, idx) =>
             idx < TOTAL_LAPS && (

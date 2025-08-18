@@ -4,6 +4,7 @@ import './globals.css';
 import OrientationLock from '@/Components/UI/OrientationLock';
 import { TextureLoader } from './Components/TextureLoader/TextureLoader';
 import UserProvider from './Components/UI/Auth/UserProvider';
+import { SettingsInitializer } from './Controllers/Settings/SettingsInitializer';
 
 export const metadata = {
   title: 'Nebula GP | Zero-Gravity Racing',
@@ -82,7 +83,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             '/textures/sunsurface.png',
           ]}
         />
-        <UserProvider>{children}</UserProvider>
+        <UserProvider>
+          {children}
+          <SettingsInitializer />
+        </UserProvider>
         <OrientationLock />
         {/* </TransitionLayout> */}
       </body>

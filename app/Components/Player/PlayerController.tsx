@@ -14,6 +14,7 @@ import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCo
 import { onBulletCollision } from '@/Utils/collisions';
 import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
 import { TOTAL_LAPS } from '@/Constants';
+import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 
 // --- Shared input ref for touch joystick ---
 const inputAxisRef = { current: { x: 0, y: 0 } };
@@ -79,6 +80,8 @@ export function usePlayerController({
   const { raceStatus, playerSpeed, raceData, setUseMine, setShieldValue } = useGameStore(
     (state) => state,
   );
+  const { invertPitch } = useSettingsStore(s => s);
+
   const controlsEnabled = raceStatus === 'racing';
   // const players = Array.isArray(playerRefs) ? playerRefs?.map(player => player.current) : [];
   useBotController({
@@ -265,7 +268,7 @@ export function usePlayerController({
     // Apply angular velocity to the ship's rotation.
     const deltaRotation = new THREE.Quaternion().setFromEuler(
       new THREE.Euler(
-        angularVelocity.current.x,
+        angularVelocity.current.x * invertPitch,
         angularVelocity.current.y,
         angularVelocity.current.z,
         'XYZ', // Order of rotation

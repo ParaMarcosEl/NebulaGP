@@ -28,6 +28,7 @@ import ShieldPadSpawner from './Components/ShieldPad/ShieldPadSpawner';
 import MinePadSpawner from './Components/MinePad/MinePadSpawner';
 import './page.css';
 import NavBar from './Components/UI/Navigation/NavBar';
+import WeaponStatus from './Components/UI/WeaponStatus/WeaponStatus';
 
 function RaceProgressTracker({
   playerRefs,
@@ -227,6 +228,7 @@ export default function Home() {
 
       <main className="main">
         <NavBar />
+        <WeaponStatus />
         <div className="ui-container">
           <h1 className="heading">Zero-Gravity Racing</h1>
 

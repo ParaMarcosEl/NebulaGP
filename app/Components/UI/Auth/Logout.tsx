@@ -2,15 +2,12 @@
 'use client';
 
 import { useUserStore } from '@/Controllers/Users/useUserStore';
-import AuthGuard from './AuthGaurd';
 
-export default function LogoutButton() {
+export default function LogoutButton({ className }: { className: string }) {
   const { signOutUser } = useUserStore();
   const handleLogout = async () => await signOutUser();
 
   return (
-    <AuthGuard>
-      <button onClick={handleLogout}>Logout</button>
-    </AuthGuard>
+      <button className={className} onClick={handleLogout}>Logout</button>
   );
 }
