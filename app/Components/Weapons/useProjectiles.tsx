@@ -19,7 +19,7 @@ export function useProjectiles(
   { fireRate = 2, maxProjectiles = 20, velocity = 200 },
 ) {
   const { scene } = useThree();
-  const { setCannon, raceData } = useGameStore(s => s);
+  const { setCannon, raceData } = useGameStore((s) => s);
   const poolRef = useRef<Projectile[]>([]);
   const lastFiredRef = useRef(0); // seconds
   const cooldown = 1 / fireRate;

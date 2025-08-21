@@ -4,10 +4,9 @@ import { adminAuth, db } from '@/Lib/Firebase/FirebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { User } from '@/Constants/types';
 
-function jsonResponse(
+export function jsonResponse(
   success: boolean,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any = null,
+  data: User | null,
   error: string | null = null,
   status = 200,
 ) {
@@ -21,10 +20,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email, password, name, ...rest } = await req.json();
+    const { email, password, name, firstName, lastName, ...rest } = await req.json();
 
-    if (!email || !password) {
-      return jsonResponse(false, null, 'Email and password are required', 400);
+    if (!email || !password || !firstName || !lastName) {
+      return jsonResponse(false, null, 'Email, password and name fields are required', 400);
     }
 
     // Create Firebase Auth account
@@ -82,6 +81,7 @@ export async function GET(req: NextRequest) {
 }
 
 // PUT /api/users?uid=<uid>
+// PUT /api/users?uid=<uid>
 export async function PUT(req: NextRequest) {
   if (!adminAuth || !db) {
     return jsonResponse(false, null, 'Firebase Admin SDK not initialized.', 500);
@@ -95,21 +95,46 @@ export async function PUT(req: NextRequest) {
 
     const { email, displayName, ...rest } = await req.json();
 
-    // Update Firebase Auth fields
-    const authUpdate: User = {};
+    // --- Email uniqueness check ---
+    if (email) {
+      // 1. Check Firestore for any other user with the same email
+      const snapshot = await db.collection('users').where('email', '==', email).get();
+
+      const conflict = snapshot.docs.some((doc) => doc.id !== uid);
+      if (conflict) {
+        return jsonResponse(false, null, 'Email already in use.', 409);
+      }
+    }
+
+    // --- Update Firebase Auth ---
+    const authUpdate: Partial<User> = {};
     if (email) authUpdate.email = email;
     if (displayName) authUpdate.displayName = displayName;
 
     if (Object.keys(authUpdate).length > 0) {
-      await adminAuth.updateUser(uid, authUpdate);
+      try {
+        await adminAuth.updateUser(uid, authUpdate);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        if (error.code === 'auth/email-already-exists') {
+          return jsonResponse(false, null, 'Email already in use.', 409);
+        }
+        throw error;
+      }
     }
 
-    // Merge Firestore updates
-    if (Object.keys(rest).length > 0) {
-      await db.collection('users').doc(uid).set(rest, { merge: true });
+    // --- Merge Firestore updates ---
+    const firestoreUpdate: Record<string, unknown> = {};
+    if (email) firestoreUpdate.email = email;
+    if (displayName) firestoreUpdate.displayName = displayName;
+    Object.assign(firestoreUpdate, rest);
+
+    if (Object.keys(firestoreUpdate).length > 0) {
+      await db.collection('users').doc(uid).set(firestoreUpdate, { merge: true });
     }
 
     return jsonResponse(true, { uid }, null, 200);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error in PUT /api/users:', error);

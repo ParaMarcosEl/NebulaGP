@@ -14,7 +14,7 @@ export default function HUD({
   trackId: number;
   playerRefs: React.RefObject<THREE.Object3D | null>[];
 }) {
-  const { lapTime, totalTime, raceData, playerId } = useGameStore((state) => {
+  const { lapTime, raceData, playerId } = useGameStore((state) => {
     return state;
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,7 +69,16 @@ export default function HUD({
       {raceOver ? (
         <>
           <div>🎉 RACE COMPLETED!</div>
-          <div>Total Time: {formatTime(totalTime)}</div>
+          {bestTime?.time && <div>Best Time: {formatTime(bestTime.time)}</div>}
+          <div>
+            Total Time:{' '}
+            {formatTime(
+              raceData[playerId]?.history.reduce(
+                (prev, curr, i) => (i <= TOTAL_LAPS ? prev + curr.time : prev),
+                0,
+              ) + lapTime,
+            )}
+          </div>
           {history}
         </>
       ) : (

@@ -1,12 +1,21 @@
 // types/User.ts
 export interface User {
   id?: string; // Firestore document ID
+  uid?: string;
   email?: string | undefined;
   name?: string | null;
   displayName?: string | null;
   age?: number;
   role?: string;
   createdAt?: string;
+  firstName?: string;
+  lastName?: string;
+  address2?: string;
+  address1?: string;
+  city?: string;
+  zip?: string;
+  state?: string;
+  region?: string;
 }
 
 // types/records.ts

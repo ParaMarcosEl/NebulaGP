@@ -1,0 +1,60 @@
+/* src/components/GlobalAlert.css */
+.global-alert-container {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+}
+
+.global-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-weight: 500;
+  min-width: 300px;
+  max-width: 500px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.global-alert.success {
+  background-color: #22c55e; /* green-500 */
+}
+
+.global-alert.error {
+  background-color: #ef4444; /* red-500 */
+}
+
+.global-alert.info {
+  background-color: #3b82f6; /* blue-500 */
+}
+
+.global-alert button {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.global-alert button:hover {
+  opacity: 0.75;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   webpack(
     config: {
       module: {
@@ -12,10 +12,10 @@ const nextConfig = {
   ) {
     if (!isServer) {
       config.module.rules.push({
-        test: /\.worker\.js$/,
+        test: /\.worker\.ts$/,
         loader: 'worker-loader',
         options: {
-          filename: 'static/[hash].worker.js',
+          filename: 'static/[hash].worker.ts',
           inline: 'no-fallback', // always separate file
         },
       });

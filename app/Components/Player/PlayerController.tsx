@@ -80,7 +80,7 @@ export function usePlayerController({
   const { raceStatus, playerSpeed, raceData, setUseMine, setShieldValue } = useGameStore(
     (state) => state,
   );
-  const { invertPitch } = useSettingsStore(s => s);
+  const { invertPitch } = useSettingsStore((s) => s);
 
   const controlsEnabled = raceStatus === 'racing';
   // const players = Array.isArray(playerRefs) ? playerRefs?.map(player => player.current) : [];
@@ -118,13 +118,12 @@ export function usePlayerController({
     onCollide: onBulletCollision,
     owner: aircraftRef,
   });
-  const playerHistory = history;
+  const playerHistory = raceData[0].history;
 
   useEffect(() => {
-    if (playerHistory.length >= TOTAL_LAPS) {
-      stopRecording();
-    }
-  }, [playerHistory, playerId, stopRecording]);
+    if (playerHistory.length < TOTAL_LAPS) return;
+    stopRecording();
+  }, [playerHistory.length, playerId]);
 
   useEffect(() => {
     const ship = aircraftRef.current;

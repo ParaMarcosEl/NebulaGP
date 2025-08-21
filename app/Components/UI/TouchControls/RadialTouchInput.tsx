@@ -37,7 +37,7 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
     if (!active.current || !center) return;
 
     const touch = e.touches[0];
-    const screenMid = window.innerWidth * .7;
+    const screenMid = window.innerWidth * 0.7;
 
     // If the finger moves past the middle, you can either stop tracking or clamp it
     if (touch.clientX > screenMid) return;
@@ -105,5 +105,3 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
     </div>
   );
 }
-
-
