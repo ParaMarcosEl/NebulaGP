@@ -16,7 +16,7 @@
   border-radius: 12px;
   max-width: 600px;
   width: 90%;
-  max-height: 80vh;        /* Constrain modal height */
+  max-height: 80vh; /* Constrain modal height */
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
   animation: fadeIn 0.2s ease-in-out;
 
@@ -41,18 +41,17 @@
 }
 
 .modal-content {
-  
   height: calc(100vh - 4em);
-  flex: 1 1 auto;      /* allow growing and shrinking */
-  overflow-y: auto;    /* enable scrolling */
-  min-height: 0;       /* flexbox fix to allow scroll */
-  margin-top: 2rem;    /* avoid close button overlap */
+  flex: 1 1 auto; /* allow growing and shrinking */
+  overflow-y: auto; /* enable scrolling */
+  min-height: 0; /* flexbox fix to allow scroll */
+  margin-top: 2rem; /* avoid close button overlap */
   -ms-overflow-style: none; /* IE/Edge */
-  scrollbar-width: none;    /* Firefox */
+  scrollbar-width: none; /* Firefox */
 }
 
 .modal-content::-webkit-scrollbar {
-  display: none;       /* Chrome/Safari */
+  display: none; /* Chrome/Safari */
 }
 
 @keyframes fadeIn {

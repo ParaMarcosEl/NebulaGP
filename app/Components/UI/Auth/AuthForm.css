@@ -27,13 +27,14 @@
   align-items: center;
 }
 
-.input label, .input input {
+.input label,
+.input input {
   width: 50%;
 }
 
 .input label {
   text-align: right;
-  margin-right: .5em;
+  margin-right: 0.5em;
 }
 h2 {
   text-align: center;

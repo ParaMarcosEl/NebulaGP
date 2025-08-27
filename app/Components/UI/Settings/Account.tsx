@@ -46,7 +46,6 @@ export default function AccountSettings() {
       setSaving(false);
     }
   };
-  
 
   return (
     <div className="accountsettings">
@@ -118,13 +117,7 @@ export default function AccountSettings() {
         </div>
         <div className="accountsettings__field">
           <label htmlFor="displayName">City</label>
-          <input
-            id="city"
-            name="city"
-            type="text"
-            value={formData.city}
-            onChange={handleChange}
-          />
+          <input id="city" name="city" type="text" value={formData.city} onChange={handleChange} />
         </div>
         <div className="accountsettings__field">
           <label htmlFor="displayName">State</label>
@@ -138,13 +131,7 @@ export default function AccountSettings() {
         </div>
         <div className="accountsettings__field">
           <label htmlFor="displayName">Zip</label>
-          <input
-            id="zip"
-            name="zip"
-            type="text"
-            value={formData.zip}
-            onChange={handleChange}
-          />
+          <input id="zip" name="zip" type="text" value={formData.zip} onChange={handleChange} />
         </div>
         <div className="accountsettings__field">
           <label htmlFor="displayName">Country/Region</label>

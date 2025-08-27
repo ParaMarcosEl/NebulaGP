@@ -8,13 +8,19 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
     uLowMap: { value: THREE.Texture };
     uMidMap: { value: THREE.Texture };
     uHighMap: { value: THREE.Texture };
+    uFrequency: { value: number };
+    uAmplitude: { value: number };
+    uOctaves: { value: number };
+    uLacunarity: { value: number };
+    uPersistence: { value: number };
+    uExponentiation: { value: number };
   };
 
   constructor(
     color: THREE.Color | number = 0x2288ff,
     lowMap?: THREE.Texture,
     midMap?: THREE.Texture,
-    highMap?: THREE.Texture
+    highMap?: THREE.Texture,
   ) {
     super({
       color,
@@ -24,7 +30,6 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
     this.metalness = 0.0;
     this.roughness = 1.0;
 
-    // Initialize textures to white placeholders if not provided
     const placeholder = new THREE.Texture();
     placeholder.needsUpdate = true;
 
@@ -35,6 +40,12 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
       uLowMap: { value: lowMap || placeholder },
       uMidMap: { value: midMap || placeholder },
       uHighMap: { value: highMap || placeholder },
+      uFrequency: { value: 2.0 },
+      uAmplitude: { value: 0.5 },
+      uOctaves: { value: 5 },
+      uLacunarity: { value: 2.0 },
+      uPersistence: { value: 0.5 },
+      uExponentiation: { value: 1.0 },
     };
 
     this.onBeforeCompile = (shader) => {
@@ -48,10 +59,16 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         uniform float uTime;
         uniform float uMaxHeight;
         uniform float uPlanetSize;
+        uniform float uFrequency;
+        uniform float uAmplitude;
+        uniform int uOctaves;
+        uniform float uLacunarity;
+        uniform float uPersistence;
+        uniform float uExponentiation;
+
         varying vec3 vWorldPosition;
         varying float vDisplacement;
 
-        // --- Noise utilities ---
         float hash(vec3 p) {
           p = fract(p * 0.3183099 + .1);
           p *= 17.0;
@@ -81,16 +98,18 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
 
         float fbm(vec3 p) {
           float value = 0.0;
-          float amplitude = 0.5;
-          float frequency = 1.0;
-          for (int i = 0; i < 5; i++) {
-            value += amplitude * (noise(p * frequency) - 0.5) * 2.0;
-            frequency *= 2.0;
-            amplitude *= 0.5;
+          float amp = uAmplitude;
+          float freq = uFrequency;
+          for (int i = 0; i < 20; i++) {
+            if(i >= uOctaves) break;
+            value += amp * (noise(p * freq) - 0.5) * 2.0;
+            freq *= uLacunarity;
+            amp *= uPersistence;
           }
+          value = pow(max(value, 0.0), uExponentiation);
           return value;
         }
-        `
+        `,
       );
 
       shader.vertexShader = shader.vertexShader.replace(
@@ -99,13 +118,13 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         vec3 transformed = position;
         vec3 unitPos = normalize(transformed);
 
-        float displacement = fbm(unitPos * 4.0 + vec3(uTime)) * uMaxHeight;
+        float displacement = fbm(unitPos + vec3(uTime * 0.05)) * uMaxHeight;
 
         vec3 posOffsetX = normalize(transformed + vec3(0.001, 0, 0));
         vec3 posOffsetY = normalize(transformed + vec3(0, 0.001, 0));
 
-        float dispX = fbm(posOffsetX * 4.0 + vec3(uTime)) * uMaxHeight;
-        float dispY = fbm(posOffsetY * 4.0 + vec3(uTime)) * uMaxHeight;
+        float dispX = fbm(posOffsetX + vec3(uTime * 0.05)) * uMaxHeight;
+        float dispY = fbm(posOffsetY + vec3(uTime * 0.05)) * uMaxHeight;
 
         vec3 p = unitPos * (uPlanetSize + displacement);
         vec3 pX = posOffsetX * (uPlanetSize + dispX);
@@ -119,7 +138,7 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         transformed = p;
         vWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
         vDisplacement = displacement;
-        `
+        `,
       );
 
       // --- Fragment Shader ---
@@ -133,37 +152,43 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         uniform sampler2D uMidMap;
         uniform sampler2D uHighMap;
         uniform float uMaxHeight;
-        `
+        `,
       );
 
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <map_fragment>',
         `
-        // Compute UV from world position for tiling
-        // vec2 uv = vWorldPosition.xz * 0.1;
-        
         vec3 p = normalize(vWorldPosition);
         float u = 0.5 + atan(p.z, p.x) / (2.0 * 3.1415926);
         float v = 0.5 - asin(p.y) / 3.1415926;
-        vec2 uv = vec2(u, v) * 10.0; // scale / repeat
-
+        vec2 uv = vec2(u, v) * 10.0;
 
         vec3 lowColor  = texture2D(uLowMap, uv).rgb;
         vec3 midColor  = texture2D(uMidMap, uv).rgb;
         vec3 highColor = texture2D(uHighMap, uv).rgb;
 
-        float h = clamp(vDisplacement / uMaxHeight, 0.0, 1.0);
+        float h = clamp(vDisplacement / uMaxHeight, 0.0, 0.1);
 
-        vec3 terrainColor = mix(midColor, lowColor, smoothstep(0.2, 0.9, h));
-        terrainColor = mix(terrainColor, highColor, smoothstep(0.9, 1.0, h));
+        vec3 terrainColor = mix(midColor, lowColor, smoothstep(0.0, 0.01, h));
+        terrainColor = mix(terrainColor, highColor, smoothstep(0.1, 1.0, h));
 
         diffuseColor.rgb = terrainColor;
-        `
+        `,
       );
     };
   }
 
   updateTime(time: number) {
     this.customUniforms.uTime.value = time;
+  }
+
+  setParams(params: Partial<Record<keyof PlanetMaterial['customUniforms'], number>>) {
+    (Object.keys(params) as (keyof typeof this.customUniforms)[]).forEach((key) => {
+      const uniform = this.customUniforms[key];
+      const value = params[key];
+      if (uniform && typeof value === 'number') {
+        uniform.value = value;
+      }
+    });
   }
 }

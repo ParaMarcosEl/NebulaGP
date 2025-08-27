@@ -19,9 +19,9 @@ import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import { useFullscreen } from '@/Controllers/UI/useFullscreen';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
-import Planet from '@/Components/World/Planet';
+import Planet from '@/Components/World/Planet/Planet';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
-import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
+import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { Mine } from './Components/Weapons/useMines';
 import ShieldPadSpawner from './Components/ShieldPad/ShieldPadSpawner';
@@ -62,7 +62,6 @@ export default function Home() {
   const botRef5 = useRef<THREE.Group | null>(null);
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
-  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
 
   useFullscreen();
 
@@ -129,11 +128,15 @@ export default function Home() {
 
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
-      key={id}
+      lifetime={0.2}
+      maxDistance={1}
+      texturePath="/textures/exploded.jpg"
+      key={id + 'booster'}
+      speed={10}
+      startSize={30}
+      endSize={3}
       target={player as React.RefObject<THREE.Object3D>}
-      size={400}
-      texturePath="/textures/explosion.png"
-      offset={thrusterOffset}
+      emissionRate={200}
     />
   ));
 
@@ -216,7 +219,7 @@ export default function Home() {
               }))}
             />
 
-            <Planet size={350} />
+            <Planet position={new THREE.Vector3()} size={350} />
 
             {players}
             {boosters}

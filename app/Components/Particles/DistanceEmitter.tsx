@@ -1,7 +1,7 @@
 // EmitterParticleSystem.tsx
-import * as THREE from "three";
-import React, { useMemo, useRef, useEffect } from "react";
-import { useFrame, useLoader } from "@react-three/fiber";
+import * as THREE from 'three';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { useFrame, useLoader } from '@react-three/fiber';
 
 // Defines the structure for a single particle's data.
 interface Particle {
@@ -68,9 +68,9 @@ export const EmitterParticleSystem: React.FC<{
   texturePath,
   count = 20,
   particleSize = 5,
-  offset = new THREE.Vector3(0, .3, .5),
+  offset = new THREE.Vector3(0, 0.3, 0.5),
   emitDistance = 0.1,
-  damping = .9,
+  damping = 0.9,
   lifetime = 0.2,
 }) => {
   // Ref to the group that will follow the target. It acts as the emitter.
@@ -159,11 +159,7 @@ export const EmitterParticleSystem: React.FC<{
           const r = Math.sqrt(Math.random()) * radius; // sqrt for uniform distribution
 
           // local offset in XY plane
-          const localOffset = new THREE.Vector3(
-            Math.cos(angle) * r,
-            Math.sin(angle) * r,
-            0
-          );
+          const localOffset = new THREE.Vector3(Math.cos(angle) * r, Math.sin(angle) * r, 0);
 
           localOffset.applyQuaternion(groupRef.current.quaternion);
 
@@ -174,12 +170,9 @@ export const EmitterParticleSystem: React.FC<{
           const jitter = new THREE.Vector3(
             (Math.random() - 0.5) * 0.1,
             (Math.random() - 0.5) * 0.1,
-            (Math.random() - 0.5) * 0.1
+            (Math.random() - 0.5) * 0.1,
           );
-          free.velocity
-            .copy(backward)
-            .multiplyScalar(speed)
-            .add(jitter);
+          free.velocity.copy(backward).multiplyScalar(speed).add(jitter);
 
           // add the target's current velocity
           if (target?.current?.userData.velocity) {
@@ -240,10 +233,10 @@ export const EmitterParticleSystem: React.FC<{
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
     // Add the particle attributes to the geometry.
-    geo.setAttribute("position", new THREE.BufferAttribute(positions.current, 3));
-    geo.setAttribute("alpha", new THREE.BufferAttribute(alphas.current, 1));
-    geo.setAttribute("color", new THREE.BufferAttribute(colors.current, 3));
-    geo.setAttribute("rotation", new THREE.BufferAttribute(rotations.current, 1));
+    geo.setAttribute('position', new THREE.BufferAttribute(positions.current, 3));
+    geo.setAttribute('alpha', new THREE.BufferAttribute(alphas.current, 1));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors.current, 3));
+    geo.setAttribute('rotation', new THREE.BufferAttribute(rotations.current, 1));
     return geo;
   }, []);
 
@@ -265,7 +258,7 @@ export const EmitterParticleSystem: React.FC<{
           // Transform the particle's world position into view space.
           vec4 mvPosition = viewMatrix * vec4(position, 1.0);
           // Calculate point size based on distance from the camera for perspective.
-          gl_PointSize = ${(particleSize).toFixed(1)} * (300.0 / -mvPosition.z);
+          gl_PointSize = ${particleSize.toFixed(1)} * (300.0 / -mvPosition.z);
           // Final projection to screen space.
           gl_Position = projectionMatrix * mvPosition;
         }

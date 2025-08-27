@@ -38,7 +38,9 @@ const vertexShader = `
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
-    gl_PointSize = size * (50.0 / -mvPosition.z);
+    // 🔹 bigger and more consistent point size
+    gl_PointSize = size * (50.0 / -mvPosition.z); // tweak 300 for scaling
+
   }
 `;
 
@@ -67,6 +69,7 @@ type ParticleSystemProps = {
   maxDistance?: number;
   position?: THREE.Vector3;
   lifetime?: number;
+  offset?: THREE.Vector3;
   maxParticles?: number;
   startSize?: number;
   endSize?: number;
@@ -80,25 +83,26 @@ type ParticleSystemProps = {
 
 export default function ParticleSystem({
   target,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   maxDistance = 1000,
   speed = 1,
   texturePath,
+  // offset = new THREE.Vector3(),
   position = new THREE.Vector3(),
-  lifetime = 1.5,
-  startSize = 30,
+  lifetime = 0,
+  startSize = 30, // 🔹 bigger for visibility
   endSize,
   maxParticles = 200,
   startColor = new THREE.Color(1, 1, 0),
   endColor = new THREE.Color(1, 0, 0),
   startAlpha = 1,
   startRotation = Math.random() * Math.PI * 2,
-  emissionRate = 30,
+  emissionRate = 30, // particles per second
 }: ParticleSystemProps) {
   const pointsRef = useRef<THREE.Points>(null);
   const particles = useRef<Particle[]>([]);
   const groupRef = useRef<THREE.Object3D>(null);
 
+  // This is the correct way to set up the geometry for a point-based particle system
   const { geometry, positions, sizes, colors, alphas, rotations } = useMemo(() => {
     const geo = new THREE.BufferGeometry();
     const positions = new Float32Array(maxParticles * 3);
@@ -115,7 +119,6 @@ export default function ParticleSystem({
 
     return { geometry: geo, positions, sizes, colors, alphas, rotations };
   }, [maxParticles]);
-
   const emissionAccumulator = useRef(0);
 
   useEffect(() => {
@@ -133,6 +136,7 @@ export default function ParticleSystem({
           diffuseTexture: {
             value: new THREE.TextureLoader().load(
               texturePath ||
+                // 🔹 tiny white dot fallback
                 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAKUlEQVQoU2NkYGBg+M8ABRgYGBiAhoDAwMDAgKExgAxUCUjAwGBgAABXWgQQbaxO6AAAAAElFTkSuQmCC',
             ),
           },
@@ -160,6 +164,7 @@ export default function ParticleSystem({
       rotations[i] = p.rotation;
     });
 
+    // Reset unused attributes for a clean slate
     for (let i = particles.current.length; i < maxParticles; i++) {
       positions[i * 3 + 0] = 0;
       positions[i * 3 + 1] = 0;
@@ -177,7 +182,10 @@ export default function ParticleSystem({
     geometry.attributes.color.needsUpdate = true;
     geometry.attributes.alpha.needsUpdate = true;
     geometry.attributes.rotation.needsUpdate = true;
+
+    // Set draw range to render only active particles
     geometry.setDrawRange(0, particles.current.length);
+    // 🔹 Add this line to update the bounding sphere for frustum culling
     if (geometry.attributes.position.count > 0) {
       geometry.computeBoundingSphere();
     }
@@ -186,26 +194,31 @@ export default function ParticleSystem({
   const spawnParticle = useCallback(() => {
     if (!target?.current || particles.current.length >= maxParticles) return;
 
-    // Define the particle's initial position and velocity in LOCAL SPACE
-    // This is relative to the group, which is attached to the target.
-    const localExhaustDir = new THREE.Vector3(0, 0, 1);
-    const localBaseVel = localExhaustDir.clone().multiplyScalar(speed);
-    const localNoise = new THREE.Vector3(
+    const shipQuat = target.current.quaternion.clone();
+
+    // Backward thrust direction (in local space of the system)
+    const backwardDir = new THREE.Vector3(0, 0, 1).applyQuaternion(shipQuat).normalize();
+
+    const baseVel = backwardDir.multiplyScalar(speed);
+    const noise = new THREE.Vector3(
       (Math.random() * 2 - 1) * 0.01,
       (Math.random() * 2 - 1) * 0.01,
       (Math.random() * 2 - 1) * 0.01,
     );
-    const localVel = localBaseVel.add(localNoise);
 
+    const vel = baseVel.add(noise);
+
+    // Local offset around exhaust
     const radius = 0.1;
     const angle = Math.random() * Math.PI * 2;
     const r = Math.sqrt(Math.random()) * radius;
 
     const localOffset = new THREE.Vector3(Math.cos(angle) * r, Math.sin(angle) * r + 0.3, 1.5);
 
+    // 🔹 Store only local position
     particles.current.push({
       position: localOffset.clone(),
-      velocity: localVel, // Velocity is also in local space
+      velocity: vel,
       size: startSize,
       startSize,
       endSize: endSize || startSize,
@@ -230,7 +243,20 @@ export default function ParticleSystem({
     maxParticles,
   ]);
 
-  const cullParticlesByLifetime = useCallback((p: Particle, i: number) => {
+  // 🔹 New function to cull particles based on distance
+  const cullParticlesbyDistance = useCallback(() => {
+    if (!target?.current) return;
+    const targetPos = target.current.position;
+
+    for (let i = particles.current.length - 1; i >= 0; i--) {
+      const p = particles.current[i];
+      if (p.position.distanceTo(targetPos) > maxDistance) {
+        particles.current.splice(i, 1);
+      }
+    }
+  }, [target, maxDistance]);
+  // 🔹 New function to cull particles based on distance
+  const cullParticlesbyLifetime = useCallback((p: Particle, i: number) => {
     if (p.age > p.lifetime) {
       particles.current.splice(i, 1);
       return true;
@@ -238,14 +264,13 @@ export default function ParticleSystem({
     return false;
   }, []);
 
+  const lastSpawnPos = useRef<THREE.Vector3>(new THREE.Vector3());
+
   useFrame((_, delta) => {
-    if (!target?.current || !groupRef.current) return;
+    if (!target?.current) return;
+    const shipPos = target.current.position;
 
-    // 🔹 Move whole system with ship. This is the only world-space update.
-    groupRef.current.position.copy(target.current.position);
-    groupRef.current.quaternion.copy(target.current.quaternion);
-
-    // --- emission
+    // --- 🔹 TIME-BASED EMISSION (baseline steady exhaust)
     emissionAccumulator.current += delta;
     const interval = 1 / emissionRate;
     while (emissionAccumulator.current > interval) {
@@ -253,22 +278,27 @@ export default function ParticleSystem({
       emissionAccumulator.current -= interval;
     }
 
-    // --- update particles (local space)
+    // --- 🔹 DISTANCE-BASED EMISSION (extra particles at high speed)
+    const dist = shipPos.distanceTo(lastSpawnPos.current);
+    const spawnSpacing = 0.15; // adjust for density (smaller = denser trail)
+    if (dist > spawnSpacing) {
+      spawnParticle();
+      lastSpawnPos.current.copy(shipPos);
+    }
+
+    // --- 🔹 UPDATE PARTICLES
     for (let i = particles.current.length - 1; i >= 0; i--) {
       const p = particles.current[i];
       p.age += delta;
 
-      if (lifetime && cullParticlesByLifetime(p, i)) continue;
+      if (lifetime && cullParticlesbyLifetime(p, i)) continue;
 
-      // Update particle position using its local velocity
-      p.position.addScaledVector(p.velocity, delta);
-
-      // Apply damping to the local velocity
       const damping = 0.98;
       p.velocity.multiplyScalar(damping);
+      p.position.addScaledVector(p.velocity, delta);
 
       const t = p.age / p.lifetime;
-      const d = Math.min(t, 1);
+      const d = Math.min(t, 1); // simple lifetime-based lerp
 
       p.size = THREE.MathUtils.lerp(p.startSize, p.endSize, d);
       p.alpha = startAlpha * (1 - d);
@@ -278,6 +308,8 @@ export default function ParticleSystem({
       }
     }
 
+    // Cull and update GPU buffers
+    cullParticlesbyDistance();
     updateGeometry();
   });
 

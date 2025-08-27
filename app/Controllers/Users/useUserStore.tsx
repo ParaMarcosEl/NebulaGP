@@ -1,4 +1,4 @@
-// @/Controllers/User/useUserStore.ts 
+// @/Controllers/User/useUserStore.ts
 'use client';
 
 import { create } from 'zustand';
@@ -46,7 +46,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       const user: User = { ...userData, createdAt };
       set({ user, loading: false });
       return user;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       set({ error: err.message || 'Failed to fetch user', loading: false });
       throw err;
@@ -68,7 +68,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
       const data: { message: string; uid: string } = await res.json();
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       set({ error: err.message || 'Failed to create user' });
       throw err;
@@ -92,7 +92,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
       const data: { message: string } = await res.json();
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       set({ error: err.message || 'Failed to update user' });
       throw err;
@@ -111,7 +111,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         throw new Error(err.error || 'Failed to delete user');
       }
       set({ user: null });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       set({ error: err.message || 'Failed to delete user' });
       throw err;
@@ -125,7 +125,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       await signOut(auth);
       set({ user: null, error: null });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       set({ error: err.message || 'Failed to sign out' });
       throw err;

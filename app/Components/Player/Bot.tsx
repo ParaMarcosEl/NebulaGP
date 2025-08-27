@@ -1,6 +1,6 @@
 'use client';
 
-import { useGLTF, Trail } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { SHIP_SCALE } from '@/Constants';
@@ -73,14 +73,6 @@ export default function Bot({
       <Shield
         target={aircraftRef as React.RefObject<THREE.Object3D>}
         shieldValue={raceData[id].shieldValue}
-      />
-      <Trail
-        target={trailTarget as React.RefObject<THREE.Object3D>}
-        width={10}
-        length={1}
-        color={'orange'}
-        decay={0.1}
-        attenuation={(t) => t * t}
       />
     </>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useGLTF, Trail } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
 import { usePlayerController } from '@/Components/Player/PlayerController';
 import * as THREE from 'three';
@@ -91,14 +91,6 @@ export default function Aircraft({
       <Shield
         target={aircraftRef as React.RefObject<THREE.Object3D>}
         shieldValue={raceData[id].shieldValue}
-      />
-      <Trail
-        target={trailTarget as React.RefObject<THREE.Object3D>}
-        width={10}
-        length={0.6}
-        color={'orange'}
-        decay={0.001}
-        attenuation={(t) => t * t}
       />
     </>
   );

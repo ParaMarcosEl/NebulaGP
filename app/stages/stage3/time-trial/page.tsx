@@ -24,7 +24,7 @@ import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
-import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
+import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import { Mine } from '@/Components/Weapons/useMines';
 import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
@@ -165,15 +165,15 @@ export default function Stage1() {
 
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
-      key={id}
+      lifetime={0.2}
+      maxDistance={1}
+      texturePath="/textures/exploded.jpg"
+      key={id + 'booster'}
+      speed={10}
+      startSize={30}
+      endSize={3}
       target={player as React.RefObject<THREE.Object3D>}
-      size={400}
-      texturePath="/textures/explosion.png"
-      offset={thrusterOffset}
-      // useWorldSpace
-      // emissions={{
-      //   rateOverDistance: 100
-      // }}
+      emissionRate={200}
     />
   ));
 

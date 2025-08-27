@@ -27,7 +27,12 @@ export const Input = ({
 }: InputType) => {
   return (
     <div className={rootClass}>
-      {label && <label>{required && <span style={{ color: '#7ff'}}>* </span>}{label}:</label>}
+      {label && (
+        <label>
+          {required && <span style={{ color: '#7ff' }}>* </span>}
+          {label}:
+        </label>
+      )}
       <input
         id={id}
         name={name}
@@ -35,7 +40,7 @@ export const Input = ({
         placeholder={placeholder}
         value={value}
         onChange={(e) => {
-          if (setValue) setValue(e.target.value); 
+          if (setValue) setValue(e.target.value);
         }}
         required={required}
         className={className}

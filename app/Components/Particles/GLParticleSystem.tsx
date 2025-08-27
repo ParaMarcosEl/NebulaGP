@@ -1,12 +1,16 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useRef, useEffect } from "react";
+import { useRef, useEffect } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useFrame, extend } from "@react-three/fiber";
+import { useFrame, extend } from '@react-three/fiber';
 
 type Particle = {
-  x: number; y: number; z: number;
-  vx: number; vy: number; vz: number;
+  x: number;
+  y: number;
+  z: number;
+  vx: number;
+  vy: number;
+  vz: number;
   life: number;
   maxLife: number;
 };
@@ -16,7 +20,9 @@ const MAX_PARTICLES = 20000;
 export function ParticleSystem() {
   const positions = new Float32Array(MAX_PARTICLES * 3);
   const particles: Particle[] = new Array(MAX_PARTICLES).fill(null).map(() => ({
-    x: 0, y: 0, z: 0,
+    x: 0,
+    y: 0,
+    z: 0,
     vx: (Math.random() - 0.5) * 2,
     vy: Math.random() * 2,
     vz: (Math.random() - 0.5) * 2,
@@ -34,7 +40,9 @@ export function ParticleSystem() {
       p.life += dt;
       if (p.life >= p.maxLife) {
         // Respawn
-        p.x = 0; p.y = 0; p.z = 0;
+        p.x = 0;
+        p.y = 0;
+        p.z = 0;
         p.vx = (Math.random() - 0.5) * 2;
         p.vy = Math.random() * 2;
         p.vz = (Math.random() - 0.5) * 2;
@@ -59,11 +67,7 @@ export function ParticleSystem() {
   return (
     <points>
       <bufferGeometry ref={geomRef}>
-        <bufferAttribute
-            args={[positions, 3]}
-          attach="attributes-position"
-          count={MAX_PARTICLES}
-        />
+        <bufferAttribute args={[positions, 3]} attach="attributes-position" count={MAX_PARTICLES} />
       </bufferGeometry>
       <shaderMaterial
         ref={matRef}

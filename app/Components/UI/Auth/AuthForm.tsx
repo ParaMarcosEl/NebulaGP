@@ -52,13 +52,13 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
         };
         const data = await createUser(newUser);
         if (data?.uid) await signInWithEmailAndPassword(auth, email, password);
-        setAlert({ type: 'info', message: `${displayName} registered.`})
-        if(setRegisterOpen) setRegisterOpen(false)
+        setAlert({ type: 'info', message: `${displayName} registered.` });
+        if (setRegisterOpen) setRegisterOpen(false);
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, password);
         if (cred.user.uid) {
           await fetchUserFromAPI(cred.user.uid);
-          setAlert({ type: 'info', message: `Logged in as ${cred.user.displayName}`})
+          setAlert({ type: 'info', message: `Logged in as ${cred.user.displayName}` });
         }
       }
     } catch (err) {
@@ -71,20 +71,20 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
       onSubmit={handleSubmit}
       className={cx('auth-form', { 'register-form': mode === 'register' })}
     >
-    {mode === "register" && <h2>Account Info</h2>}
-        <Input
-          rootClass='input'
-          label='Email'
-          type="email"
-          placeholder="Email"
-          value={email}
-          setValue={(e) => setEmail(e)}
-          required
-          className="auth-input"
-        />
+      {mode === 'register' && <h2>Account Info</h2>}
       <Input
-        rootClass='input'
-        label='Password'
+        rootClass="input"
+        label="Email"
+        type="email"
+        placeholder="Email"
+        value={email}
+        setValue={(e) => setEmail(e)}
+        required
+        className="auth-input"
+      />
+      <Input
+        rootClass="input"
+        label="Password"
         type="password"
         placeholder="Password"
         value={password}
@@ -95,7 +95,7 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
       {mode === 'register' && (
         <>
           <Input
-            rootClass='input'
+            rootClass="input"
             label="Username"
             type="text"
             placeholder="Username"
@@ -103,9 +103,9 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
             setValue={(e) => setDisplayName(e)}
             className="auth-input"
             required
-            />
+          />
           <Input
-            rootClass='input'
+            rootClass="input"
             label="First Name"
             type="text"
             placeholder="First Name"
@@ -113,66 +113,66 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
             setValue={(e) => setFirstName(e)}
             className="auth-input"
             required
-            />
+          />
           <Input
             type="text"
-            rootClass='input'
+            rootClass="input"
             placeholder="Last Name"
             label="Last Name"
             value={lastName}
             setValue={(e) => setLasttName(e)}
             className="auth-input"
             required
-            />
+          />
           <div className="address">
             <h2>{'Address (optional)'}</h2>
             <Input
               type="text"
-            rootClass='input'
-            placeholder="Address Line 1"
-            label="Address Line 1"
-            value={address1}
-            setValue={(e) => setAddress1(e)}
-            className="auth-input"
+              rootClass="input"
+              placeholder="Address Line 1"
+              label="Address Line 1"
+              value={address1}
+              setValue={(e) => setAddress1(e)}
+              className="auth-input"
             />
             <Input
               type="text"
-            rootClass='input'
-            placeholder="Address Line 2"
-            label="Address Line 2"
-            value={address2}
-            setValue={(e) => setAddress2(e)}
-            className="auth-input"
+              rootClass="input"
+              placeholder="Address Line 2"
+              label="Address Line 2"
+              value={address2}
+              setValue={(e) => setAddress2(e)}
+              className="auth-input"
             />
             <Input
-            rootClass='input'
-            type="text"
-            placeholder="City"
-            label="City"
-            value={city}
-            setValue={(e) => setCity(e)}
-            className="auth-input"
+              rootClass="input"
+              type="text"
+              placeholder="City"
+              label="City"
+              value={city}
+              setValue={(e) => setCity(e)}
+              className="auth-input"
             />
             <Input
-            rootClass='input'
-            type="text"
-            placeholder="State"
-            label="State"
-            value={state}
-            setValue={(e) => setState(e)}
-            className="auth-input"
+              rootClass="input"
+              type="text"
+              placeholder="State"
+              label="State"
+              value={state}
+              setValue={(e) => setState(e)}
+              className="auth-input"
             />
             <Input
-            rootClass='input'
-            label="Zip"
-            type="text"
-            placeholder="Zip"
-            value={zip}
-            setValue={(e) => setZip(e)}
-            className="auth-input"
+              rootClass="input"
+              label="Zip"
+              type="text"
+              placeholder="Zip"
+              value={zip}
+              setValue={(e) => setZip(e)}
+              className="auth-input"
             />
             <Input
-              rootClass='input'
+              rootClass="input"
               label="Country/Region"
               type="text"
               placeholder="Country/Region"

@@ -1,11 +1,17 @@
 import { useMemo, useState } from 'react';
-import {QuadtreeNode} from './quadTree';
+import { QuadtreeNode } from './quadTree';
 import { Face } from './Face';
 import * as THREE from 'three';
 
 // --- CubeTree.tsx ---
 // This is the top-level component that manages the six faces of the cube.
-export const CubeTree = ({ size = 10, position }: { size?: number, position: THREE.Vector3 | [number, number, number] }) => {
+export const CubeTree = ({
+  size = 10,
+  position,
+}: {
+  size?: number;
+  position: THREE.Vector3 | [number, number, number];
+}) => {
   // Use state to hold the quadtree for each face.
   const [faceQuadtrees] = useState(() => {
     const halfSize = size / 2;

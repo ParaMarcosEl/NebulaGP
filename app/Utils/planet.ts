@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute, Vector3 } from "three";
+import { BufferGeometry, BufferAttribute, Vector3 } from 'three';
 
 // Utility: push vertices out to a proper cube-sphere
 export function spherifyGeometry(geometry: BufferGeometry, radius: number) {
@@ -9,7 +9,7 @@ export function spherifyGeometry(geometry: BufferGeometry, radius: number) {
     v.fromBufferAttribute(pos, i);
 
     // Step 1: normalize to cube space (-1..1)
-    // If your geometry is already in [-1,1] range (like your CubeTree quads), 
+    // If your geometry is already in [-1,1] range (like your CubeTree quads),
     // you can skip dividing by len. But it's safer to rescale:
     const len = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
     const cube = v.clone().divideScalar(len);
@@ -34,9 +34,9 @@ function cubeToSphere(v: Vector3): Vector3 {
   const y2 = y * y;
   const z2 = z * z;
 
-  const sx = x * Math.sqrt(1 - (y2 / 2) - (z2 / 2) + (y2 * z2 / 3));
-  const sy = y * Math.sqrt(1 - (z2 / 2) - (x2 / 2) + (z2 * x2 / 3));
-  const sz = z * Math.sqrt(1 - (x2 / 2) - (y2 / 2) + (x2 * y2 / 3));
+  const sx = x * Math.sqrt(1 - y2 / 2 - z2 / 2 + (y2 * z2) / 3);
+  const sy = y * Math.sqrt(1 - z2 / 2 - x2 / 2 + (z2 * x2) / 3);
+  const sz = z * Math.sqrt(1 - x2 / 2 - y2 / 2 + (x2 * y2) / 3);
 
   return new Vector3(sx, sy, sz);
 }

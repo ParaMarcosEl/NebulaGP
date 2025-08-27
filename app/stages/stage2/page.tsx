@@ -25,7 +25,7 @@ import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
-import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
+import ParticleSystem from '@/Components/Particles/ParticleSystem';
 // import Satellite from '@/Components/World/Satellite';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import Satellite from '@/Components/World/Satellite';
@@ -74,8 +74,6 @@ export default function Stage1() {
   const botRef5 = useRef<THREE.Group | null>(null);
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
-  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { loader, setMaterialLoaded } = useCanvasLoader();
 
   const playerRefs = useMemo(
@@ -187,17 +185,15 @@ export default function Stage1() {
 
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
-      key={id}
-      duration={Infinity}
-      direction={new THREE.Vector3(0, 0, 1)}
+      lifetime={0.2}
+      maxDistance={1}
+      texturePath="/textures/exploded.jpg"
+      key={id + 'booster'}
+      speed={10}
+      startSize={30}
+      endSize={3}
       target={player as React.RefObject<THREE.Object3D>}
-      size={400}
-      texturePath="/textures/explosion.png"
-      offset={thrusterOffset}
-      // useWorldSpace
-      // emissions={{
-      //   rateOverDistance: 100
-      // }}
+      emissionRate={200}
     />
   ));
 

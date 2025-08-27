@@ -1,7 +1,7 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { useState } from "react";
-import { QuadtreeNode } from "./quadTree";
-import {Chunk} from "./Chunk";
+import { useFrame, useThree } from '@react-three/fiber';
+import { useState } from 'react';
+import { QuadtreeNode } from './quadTree';
+import { Chunk } from './Chunk';
 import * as THREE from 'three';
 
 interface IFaceProps {
@@ -9,7 +9,6 @@ interface IFaceProps {
   active: boolean; // Only active faces will update their quadtree.
   worldOrigin: THREE.Vector2;
 }
-
 
 export const Face = ({ quadtree, active, worldOrigin }: IFaceProps) => {
   const [leafNodes, setLeafNodes] = useState<QuadtreeNode[]>([]);
@@ -27,12 +26,7 @@ export const Face = ({ quadtree, active, worldOrigin }: IFaceProps) => {
   return (
     <group>
       {leafNodes.map((node, index) => (
-        <Chunk
-            
-          key={index}
-          node={node}
-          worldOrigin={worldOrigin}
-        />
+        <Chunk key={index} node={node} worldOrigin={worldOrigin} />
       ))}
     </group>
   );

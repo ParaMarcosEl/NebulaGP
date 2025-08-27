@@ -1,6 +1,6 @@
-import * as THREE from "three";
-import { useFrame, useThree } from "@react-three/fiber";
-import React, { useMemo, useRef } from "react";
+import * as THREE from 'three';
+import { useFrame, useThree } from '@react-three/fiber';
+import React, { useMemo, useRef } from 'react';
 
 /**
  * NOTE: WebGL in browsers (via three.js/R3F) does not support geometry shaders.
@@ -11,7 +11,7 @@ import React, { useMemo, useRef } from "react";
  * The fragment shader outputs solid white for now.
  */
 
-const vert = /* glsl */`
+const vert = /* glsl */ `
 uniform vec3 cameraRight;
 uniform vec3 cameraUp;
 uniform vec3 particlePos;  // world-space center of the particle
@@ -29,7 +29,7 @@ void main() {
 }
 `;
 
-const frag = /* glsl */`
+const frag = /* glsl */ `
 precision mediump float;
 void main() {
   gl_FragColor = vec4(1.0); // solid white for now
@@ -38,21 +38,19 @@ void main() {
 
 export function BillboardParticleSystem({
   position = new THREE.Vector3(0, 0, 0),
-  size = 1
-}: { position?: THREE.Vector3, size?: number }) {
+  size = 1,
+}: {
+  position?: THREE.Vector3;
+  size?: number;
+}) {
   const matRef = useRef<THREE.ShaderMaterial>(null!);
   const { camera } = useThree();
 
   // Build a unit quad with a custom `corner` attribute so the vertex shader can expand it
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
-    const corners = new Float32Array([
-      -0.5, -0.5,
-       0.5, -0.5,
-       0.5,  0.5,
-      -0.5,  0.5,
-    ]);
-    geo.setAttribute("corner", new THREE.BufferAttribute(corners, 2));
+    const corners = new Float32Array([-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5]);
+    geo.setAttribute('corner', new THREE.BufferAttribute(corners, 2));
     const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
     geo.setIndex(new THREE.BufferAttribute(indices, 1));
     return geo;
@@ -72,19 +70,23 @@ export function BillboardParticleSystem({
     matRef.current.uniforms.size.value = size;
   });
 
-  const material = useMemo(() => new THREE.ShaderMaterial({
-    vertexShader: vert,
-    fragmentShader: frag,
-    depthTest: true,
-    depthWrite: true,
-    transparent: false,
-    uniforms: {
-      cameraRight: { value: new THREE.Vector3(1, 0, 0) },
-      cameraUp: { value: new THREE.Vector3(0, 1, 0) },
-      particlePos: { value: new THREE.Vector3() },
-      size: { value: 1 },
-    },
-  }), []);
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: vert,
+        fragmentShader: frag,
+        depthTest: true,
+        depthWrite: true,
+        transparent: false,
+        uniforms: {
+          cameraRight: { value: new THREE.Vector3(1, 0, 0) },
+          cameraUp: { value: new THREE.Vector3(0, 1, 0) },
+          particlePos: { value: new THREE.Vector3() },
+          size: { value: 1 },
+        },
+      }),
+    [],
+  );
 
   return (
     <mesh geometry={geometry} material={material}>

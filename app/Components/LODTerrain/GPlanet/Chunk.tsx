@@ -131,7 +131,10 @@ interface IChunkProps {
   worldOrigin: THREE.Vector2;
 }
 
-export const Chunk = forwardRef<THREE.Mesh, IChunkProps>(function Chunk({ node, worldOrigin }, ref) {
+export const Chunk = forwardRef<THREE.Mesh, IChunkProps>(function Chunk(
+  { node, worldOrigin },
+  ref,
+) {
   const materialRef = useRef<PlanetMaterial>(null);
   const { position, size, segments } = useMemo(() => {
     // Determine the position and size from the quadtree node.
