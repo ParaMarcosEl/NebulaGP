@@ -1,6 +1,6 @@
 // stores/useSettingsStore.ts
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface SettingsState {
   invertPitch: number;
@@ -33,8 +33,8 @@ export const useSettingsStore = create<SettingsState>()(
       reset: () => set({ invertPitch: 1, touchEnabled: true }),
     }),
     {
-      name: "game-settings", // default (overridden by loadForUser)
+      name: 'game-settings', // default (overridden by loadForUser)
       storage: createJSONStorage(() => localStorage),
-    }
-  )
+    },
+  ),
 );

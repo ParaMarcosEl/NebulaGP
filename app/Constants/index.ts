@@ -43,8 +43,8 @@ export const TERRAIN_PROPS = {
   persistence: 0.5,
   exponentiation: 1.0,
   midMapPath: '/textures/planet_texture01.png',
-  lowMapPath: '/textures/planet_texture01.jpg', // Example low elevation texture
-  highMapPath: '/textures/planet_texture02.jpg', // Example high elevation texture
+  lowMapPath: '/textures/planet_texture01.png', // Example low elevation texture
+  highMapPath: '/textures/planet_texture02.png', // Example high elevation texture
   textureBlend: 0.2, // Controls blend sharpness (smaller = sharper, 0 to 1)
 };
 export const Y_OFFSET = -175;

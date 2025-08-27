@@ -1,0 +1,85 @@
+.accountsettings {
+  position: relative;
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #490000;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.accountsettings__title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.accountsettings__error {
+  color: #d33;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.accountsettings__message {
+  color: #2a7;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.accountsettings__form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+}
+
+.accountsettings__field {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+
+.accountsettings__field label {
+  width: calc(50%);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  margin-right: 0.25rem;
+  text-align: right;
+  align-self: center;
+  color: #fff;
+}
+
+.accountsettings__field input {
+  border: 1px white solid;
+  border-radius: 5px;
+  width: calc(50%);
+  text-align: left;
+  background: transparent;
+  padding: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.accountsettings__field input:focus {
+  outline: none;
+  border-bottom: 1px solid #888;
+}
+
+.accountsettings__update {
+  width: 100%;
+  text-align: right;
+}
+
+.accountsettings__update:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.accountsettings__notice {
+  text-align: center;
+  padding: 1rem;
+  color: #666;
+}

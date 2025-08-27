@@ -21,17 +21,17 @@ import { RaceOver } from '@/Components/UI/RaceOver';
 import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
-import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
-import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
+import ParticleSystem from '@/Components/Particles/ParticleSystem';
+import LODPlanet from '@/Components/LODTerrain/Planet/Planet';
 
 function RaceProgressTracker({
   playerRefs,
@@ -68,7 +68,7 @@ export default function Stage1() {
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
-  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
+  // const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
   const { loader } = useCanvasLoader();
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
@@ -182,18 +182,21 @@ export default function Stage1() {
 
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
-      key={id}
+      lifetime={0.2}
+      maxDistance={1}
+      texturePath="/textures/exploded.jpg"
+      key={id + 'booster'}
+      speed={10}
+      startSize={30}
+      endSize={3}
       target={player as React.RefObject<THREE.Object3D>}
-      size={400}
-      texturePath="/textures/explosion.png"
-      offset={thrusterOffset}
-      // useWorldSpace
-      // emissions={{
-      //   rateOverDistance: 100
-      // }}
+      emissionRate={200}
     />
   ));
 
+  const playerPosition = startPositions[0].position;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const playerStart = new THREE.Vector3(playerPosition[0], playerPosition[1], playerPosition[2]);
   return (
     <main
       style={{
@@ -317,12 +320,25 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-          <Planet size={350} />
+
+          <LODPlanet
+            planetSize={350}
+            cubeSize = {100}
+            lowTextPath = '/textures/molten_rock.png'
+            midTextPath = '/textures/rocky_ground.png'
+            highTextPath = '/textures/molten_rock.png'
+            maxHeight = {20}
+            frequency = {4}
+            amplitude = {1}
+            octaves = {4}
+            lacunarity = {2.0}
+            persistence = {0.5}
+            exponentiation = {2}
+          />
 
           {/* Players */}
           {players}
           {boosters}
-
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>

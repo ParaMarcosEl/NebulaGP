@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import styles from './Modal.module.css'; // CSS module
+import './Modal.css'; // CSS module
 
 interface ModalProps {
   isOpen: boolean;
@@ -26,15 +26,15 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={'overlay'} onClick={onClose}>
       <div
-        className={styles.modal}
+        className={'modal'}
         onClick={(e) => e.stopPropagation()} // prevent closing on modal click
       >
-        <button className={styles.closeBtn} onClick={onClose}>
+        <button className={'closeBtn'} onClick={onClose}>
           ✕
         </button>
-        {children}
+        <div className="modal-content">{children}</div>
       </div>
     </div>,
     document.body,

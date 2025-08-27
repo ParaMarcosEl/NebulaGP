@@ -13,3 +13,15 @@ export async function getUserFromRequest(req: NextRequest) {
     return null;
   }
 }
+// lib/jsonResponse.ts
+import { NextResponse } from 'next/server'
+import type { User } from '@/Constants/types'
+
+export function jsonResponse(
+  success: boolean,
+  data: User | null,
+  error: string | null = null,
+  status = 200
+) {
+  return NextResponse.json({ success, data, error }, { status })
+}

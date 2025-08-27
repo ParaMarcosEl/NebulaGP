@@ -1,16 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect } from 'react';
+import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
 import HUD from '@/Components/UI/HUD/HUD';
-import { onShipCollision } from '@/Utils/collisions';
 import { getStartPoseFromCurve } from '@/Utils';
+import { onShipCollision } from '@/Utils/collisions';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
@@ -22,16 +21,17 @@ import { RaceOver } from '@/Components/UI/RaceOver';
 import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
-import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
-import { ParticleSystem } from '@/Components/ParticleSystem/ParticleSystem';
 import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
+import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
-import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
+import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
-import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
+import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
+import ParticleSystem from '@/Components/Particles/ParticleSystem';
+import LODPlanet from '@/Components/LODTerrain/Planet/Planet';
 
 function RaceProgressTracker({
   playerRefs,
@@ -60,26 +60,22 @@ function ShipCollisionTracker({
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
+  const botRef1 = useRef<THREE.Group | null>(null);
+  const botRef2 = useRef<THREE.Group | null>(null);
+  const botRef3 = useRef<THREE.Group | null>(null);
+  const botRef4 = useRef<THREE.Group | null>(null);
+  const botRef5 = useRef<THREE.Group | null>(null);
+  const botRef6 = useRef<THREE.Group | null>(null);
+  const botRef7 = useRef<THREE.Group | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
-  const ghostRef = useRef<THREE.Group | null>(null);
-  // const botRef2 = useRef<THREE.Group | null>(null);
-  // const botRef3 = useRef<THREE.Group | null>(null);
-  // const botRef4 = useRef<THREE.Group | null>(null);
-  // const botRef5 = useRef<THREE.Group | null>(null);
-  // const botRef6 = useRef<THREE.Group | null>(null);
-  // const botRef7 = useRef<THREE.Group | null>(null);
-  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
-
+  // const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
+  const { loader } = useCanvasLoader();
   const playerRefs = useMemo(
-    () => [
-      aircraftRef,
-      // botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7
-    ],
+    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
 
   const bounds = { x: 500, y: 250, z: 500 };
-
   const {
     raceData,
     reset,
@@ -87,7 +83,20 @@ export default function Stage1() {
     setTrack,
     setMaterialLoaded,
     setRaceComplete,
+    setTouchEnabled,
   } = useGameStore((state) => state);
+
+  useEffect(() => {
+    // Enable touch only if device supports touch
+    if ('ontouchstart' in window) {
+      setTouchEnabled(true);
+    }
+
+    // Optional: cleanup / disable on unmount
+    return () => {
+      setTouchEnabled(false);
+    };
+  }, []);
 
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
@@ -117,7 +126,7 @@ export default function Stage1() {
   // HUD state
   const [speed, setSpeed] = useState(0);
   const startPositions = useMemo(
-    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01)),
+    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
     [curve, playerRefs],
   );
 
@@ -125,21 +134,22 @@ export default function Stage1() {
     setMaterialLoaded(true);
     setTrack(tracks[0]);
     reset();
+
     return () => {
       setMaterialLoaded(false);
       setRaceComplete(false);
     };
-  }, []);
+  }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
 
   const players = playerRefs.map((player, id) =>
     id === 0 ? (
       <Aircraft
-        trackId={0}
         key={id}
         id={id}
-        minePoolRef={minePoolRef}
+        trackId={0}
         aircraftRef={player}
         playerRefs={playerRefs}
+        minePoolRef={minePoolRef}
         curve={curve}
         obstacleRefs={obstacleRefs.current}
         playingFieldRef={playingFieldRef}
@@ -151,24 +161,42 @@ export default function Stage1() {
         botSpeed={1.6}
       />
     ) : (
-      <GhostShip key={id} shipRef={ghostRef as React.RefObject<THREE.Object3D>} trackId={0} />
+      <Bot
+        key={id}
+        minePoolRef={minePoolRef}
+        id={id}
+        aircraftRef={player}
+        playerRefs={playerRefs}
+        startPosition={startPositions[id].position}
+        startQuaternion={startPositions[id].quaternion}
+        curve={curve}
+        isBot
+        obstacleRefs={obstacleRefs.current}
+        playingFieldRef={playingFieldRef}
+        acceleration={0.01}
+        damping={0.99}
+        botSpeed={1.4 + id * 0.1}
+      />
     ),
   );
 
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
-      key={id}
+      lifetime={0.2}
+      maxDistance={1}
+      texturePath="/textures/exploded.jpg"
+      key={id + 'booster'}
+      speed={10}
+      startSize={30}
+      endSize={3}
       target={player as React.RefObject<THREE.Object3D>}
-      size={400}
-      texturePath="/textures/explosion.png"
-      offset={thrusterOffset}
-      // useWorldSpace
-      // emissions={{
-      //   rateOverDistance: 100
-      // }}
+      emissionRate={200}
     />
   ));
 
+  const playerPosition = startPositions[0].position;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const playerStart = new THREE.Vector3(playerPosition[0], playerPosition[1], playerPosition[2]);
   return (
     <main
       style={{
@@ -195,85 +223,125 @@ export default function Stage1() {
         EXIT RACE
       </Link>
       <HUD playerRefs={playerRefs} trackId={0} />
+      <WeaponStatus />
+      {/* <TouchControls /> */}
+      <ControlButtons />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
       <RaceOver />
       <Speedometer speed={speed} />
       <StartCountdown />
-      <ControlButtons />
+      {loader}
 
       {/* Scene */}
-      <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
-        <RaceProgressTracker
-          playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
-          curve={curve}
-        />
+      <Canvas
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: -1,
+          width: '100%',
+          height: '100%',
+        }}
+        camera={{ position: [0, 5, 15], fov: 60 }}
+      >
+        <Suspense fallback={null}>
+          <RaceProgressTracker
+            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
+            curve={curve}
+          />
 
-        <ShipCollisionTracker
-          playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
-          onCollide={onShipCollision}
-        />
+          <ShipCollisionTracker
+            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
+            onCollide={onShipCollision}
+          />
 
-        {/* Lighting */}
-        <ambientLight intensity={0.4} />
-        <directionalLight
-          position={[5, 10, 7]}
-          intensity={0.8}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-          shadow-camera-near={0.5}
-          shadow-camera-far={500}
-        />
-        <pointLight position={[-10, 5, -10]} intensity={0.3} />
+          {/* Lighting */}
+          <ambientLight intensity={0.2} />
+          <directionalLight
+            position={[150, 0, 0]}
+            intensity={0.8}
+            castShadow
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
+            shadow-camera-near={0.5}
+            shadow-camera-far={500}
+          />
+          <pointLight position={[-10, 5, -10]} intensity={0.3} />
 
-        {/* World */}
-        <Skybox stageName="stageI" />
+          {/* World */}
+          <Skybox stageName="stageI" />
 
-        <Track
-          ref={playingFieldRef}
-          aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
-          curve={curve}
-        />
-        <SpeedPadSpawner
-          curve={curve}
-          padCount={16}
-          startT={0.16}
-          playerRefs={playerRefs.map((ref, id) => ({
-            id,
-            ref: ref as React.RefObject<THREE.Group>,
-          }))}
-        />
+          <Track
+            ref={playingFieldRef}
+            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
+            curve={curve}
+          />
 
-        {/* <WeaponsPadSpawner
-          curve={curve}
-          padCount={4}
-          startT={0.2}
-          endT={0.9}
-          playerRefs={playerRefs.map((ref, id) => ({
-            id,
-            ref: ref as React.RefObject<THREE.Group>,
-          }))}
-        />
+          <MinePadSpawner
+            curve={curve}
+            padCount={4}
+            startT={0.3}
+            endT={0.85}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
 
-        <ShieldPadSpawner
-          curve={curve}
-          padCount={2}
-          startT={0.5}
-          endT={0.8}
-          playerRefs={playerRefs.map((ref, id) => ({
-            id,
-            ref: ref as React.RefObject<THREE.Group>,
-          }))}
-        /> */}
-        <Planet size={350} />
+          <SpeedPadSpawner
+            curve={curve}
+            padCount={16}
+            startT={0.16}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
 
-        {/* Players */}
-        {players}
-        {boosters}
+          <WeaponsPadSpawner
+            curve={curve}
+            padCount={4}
+            startT={0.2}
+            endT={0.9}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
 
-        {/* Camera */}
-        <FollowCamera targetRef={aircraftRef} />
+          <ShieldPadSpawner
+            curve={curve}
+            padCount={2}
+            startT={0.5}
+            endT={0.8}
+            playerRefs={playerRefs.map((ref, id) => ({
+              id,
+              ref: ref as React.RefObject<THREE.Group>,
+            }))}
+          />
+
+          <LODPlanet
+            planetSize={350}
+            cubeSize = {100}
+            lowTextPath = '/textures/molten_rock.png'
+            midTextPath = '/textures/rocky_ground.png'
+            highTextPath = '/textures/molten_rock.png'
+            maxHeight = {20}
+            frequency = {4}
+            amplitude = {1}
+            octaves = {4}
+            lacunarity = {2.0}
+            persistence = {0.5}
+            exponentiation = {2}
+          />
+
+          {/* Players */}
+          {players}
+          {boosters}
+          {/* Camera */}
+          <FollowCamera targetRef={aircraftRef} />
+        </Suspense>
       </Canvas>
     </main>
   );

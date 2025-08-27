@@ -7,6 +7,12 @@
   margin: 0 auto;
 }
 
+.register-form,
+.address {
+  display: flex;
+  flex-direction: column;
+}
+
 .auth-input {
   background: none;
   padding: 0.3rem;
@@ -16,6 +22,23 @@
   width: 8em;
 }
 
+.input {
+  display: flex;
+  align-items: center;
+}
+
+.input label,
+.input input {
+  width: 50%;
+}
+
+.input label {
+  text-align: right;
+  margin-right: 0.5em;
+}
+h2 {
+  text-align: center;
+}
 .auth-button {
   background-color: none;
   color: #fff;

@@ -3,6 +3,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { Trail } from '@react-three/drei';
 
 type CannonProps = {
   parentRef: React.RefObject<THREE.Object3D>;
@@ -18,6 +19,7 @@ export default function Cannon({ parentRef, onShoot }: CannonProps) {
   const timeSinceLastShot = useRef(0);
   const cannonWorldPos = useRef(new THREE.Vector3());
   const cannonForward = useRef(new THREE.Vector3());
+  const cannonRef = useRef<THREE.Object3D>(null);
   const offset = new THREE.Vector3(0, 0, 0);
 
   useEffect(() => {
@@ -75,7 +77,16 @@ export default function Cannon({ parentRef, onShoot }: CannonProps) {
   return (
     <>
       {projectiles.map((p, i) => (
-        <primitive object={p} key={i} />
+        <>
+          <primitive key={i} ref={cannonRef} object={p} />
+          <Trail
+            target={cannonRef as React.RefObject<THREE.Object3D>}
+            width={0.5}
+            length={1}
+            attenuation={(t) => t * t}
+            color={new THREE.Color(1, 0, 0)}
+          />
+        </>
       ))}
     </>
   );

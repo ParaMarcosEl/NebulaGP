@@ -5,6 +5,7 @@ import OrientationLock from '@/Components/UI/OrientationLock';
 import { TextureLoader } from './Components/TextureLoader/TextureLoader';
 import UserProvider from './Components/UI/Auth/UserProvider';
 import { SettingsInitializer } from './Controllers/Settings/SettingsInitializer';
+import GlobalAlert from './Components/UI/Alert/GlobalAlert';
 
 export const metadata = {
   title: 'Nebula GP | Zero-Gravity Racing',
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <UserProvider>
           {children}
           <SettingsInitializer />
+          <GlobalAlert />
         </UserProvider>
         <OrientationLock />
         {/* </TransitionLayout> */}
