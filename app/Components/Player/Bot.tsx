@@ -8,6 +8,7 @@ import { useBotController } from './BotController';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
 import { Mine } from '../Weapons/useMines';
+import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 
 type AircraftProps = {
   id: number;
@@ -26,6 +27,7 @@ type AircraftProps = {
   curve: THREE.Curve<THREE.Vector3>;
   isBot?: boolean;
   botSpeed?: number;
+  explosionPoolRef?: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
 };
 
 export default function Bot({
@@ -38,6 +40,7 @@ export default function Bot({
   curve,
   isBot,
   botSpeed = 1,
+  explosionPoolRef,
 }: AircraftProps) {
   const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
@@ -52,6 +55,7 @@ export default function Bot({
     curve,
     enabled: !!isBot,
     speed: botSpeed,
+    explosionPoolRef
   });
 
   useEffect(() => {

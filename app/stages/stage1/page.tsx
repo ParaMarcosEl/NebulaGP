@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
+import { useRef, useMemo, useState, createRef, useEffect, Suspense, ReactElement } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
@@ -31,7 +31,8 @@ import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
-import LODPlanet from '@/Components/LODTerrain/Planet/Planet';
+import MineExplosionParticles, { MineExplosionHandle } from '@/Components/Particles/ExplosionParticles';
+import Planet from '@/Components/World/Planet/Planet';
 
 function RaceProgressTracker({
   playerRefs,
@@ -40,7 +41,7 @@ function RaceProgressTracker({
   curve: curveType;
 }) {
   useRaceProgress({ playerRefs: playerRefs as React.RefObject<THREE.Group>[] });
-  return null; // No rendering, just logic
+  return null;
 }
 
 function ShipCollisionTracker({
@@ -57,6 +58,8 @@ function ShipCollisionTracker({
   return null;
 }
 
+const EXPLOSION_POOL_SIZE = 10;
+
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
@@ -68,12 +71,36 @@ export default function Stage1() {
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
-  // const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
   const { loader } = useCanvasLoader();
+
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
+
+  // Correctly type the explosion pool ref as an array of RefObjects
+  const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
+  
+  // Use useMemo to create the components and their refs only once.
+  // This ensures the refs are created before the components are rendered.
+  const explosions = useMemo(() => {
+    const exps: ReactElement[] = [];
+    for (let i = 0; i < EXPLOSION_POOL_SIZE; i++) {
+      const handle = createRef<MineExplosionHandle>();
+      exps.push(<MineExplosionParticles key={i} ref={handle} />);
+      explosionPoolRef.current.push(handle as React.RefObject<MineExplosionHandle>);
+    }
+    return exps;
+  }, []);
+
+  // Use useEffect to check that the refs are populated after the initial render.
+  // This is a good way to debug timing issues.
+  useEffect(() => {
+    console.log('Explosion Pool Refs populated:', explosionPoolRef.current);
+    if (explosionPoolRef.current.length === 0) {
+      console.error('Explosion pool is empty!');
+    }
+  }, []); // Run only once after initial render
 
   const bounds = { x: 500, y: 250, z: 500 };
   const {
@@ -87,16 +114,13 @@ export default function Stage1() {
   } = useGameStore((state) => state);
 
   useEffect(() => {
-    // Enable touch only if device supports touch
     if ('ontouchstart' in window) {
       setTouchEnabled(true);
     }
-
-    // Optional: cleanup / disable on unmount
     return () => {
       setTouchEnabled(false);
     };
-  }, []);
+  }, [setTouchEnabled]);
 
   const positions = Object.entries(raceData)
     .map(([id, player]) => ({
@@ -123,7 +147,6 @@ export default function Stage1() {
     obstacleRefs.current = obstaclePositions.map(() => createRef<THREE.Mesh>());
   }
 
-  // HUD state
   const [speed, setSpeed] = useState(0);
   const startPositions = useMemo(
     () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
@@ -134,7 +157,6 @@ export default function Stage1() {
     setMaterialLoaded(true);
     setTrack(tracks[0]);
     reset();
-
     return () => {
       setMaterialLoaded(false);
       setRaceComplete(false);
@@ -150,6 +172,8 @@ export default function Stage1() {
         aircraftRef={player}
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}
+        // Correctly pass the typed ref object
+        explosionPoolRef={explosionPoolRef} 
         curve={curve}
         obstacleRefs={obstacleRefs.current}
         playingFieldRef={playingFieldRef}
@@ -164,6 +188,7 @@ export default function Stage1() {
       <Bot
         key={id}
         minePoolRef={minePoolRef}
+        explosionPoolRef={explosionPoolRef}
         id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
@@ -194,9 +219,6 @@ export default function Stage1() {
     />
   ));
 
-  const playerPosition = startPositions[0].position;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const playerStart = new THREE.Vector3(playerPosition[0], playerPosition[1], playerPosition[2]);
   return (
     <main
       style={{
@@ -224,7 +246,6 @@ export default function Stage1() {
       </Link>
       <HUD playerRefs={playerRefs} trackId={0} />
       <WeaponStatus />
-      {/* <TouchControls /> */}
       <ControlButtons />
       <MiniMap positions={positions} curve={curve} />
       <StandingsUI />
@@ -232,7 +253,6 @@ export default function Stage1() {
       <Speedometer speed={speed} />
       <StartCountdown />
       {loader}
-
       {/* Scene */}
       <Canvas
         style={{
@@ -244,18 +264,20 @@ export default function Stage1() {
           height: '100%',
         }}
         camera={{ position: [0, 5, 15], fov: 60 }}
+        dpr={[1, 2]}
+        onCreated={({ gl }) => {
+          gl.sortObjects = true;
+        }}
       >
         <Suspense fallback={null}>
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}
           />
-
           <ShipCollisionTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             onCollide={onShipCollision}
           />
-
           {/* Lighting */}
           <ambientLight intensity={0.2} />
           <directionalLight
@@ -268,27 +290,23 @@ export default function Stage1() {
             shadow-camera-far={500}
           />
           <pointLight position={[-10, 5, -10]} intensity={0.3} />
-
           {/* World */}
           <Skybox stageName="stageI" />
-
           <Track
             ref={playingFieldRef}
             aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
             curve={curve}
           />
-
           <MinePadSpawner
             curve={curve}
             padCount={4}
-            startT={0.3}
+            startT={0.1}
             endT={0.85}
             playerRefs={playerRefs.map((ref, id) => ({
               id,
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-
           <SpeedPadSpawner
             curve={curve}
             padCount={16}
@@ -298,7 +316,6 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-
           <WeaponsPadSpawner
             curve={curve}
             padCount={4}
@@ -309,7 +326,6 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-
           <ShieldPadSpawner
             curve={curve}
             padCount={2}
@@ -320,25 +336,15 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-
-          <LODPlanet
-            planetSize={350}
-            cubeSize = {100}
-            lowTextPath = '/textures/molten_rock.png'
-            midTextPath = '/textures/rocky_ground.png'
-            highTextPath = '/textures/molten_rock.png'
-            maxHeight = {20}
-            frequency = {4}
-            amplitude = {1}
-            octaves = {4}
-            lacunarity = {2.0}
-            persistence = {0.5}
-            exponentiation = {2}
+          <Planet
+            position={new THREE.Vector3()}
+            size={350}
           />
-
           {/* Players */}
           {players}
           {boosters}
+          {/* Explosions */}
+          {explosions}
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>

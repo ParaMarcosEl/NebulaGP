@@ -1,5 +1,21 @@
 import * as THREE from 'three';
 
+export interface PlanetUniforms {
+  uTime: { value: number };
+  uMaxHeight: { value: number };
+  uPlanetSize: { value: number };
+  uLowMap: { value: THREE.Texture };
+  uMidMap: { value: THREE.Texture };
+  uHighMap: { value: THREE.Texture };
+  uFrequency: { value: number };
+  uAmplitude: { value: number };
+  uOctaves: { value: number };
+  uLacunarity: { value: number };
+  uPersistence: { value: number };
+  uExponentiation: { value: number };
+}
+
+
 export class PlanetMaterial extends THREE.MeshStandardMaterial {
   customUniforms: {
     uTime: { value: number };
@@ -97,17 +113,22 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         }
 
         float fbm(vec3 p) {
-          float value = 0.0;
-          float amp = uAmplitude;
+          float total = 0.0;
           float freq = uFrequency;
+          float amp = uAmplitude;
+          float maxAmp = 0.0;
+
           for (int i = 0; i < 20; i++) {
-            if(i >= uOctaves) break;
-            value += amp * (noise(p * freq) - 0.5) * 2.0;
+            if (i >= uOctaves) break;
+            float n = noise(p * freq); // 0..1 range
+            total += n * amp;
+            maxAmp += amp;
             freq *= uLacunarity;
             amp *= uPersistence;
           }
-          value = pow(max(value, 0.0), uExponentiation);
-          return value;
+
+          float normalized = total / maxAmp;  // stays in 0..1
+          return pow(normalized, uExponentiation);
         }
         `,
       );

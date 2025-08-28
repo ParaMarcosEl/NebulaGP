@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRef } from 'react';
 import { onBulletCollision } from '@/Utils/collisions';
 import { useGameStore } from '@/Controllers/Game/GameController';
+import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 
 export type Mine = {
   mesh: THREE.Mesh;
@@ -13,6 +14,7 @@ export type Mine = {
 export function useMines(
   shipRef: React.RefObject<THREE.Object3D>,
   poolRef: React.RefObject<Mine[]>,
+  explosionPoolRefs: React.RefObject<React.RefObject<MineExplosionHandle>[]>,
   { maxMines = 10, dropOffset = 5 } = {},
 ) {
   const { scene } = useThree();
@@ -20,10 +22,9 @@ export function useMines(
   const backward = new THREE.Vector3(0, 0, 1);
   const playerPos = new THREE.Vector3();
   const cooldown = 3;
-  const lastFiredRef = useRef(0); // seconds
+  const lastFiredRef = useRef(0);
   const { raceData, setShieldValue } = useGameStore((s) => s);
 
-  // Initialize mine pool once
   if (poolRef.current.length === 0) {
     for (let i = 0; i < maxMines; i++) {
       const sphere = new THREE.Mesh(
@@ -42,14 +43,13 @@ export function useMines(
   }
 
   const drop = (currentTime: number) => {
-    if (!shipRef.current) return null;
+    if (!shipRef.current) return;
     if (currentTime - lastFiredRef.current < cooldown) return;
     lastFiredRef.current = currentTime;
 
     const available = poolRef.current.find((m) => !m.active);
-    if (!available) return; // no free mines
+    if (!available) return;
 
-    // Get backward direction in world space
     backward
       .applyQuaternion(shipRef.current.getWorldQuaternion(new THREE.Quaternion()))
       .normalize();
@@ -65,12 +65,20 @@ export function useMines(
   const deactivateMine = (mine: Mine) => {
     mine.active = false;
     mine.mesh.visible = false;
+
+    // Defensive check to ensure the explosion pool and its contents exist
+    if (explosionPoolRefs.current && explosionPoolRefs.current.length > 0) {
+      // Find the first inactive explosion in the pool
+      const availableExplosion = explosionPoolRefs.current.find(ref => ref.current && !ref.current.isPlaying());
+      
+      // If an available explosion is found, play it at the mine's position
+      if (availableExplosion?.current) {
+        availableExplosion.current.play(mine.mesh.position);
+      }
+    }
   };
 
-  // Collision check in frame loop
   useFrame(() => {
-    // You can adjust this depending on how you track players
-    // Here’s a simple placeholder loop
     if (shipRef.current) {
       playerPos.setFromMatrixPosition(shipRef.current.matrixWorld);
     }

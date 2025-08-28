@@ -1,7 +1,7 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useGLTF } from 'node_modules/@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { SkeletonUtils } from 'three-stdlib';
 import { useGameStore } from '@/Controllers/Game/GameController';
 
@@ -26,11 +26,10 @@ export function useProjectiles(
   const lifetime = 2; // seconds
   const gltf = useGLTF('/models/missile.glb');
 
-  // Initialize pool once
+  useEffect(() => {
   if (poolRef.current.length === 0) {
     for (let i = 0; i < maxProjectiles; i++) {
       const missile = SkeletonUtils.clone(gltf.scene) as THREE.Group;
-
       missile.visible = false;
       scene.add(missile);
 
@@ -44,6 +43,27 @@ export function useProjectiles(
       });
     }
   }
+}, [gltf, maxProjectiles, scene, shipRef, velocity]);
+
+
+  // // Initialize pool once
+  // if (poolRef.current.length === 0) {
+  //   for (let i = 0; i < maxProjectiles; i++) {
+  //     const missile = SkeletonUtils.clone(gltf.scene) as THREE.Group;
+
+  //     missile.visible = false;
+  //     scene.add(missile);
+
+  //     poolRef.current.push({
+  //       mesh: missile,
+  //       direction: new THREE.Vector3(),
+  //       velocity,
+  //       age: 0,
+  //       active: false,
+  //       owner: shipRef,
+  //     });
+  //   }
+  // }
 
   const fire = (currentTime: number, id: number) => {
     if (!shipRef.current) return;
@@ -67,6 +87,27 @@ export function useProjectiles(
     available.active = true;
     available.mesh.visible = true;
   };
+
+  useEffect(() => {
+    const pool = poolRef.current;
+  return () => {
+    pool.forEach((p) => {
+      scene.remove(p.mesh);
+      p.mesh.traverse((child) => {
+        if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
+        if ((child as THREE.Mesh).material) {
+          const material = (child as THREE.Mesh).material;
+          if (Array.isArray(material)) {
+            material.forEach((m) => m.dispose());
+          } else {
+            material.dispose();
+          }
+        }
+      });
+    });
+  };
+}, [scene]);
+
 
   useFrame((_, delta) => {
     poolRef.current.forEach((proj) => {

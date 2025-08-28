@@ -8,6 +8,7 @@ import { SHIP_SCALE } from '@/Constants';
 import { Shield } from '../Shield/Shield';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Mine } from '../Weapons/useMines';
+import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 
 type AircraftProps = {
   id: number;
@@ -27,6 +28,7 @@ type AircraftProps = {
   curve: THREE.Curve<THREE.Vector3>;
   isBot?: boolean;
   botSpeed?: number;
+  explosionPoolRef?: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
 };
 
 export default function Aircraft({
@@ -47,11 +49,16 @@ export default function Aircraft({
   curve,
   isBot,
   botSpeed = 1,
+  explosionPoolRef
 }: AircraftProps) {
   const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
+  
+  useEffect(() => {
+    console.log({ explosionPoolRef })
+  }, [explosionPoolRef])
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
@@ -65,6 +72,7 @@ export default function Aircraft({
     id,
     trackId,
     minePoolRef,
+    explosionPoolRef,
     aircraftRef,
     playerRefs,
     obstacleRefs,

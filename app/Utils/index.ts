@@ -8,6 +8,10 @@ type BotState = {
   lastDir: THREE.Vector3;
 };
 
+export function isNullOrUndefined<T>(value: T | null | undefined): value is null | undefined {
+  return value === null || value === undefined;
+}
+
 export function getStartPoseFromCurve(
   curve: THREE.Curve<THREE.Vector3>,
   distance = 0, // Distance along the curve to spawn from

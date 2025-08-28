@@ -67,19 +67,18 @@ export default function Planet({
         castShadow
       />
       <LODPlanet
-        position={new THREE.Vector3()}
-        planetSize={size}
-        cubeSize={16}
-        lowTextPath={'/textures/sunsurface.png'}
-        midTextPath={'/textures/sunsurface.png'}
-        highTextPath={'/textures/sunsurface.png'}
-        maxHeight={30}
-        frequency={4}
-        amplitude={1}
-        octaves={8}
-        lacunarity={3}
-        persistence={0.6}
-        exponentiation={2}
+            planetSize={350}
+            cubeSize = {100}
+            lowTextPath = '/textures/molten_rock.png'
+            midTextPath = '/textures/rocky_ground.png'
+            highTextPath = '/textures/molten_rock.png'
+            maxHeight = {50}
+            frequency = {10}
+            amplitude = {3}
+            octaves = {10}
+            lacunarity = {1.0}
+            persistence = {.1}
+            exponentiation = {6}
       />
       <mesh ref={planetRef} position={position}>
         <sphereGeometry args={[size / 2, 64, 64]} />
