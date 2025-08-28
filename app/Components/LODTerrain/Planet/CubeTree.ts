@@ -75,6 +75,8 @@ type NoiseUniforms = Partial<{
 
   uExponentiation: number;
 
+    uTime: number;
+
 }>;
 
 
@@ -427,7 +429,8 @@ export class CubeTree {
 
     highTexture: THREE.Texture,
 
-    uniforms: NoiseUniforms = {}
+    uniforms: NoiseUniforms = {},
+    
 
   ) {
 

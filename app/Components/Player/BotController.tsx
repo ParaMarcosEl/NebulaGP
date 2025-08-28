@@ -15,6 +15,7 @@ import { useGameStore } from '@/Controllers/Game/GameController';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { Mine, useMines } from '../Weapons/useMines';
+import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 
 interface UseBotControllerProps {
   id: number;
@@ -27,6 +28,8 @@ interface UseBotControllerProps {
   acceleration?: number;
   enabled?: boolean;
   onSpeedChange?: (speed: number) => void;
+  
+  explosionPoolRef?: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
 }
 
 const ROLL_TORQUE = 7;
@@ -43,6 +46,7 @@ export function useBotController({
   acceleration = 0.2,
   enabled = true,
   onSpeedChange,
+  explosionPoolRef
 }: UseBotControllerProps) {
   const currentTRef = useRef(0);
   const [waypoints, setWaypoints] = useState<THREE.Vector3[]>([]);
@@ -62,7 +66,11 @@ export function useBotController({
     velocity: 200,
   });
 
-  const { drop } = useMines(botRef as React.RefObject<THREE.Object3D>, minePoolRef);
+  const { drop } = useMines(
+    botRef as React.RefObject<THREE.Object3D>, 
+    minePoolRef, 
+    explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>
+  );
 
   useProjectileCollisions({
     projectiles: poolRef.current,

@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
+import { useRef, useMemo, useState, createRef, useEffect, Suspense, ReactElement } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
@@ -32,6 +32,7 @@ import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import LODPlanet from '@/Components/LODTerrain/Planet/Planet';
+import MineExplosionParticles, { MineExplosionHandle } from '@/Components/Particles/ExplosionParticles';
 
 function RaceProgressTracker({
   playerRefs,
@@ -129,6 +130,21 @@ export default function Stage1() {
     () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
     [curve, playerRefs],
   );
+  
+    // Correctly type the explosion pool ref as an array of RefObjects
+    const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
+    
+    // Use useMemo to create the components and their refs only once.
+    // This ensures the refs are created before the components are rendered.
+    const explosions = useMemo(() => {
+      const exps: ReactElement[] = [];
+      for (let i = 0; i < 20; i++) {
+        const handle = createRef<MineExplosionHandle>();
+        exps.push(<MineExplosionParticles key={i} ref={handle} />);
+        explosionPoolRef.current.push(handle as React.RefObject<MineExplosionHandle>);
+      }
+      return exps;
+    }, []);
 
   useEffect(() => {
     setMaterialLoaded(true);
@@ -150,6 +166,7 @@ export default function Stage1() {
         aircraftRef={player}
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}
+        explosionPoolRef={explosionPoolRef}
         curve={curve}
         obstacleRefs={obstacleRefs.current}
         playingFieldRef={playingFieldRef}
@@ -167,6 +184,7 @@ export default function Stage1() {
         id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
+        explosionPoolRef={explosionPoolRef}
         startPosition={startPositions[id].position}
         startQuaternion={startPositions[id].quaternion}
         curve={curve}
@@ -339,6 +357,7 @@ export default function Stage1() {
           {/* Players */}
           {players}
           {boosters}
+          {explosions}
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>

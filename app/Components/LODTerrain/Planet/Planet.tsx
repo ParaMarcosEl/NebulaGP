@@ -4,7 +4,7 @@ import { CubeTree } from './CubeTree';
 
 import { Vector3 } from 'three';
 
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useRef } from 'react';
 
 import { useTexture } from '@react-three/drei';
 
@@ -36,6 +36,7 @@ type PlanetDebugProps = {
   persistence?: number;
 
   exponentiation?: number;
+  animate?: boolean
 };
 
 export function LODPlanet({
@@ -81,6 +82,7 @@ export function LODPlanet({
     tex.minFilter = LinearFilter;
   }); 
   // 🔹 Memoize CubeTree with uniforms
+  const timeRef = useRef(0);
 
   const cubeTree = useMemo(
     () =>
@@ -109,6 +111,7 @@ export function LODPlanet({
           uPersistence: persistence,
 
           uExponentiation: exponentiation,
+          uTime: timeRef.current
         },
       ),
 
