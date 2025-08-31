@@ -87,7 +87,7 @@ export function usePlayerController({
     id: playerId,
     playerRefs,
     minePoolRef,
-    enabled: controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
+    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
     botRef: aircraftRef,
     curve,
     speed: botSpeed,

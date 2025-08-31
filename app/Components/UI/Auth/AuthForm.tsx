@@ -195,7 +195,7 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
           <button
             type="button"
             onClick={() => setRegisterOpen && setRegisterOpen(true)}
-            className="auth-switch-btn"
+            className="auth-switch-btn register-btn"
           >
             Register
           </button>
