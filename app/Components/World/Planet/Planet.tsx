@@ -67,18 +67,18 @@ export default function Planet({
         castShadow
       />
       <LODPlanet
-            planetSize={350}
-            cubeSize = {100}
-            lowTextPath = '/textures/molten_rock.png'
-            midTextPath = '/textures/rocky_ground.png'
-            highTextPath = '/textures/molten_rock.png'
-            maxHeight = {50}
-            frequency = {10}
-            amplitude = {3}
-            octaves = {10}
-            lacunarity = {1.0}
-            persistence = {.1}
-            exponentiation = {6}
+        planetSize={350}
+        cubeSize={100}
+        lowTextPath="/textures/molten_rock.png"
+        midTextPath="/textures/rocky_ground.png"
+        highTextPath="/textures/molten_rock.png"
+        maxHeight={50}
+        frequency={10}
+        amplitude={3}
+        octaves={10}
+        lacunarity={1.0}
+        persistence={0.1}
+        exponentiation={6}
       />
       <mesh ref={planetRef} position={position}>
         <sphereGeometry args={[size / 2, 64, 64]} />

@@ -49,16 +49,16 @@ export default function Aircraft({
   curve,
   isBot,
   botSpeed = 1,
-  explosionPoolRef
+  explosionPoolRef,
 }: AircraftProps) {
   const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
-  
+
   useEffect(() => {
-    console.log({ explosionPoolRef })
-  }, [explosionPoolRef])
+    console.log({ explosionPoolRef });
+  }, [explosionPoolRef]);
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {

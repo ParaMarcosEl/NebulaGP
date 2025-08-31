@@ -2,9 +2,10 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OBB } from 'three/addons/math/OBB.js';
 import { useGameStore } from '../Game/GameController';
+import { MineExplosionHandle } from '@/Components/Particles/ExplosionParticles';
 
 type Projectile = {
-  mesh: THREE.Group;
+  mesh: THREE.Mesh;
   direction: THREE.Vector3;
   velocity: number;
   age: number;
@@ -19,9 +20,11 @@ export function useProjectileCollisions({
   playerRefs,
   onCollide,
   owner,
+  explosionPoolRef,
 }: {
   projectiles: Projectile[];
   playerRefs: React.RefObject<THREE.Object3D | null>[];
+  explosionPoolRef: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
   onCollide: CollisionCallback;
   owner: React.RefObject<THREE.Object3D | null>;
 }) {
@@ -55,6 +58,13 @@ export function useProjectileCollisions({
             onCollide(player);
           } else {
             setShieldValue(shieldValue - 0.2, id);
+          }
+          // Trigger explosion if available
+          if (explosionPoolRef.current && explosionPoolRef.current.length > 0) {
+            const availableExplosion = explosionPoolRef.current.find(
+              (ref) => ref.current && !ref.current.isPlaying(),
+            );
+            availableExplosion?.current?.play(proj.mesh.position);
           }
 
           proj.active = false;

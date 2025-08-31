@@ -7,7 +7,6 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { getNearestCurveT, isMobileDevice } from '@/Utils';
 import { useBotController } from '@/Components/Player/BotController';
-import { useProjectiles } from '../Weapons/useProjectiles';
 import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { onBulletCollision } from '@/Utils/collisions';
@@ -15,6 +14,7 @@ import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
 import { TOTAL_LAPS } from '@/Constants';
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { MineExplosionHandle } from '../Particles/ExplosionParticles';
+import { useProjectiles } from '../Weapons/useProjectiles';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
@@ -87,7 +87,7 @@ export function usePlayerController({
     id: playerId,
     playerRefs,
     minePoolRef,
-    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
+    enabled: controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
     botRef: aircraftRef,
     curve,
     speed: botSpeed,
@@ -101,11 +101,15 @@ export function usePlayerController({
     onRecordingComplete: () => {},
   });
 
-  const { fire, poolRef } = useProjectiles(aircraftRef as React.RefObject<THREE.Object3D>, {
-    fireRate: 5,
-    maxProjectiles: 20,
-    velocity: 200,
-  });
+  const { fire, poolRef } = useProjectiles(
+    aircraftRef as React.RefObject<THREE.Object3D>,
+    explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+    {
+      fireRate: 5,
+      maxProjectiles: 20,
+      velocity: 400,
+    },
+  );
 
   const { drop } = useMines(
     aircraftRef as React.RefObject<THREE.Object3D>,
@@ -115,12 +119,13 @@ export function usePlayerController({
     {
       maxMines: 16,
       dropOffset: 6,
-    }
+    },
   );
 
   useProjectileCollisions({
     projectiles: poolRef.current,
     playerRefs,
+    explosionPoolRef: explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
     onCollide: onBulletCollision,
     owner: aircraftRef,
   });

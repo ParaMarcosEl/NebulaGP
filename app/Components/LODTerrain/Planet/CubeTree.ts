@@ -1,507 +1,392 @@
+import * as THREE from 'three';
 
-import * as THREE from "three";
-
-import { PlanetMaterial } from "./PlanetMaterial";
-
-
-
-
+import { PlanetMaterial } from './PlanetMaterial';
 
 // Utility: push vertices out to a proper cube-sphere
 
 export function spherifyGeometry(geometry: THREE.BufferGeometry, radius: number) {
+  const pos = geometry.attributes.position as THREE.BufferAttribute;
 
-  const pos = geometry.attributes.position as THREE.BufferAttribute;
+  const v = new THREE.Vector3();
 
-  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i); // Normalize to a cube space where the largest component is 1
 
+    const len = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
 
+    const cubeV = v.clone().divideScalar(len); // Map cube -> sphere using a computationally efficient approximation
 
-  for (let i = 0; i < pos.count; i++) {
+    const sx =
+      cubeV.x *
+      Math.sqrt(
+        1 -
+          (cubeV.y * cubeV.y) / 2 -
+          (cubeV.z * cubeV.z) / 2 +
+          (cubeV.y * cubeV.y * cubeV.z * cubeV.z) / 3,
+      );
 
-    v.fromBufferAttribute(pos, i);
+    const sy =
+      cubeV.y *
+      Math.sqrt(
+        1 -
+          (cubeV.z * cubeV.z) / 2 -
+          (cubeV.x * cubeV.x) / 2 +
+          (cubeV.z * cubeV.z * cubeV.x * cubeV.x) / 3,
+      );
 
-   
+    const sz =
+      cubeV.z *
+      Math.sqrt(
+        1 -
+          (cubeV.x * cubeV.x) / 2 -
+          (cubeV.y * cubeV.y) / 2 +
+          (cubeV.x * cubeV.x * cubeV.y * cubeV.y) / 3,
+      ); // Scale to the desired radius
 
-    // Normalize to a cube space where the largest component is 1
+    pos.setXYZ(i, sx * radius, sy * radius, sz * radius);
+  }
 
-    const len = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
+  pos.needsUpdate = true;
 
-    const cubeV = v.clone().divideScalar(len);
-
-
-
-    // Map cube -> sphere using a computationally efficient approximation
-
-    const sx = cubeV.x * Math.sqrt(1 - (cubeV.y * cubeV.y / 2) - (cubeV.z * cubeV.z / 2) + (cubeV.y * cubeV.y * cubeV.z * cubeV.z / 3));
-
-    const sy = cubeV.y * Math.sqrt(1 - (cubeV.z * cubeV.z / 2) - (cubeV.x * cubeV.x / 2) + (cubeV.z * cubeV.z * cubeV.x * cubeV.x / 3));
-
-    const sz = cubeV.z * Math.sqrt(1 - (cubeV.x * cubeV.x / 2) - (cubeV.y * cubeV.y / 2) + (cubeV.x * cubeV.x * cubeV.y * cubeV.y / 3));
-
-
-
-    // Scale to the desired radius
-
-    pos.setXYZ(i, sx * radius, sy * radius, sz * radius);
-
-  }
-
-
-
-  pos.needsUpdate = true;
-
-  geometry.computeVertexNormals();
-
+  geometry.computeVertexNormals();
 }
-
-
 
 // Noise uniforms type
 
 type NoiseUniforms = Partial<{
+  uMaxHeight: number;
 
-  uMaxHeight: number;
+  uFrequency: number;
 
-  uFrequency: number;
+  uAmplitude: number;
 
-  uAmplitude: number;
+  uOctaves: number;
 
-  uOctaves: number;
+  uLacunarity: number;
 
-  uLacunarity: number;
+  uPersistence: number;
 
-  uPersistence: number;
+  uExponentiation: number;
 
-  uExponentiation: number;
-
-    uTime: number;
-
+  uTime: number;
 }>;
 
-
-
 class QuadTreeNode {
+  level: number;
 
-  level: number;
+  bounds: THREE.Vector2[];
 
-  bounds: THREE.Vector2[];
+  children: QuadTreeNode[] = [];
 
-  children: QuadTreeNode[] = [];
+  mesh: THREE.Mesh | null = null;
 
-  mesh: THREE.Mesh | null = null;
+  constructor(level: number, bounds: THREE.Vector2[]) {
+    this.level = level;
 
+    this.bounds = bounds;
+  }
 
+  subdivide() {
+    // ... keep your subdivision logic ...
+  }
 
-  constructor(level: number, bounds: THREE.Vector2[]) {
+  buildMesh(
+    normal: THREE.Vector3,
 
-    this.level = level;
+    planetSize: number,
 
-    this.bounds = bounds;
+    cubeSize: number,
 
-  }
+    lowTexture: THREE.Texture,
 
+    midTexture: THREE.Texture,
 
+    highTexture: THREE.Texture,
 
-  subdivide() {
+    uniforms: NoiseUniforms,
+  ): THREE.Mesh {
+    if (this.mesh) return this.mesh;
 
-    // ... keep your subdivision logic ...
+    const [bl, , tr] = this.bounds;
 
-  }
+    const quadWidth = tr.x - bl.x;
 
+    const quadHeight = tr.y - bl.y;
 
+    const segments = 128;
 
-  buildMesh(
+    const geometry = new THREE.PlaneGeometry(
+      quadWidth * cubeSize,
 
-    normal: THREE.Vector3,
+      quadHeight * cubeSize,
 
-    planetSize: number,
+      segments,
 
-    cubeSize: number,
+      segments,
+    );
 
-    lowTexture: THREE.Texture,
+    const up = new THREE.Vector3(0, 0, 1);
 
-    midTexture: THREE.Texture,
+    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
 
-    highTexture: THREE.Texture,
+    geometry.applyQuaternion(q);
 
-    uniforms: NoiseUniforms
+    const quadCenterX = (bl.x + tr.x) / 2;
 
-  ): THREE.Mesh {
+    const quadCenterY = (bl.y + tr.y) / 2;
 
-    if (this.mesh) return this.mesh;
+    const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
 
+    translation.applyQuaternion(q);
 
+    translation.multiplyScalar(cubeSize / 2);
 
-    const [bl, , tr] = this.bounds;
+    geometry.translate(translation.x, translation.y, translation.z); // 🔹 Convert to cube-sphere
 
-    const quadWidth = tr.x - bl.x;
+    spherifyGeometry(geometry, planetSize);
 
-    const quadHeight = tr.y - bl.y;
+    const material = new PlanetMaterial(undefined, lowTexture, midTexture, highTexture); // Pass uniforms from props
 
+    material.customUniforms.uPlanetSize.value = planetSize;
 
+    material.setParams(uniforms);
 
-    const segments = 128;
+    this.mesh = new THREE.Mesh(geometry, material);
 
-    const geometry = new THREE.PlaneGeometry(
+    return this.mesh;
+  }
 
-      quadWidth * cubeSize,
+  getMeshes(
+    normal: THREE.Vector3,
 
-      quadHeight * cubeSize,
+    planetSize: number,
 
-      segments,
+    cubeSize: number,
 
-      segments
+    camera: THREE.Camera,
 
-    );
+    maxDepth: number,
 
+    meshes: THREE.Mesh[],
 
+    lowTexture: THREE.Texture,
 
-    const up = new THREE.Vector3(0, 0, 1);
+    midTexture: THREE.Texture,
 
-    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
+    highTexture: THREE.Texture,
 
-    geometry.applyQuaternion(q);
+    uniforms: NoiseUniforms,
+  ): void {
+    const [bl, , tr] = this.bounds;
 
+    const center = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
 
+    const up = new THREE.Vector3(0, 0, 1);
 
-    const quadCenterX = (bl.x + tr.x) / 2;
+    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
 
-    const quadCenterY = (bl.y + tr.y) / 2;
+    center.applyQuaternion(q);
 
-    const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
+    center.multiplyScalar(cubeSize / 2);
 
-    translation.applyQuaternion(q);
+    center.addScaledVector(normal, cubeSize / 2);
 
-    translation.multiplyScalar(cubeSize / 2);
+    const dist = camera.position.distanceTo(center);
 
-    geometry.translate(translation.x, translation.y, translation.z);
+    if (this.level < maxDepth && dist < cubeSize * 2.5) {
+      this.subdivide();
 
+      this.children.forEach((child) =>
+        child.getMeshes(
+          normal,
 
+          planetSize,
 
-    // 🔹 Convert to cube-sphere
+          cubeSize,
 
-    spherifyGeometry(geometry, planetSize);
+          camera,
 
+          maxDepth,
 
+          meshes,
 
-    const material = new PlanetMaterial(undefined, lowTexture, midTexture, highTexture);
+          lowTexture,
 
+          midTexture,
 
+          highTexture,
 
-    // Pass uniforms from props
+          uniforms,
+        ),
+      );
+    } else {
+      meshes.push(
+        this.buildMesh(
+          normal,
 
-    material.customUniforms.uPlanetSize.value = planetSize;
+          planetSize,
 
-    material.setParams(uniforms);
+          cubeSize,
 
+          lowTexture,
 
+          midTexture,
 
-    this.mesh = new THREE.Mesh(geometry, material);
+          highTexture,
 
-    return this.mesh;
-
-  }
-
-
-
-  getMeshes(
-
-    normal: THREE.Vector3,
-
-    planetSize: number,
-
-    cubeSize: number,
-
-    camera: THREE.Camera,
-
-    maxDepth: number,
-
-    meshes: THREE.Mesh[],
-
-    lowTexture: THREE.Texture,
-
-    midTexture: THREE.Texture,
-
-    highTexture: THREE.Texture,
-
-    uniforms: NoiseUniforms
-
-  ): void {
-
-    const [bl, , tr] = this.bounds;
-
-
-
-    const center = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
-
-
-
-    const up = new THREE.Vector3(0, 0, 1);
-
-    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
-
-    center.applyQuaternion(q);
-
-    center.multiplyScalar(cubeSize / 2);
-
-    center.addScaledVector(normal, cubeSize / 2);
-
-
-
-    const dist = camera.position.distanceTo(center);
-
-
-
-    if (this.level < maxDepth && dist < cubeSize * 2.5) {
-
-      this.subdivide();
-
-      this.children.forEach((child) =>
-
-        child.getMeshes(
-
-          normal,
-
-          planetSize,
-
-          cubeSize,
-
-          camera,
-
-          maxDepth,
-
-          meshes,
-
-          lowTexture,
-
-          midTexture,
-
-          highTexture,
-
-          uniforms
-
-        )
-
-      );
-
-    } else {
-
-      meshes.push(
-
-        this.buildMesh(
-
-          normal,
-
-          planetSize,
-
-          cubeSize,
-
-          lowTexture,
-
-          midTexture,
-
-          highTexture,
-
-          uniforms
-
-        )
-
-      );
-
-    }
-
-  }
-
+          uniforms,
+        ),
+      );
+    }
+  }
 }
-
-
 
 class CubeFace {
+  normal: THREE.Vector3;
 
-  normal: THREE.Vector3;
+  root: QuadTreeNode;
 
-  root: QuadTreeNode;
+  constructor(normal: THREE.Vector3) {
+    this.normal = normal;
 
+    this.root = new QuadTreeNode(0, [
+      new THREE.Vector2(-1, -1),
 
+      new THREE.Vector2(1, -1),
 
-  constructor(normal: THREE.Vector3) {
+      new THREE.Vector2(1, 1),
 
-    this.normal = normal;
+      new THREE.Vector2(-1, 1),
+    ]);
+  }
 
-    this.root = new QuadTreeNode(0, [
+  getMeshes(
+    planetSize: number,
 
-      new THREE.Vector2(-1, -1),
+    cubeSize: number,
 
-      new THREE.Vector2(1, -1),
+    camera: THREE.Camera,
 
-      new THREE.Vector2(1, 1),
+    maxDepth: number,
 
-      new THREE.Vector2(-1, 1),
+    lowTexture: THREE.Texture,
 
-    ]);
+    midTexture: THREE.Texture,
 
-  }
+    highTexture: THREE.Texture,
 
+    uniforms: NoiseUniforms,
+  ): THREE.Mesh[] {
+    const meshes: THREE.Mesh[] = [];
 
+    this.root.getMeshes(
+      this.normal,
 
-  getMeshes(
+      planetSize,
 
-    planetSize: number,
+      cubeSize,
 
-    cubeSize: number,
+      camera,
 
-    camera: THREE.Camera,
+      maxDepth,
 
-    maxDepth: number,
+      meshes,
 
-    lowTexture: THREE.Texture,
+      lowTexture,
 
-    midTexture: THREE.Texture,
+      midTexture,
 
-    highTexture: THREE.Texture,
+      highTexture,
 
-    uniforms: NoiseUniforms
+      uniforms,
+    );
 
-  ): THREE.Mesh[] {
-
-    const meshes: THREE.Mesh[] = [];
-
-    this.root.getMeshes(
-
-      this.normal,
-
-      planetSize,
-
-      cubeSize,
-
-      camera,
-
-      maxDepth,
-
-      meshes,
-
-      lowTexture,
-
-      midTexture,
-
-      highTexture,
-
-      uniforms
-
-    );
-
-    return meshes;
-
-  }
-
+    return meshes;
+  }
 }
 
-
-
 export class CubeTree {
+  private planetSize: number;
 
-  private planetSize: number;
+  private cubeSize: number;
 
-  private cubeSize: number;
+  private lowTexture: THREE.Texture;
 
-  private lowTexture: THREE.Texture;
+  private midTexture: THREE.Texture;
 
-  private midTexture: THREE.Texture;
+  private highTexture: THREE.Texture;
 
-  private highTexture: THREE.Texture;
+  private uniforms: NoiseUniforms;
 
-  private uniforms: NoiseUniforms;
+  faces: CubeFace[] = [];
 
-  faces: CubeFace[] = [];
+  constructor(
+    planetSize = 5,
 
+    cubeSize = 5,
 
+    lowTexture: THREE.Texture,
 
-  constructor(
+    midTexture: THREE.Texture,
 
-    planetSize = 5,
+    highTexture: THREE.Texture,
 
-    cubeSize = 5,
+    uniforms: NoiseUniforms = {},
+  ) {
+    this.planetSize = planetSize;
 
-    lowTexture: THREE.Texture,
+    this.cubeSize = cubeSize;
 
-    midTexture: THREE.Texture,
+    this.lowTexture = lowTexture;
 
-    highTexture: THREE.Texture,
+    this.midTexture = midTexture;
 
-    uniforms: NoiseUniforms = {},
-    
+    this.highTexture = highTexture;
 
-  ) {
+    this.uniforms = uniforms;
 
-    this.planetSize = planetSize;
+    const normals = [
+      new THREE.Vector3(1, 0, 0),
 
-    this.cubeSize = cubeSize;
+      new THREE.Vector3(-1, 0, 0),
 
-    this.lowTexture = lowTexture;
+      new THREE.Vector3(0, 1, 0),
 
-    this.midTexture = midTexture;
+      new THREE.Vector3(0, -1, 0),
 
-    this.highTexture = highTexture;
+      new THREE.Vector3(0, 0, 1),
 
-    this.uniforms = uniforms;
+      new THREE.Vector3(0, 0, -1),
+    ];
 
+    this.faces = normals.map((n) => new CubeFace(n));
+  }
 
+  getDynamicMeshes(camera: THREE.Camera, maxDepth = 6): THREE.Group {
+    const group = new THREE.Group();
 
-    const normals = [
+    for (const face of this.faces) {
+      const meshes = face.getMeshes(
+        this.planetSize,
 
-      new THREE.Vector3(1, 0, 0),
+        this.cubeSize,
 
-      new THREE.Vector3(-1, 0, 0),
+        camera,
 
-      new THREE.Vector3(0, 1, 0),
+        maxDepth,
 
-      new THREE.Vector3(0, -1, 0),
+        this.lowTexture,
 
-      new THREE.Vector3(0, 0, 1),
+        this.midTexture,
 
-      new THREE.Vector3(0, 0, -1),
+        this.highTexture,
 
-    ];
+        this.uniforms,
+      );
 
-    this.faces = normals.map((n) => new CubeFace(n));
+      meshes.forEach((mesh) => group.add(mesh));
+    }
 
-  }
-
-
-
-  getDynamicMeshes(camera: THREE.Camera, maxDepth = 6): THREE.Group {
-
-    const group = new THREE.Group();
-
-    for (const face of this.faces) {
-
-      const meshes = face.getMeshes(
-
-        this.planetSize,
-
-        this.cubeSize,
-
-        camera,
-
-        maxDepth,
-
-        this.lowTexture,
-
-        this.midTexture,
-
-        this.highTexture,
-
-        this.uniforms
-
-      );
-
-      meshes.forEach((mesh) => group.add(mesh));
-
-    }
-
-    return group;
-
-  }
-
+    return group;
+  }
 }

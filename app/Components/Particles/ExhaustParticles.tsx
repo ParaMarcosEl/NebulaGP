@@ -48,7 +48,7 @@ const vertexShader = `
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     // protect against z==0
     float z = -mvPosition.z + 1e-6;
-    gl_PointSize = size * (50.0 / z);
+    gl_PointSize = size;
     gl_Position = projectionMatrix * mvPosition;
   }
 `;

@@ -15,7 +15,6 @@ export interface PlanetUniforms {
   uExponentiation: { value: number };
 }
 
-
 export class PlanetMaterial extends THREE.MeshStandardMaterial {
   customUniforms: {
     uTime: { value: number };

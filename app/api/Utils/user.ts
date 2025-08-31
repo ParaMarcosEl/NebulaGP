@@ -14,14 +14,14 @@ export async function getUserFromRequest(req: NextRequest) {
   }
 }
 // lib/jsonResponse.ts
-import { NextResponse } from 'next/server'
-import type { User } from '@/Constants/types'
+import { NextResponse } from 'next/server';
+import type { User } from '@/Constants/types';
 
 export function jsonResponse(
   success: boolean,
   data: User | null,
   error: string | null = null,
-  status = 200
+  status = 200,
 ) {
-  return NextResponse.json({ success, data, error }, { status })
+  return NextResponse.json({ success, data, error }, { status });
 }

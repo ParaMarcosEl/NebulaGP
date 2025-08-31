@@ -29,7 +29,9 @@ import MinePadSpawner from './Components/MinePad/MinePadSpawner';
 import './page.css';
 import NavBar from './Components/UI/Navigation/NavBar';
 import WeaponStatus from './Components/UI/WeaponStatus/WeaponStatus';
-import MineExplosionParticles, { MineExplosionHandle } from './Components/Particles/ExplosionParticles';
+import MineExplosionParticles, {
+  MineExplosionHandle,
+} from './Components/Particles/ExplosionParticles';
 
 function RaceProgressTracker({
   playerRefs,
@@ -52,11 +54,7 @@ function ShipCollisionTracker({
   return null;
 }
 
-
-
 const EXPLOSION_POOL_SIZE = 10;
-
-
 
 export default function Home() {
   const aircraftRef = useRef<THREE.Group | null>(null);
@@ -86,10 +84,9 @@ export default function Home() {
     [curve, playerRefs],
   );
 
-  
   // Correctly type the explosion pool ref as an array of RefObjects
   const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
-  
+
   // Use useMemo to create the components and their refs only once.
   // This ensures the refs are created before the components are rendered.
   const explosions = useMemo(() => {
@@ -101,7 +98,6 @@ export default function Home() {
     }
     return exps;
   }, []);
-
 
   useEffect(() => {
     setTrack(tracks[0]);
@@ -129,12 +125,11 @@ export default function Home() {
         onSpeedChange={setSpeed}
         botSpeed={1.6}
         minePoolRef={minePoolRef}
-        explosionPoolRef={explosionPoolRef} 
-        
+        explosionPoolRef={explosionPoolRef}
         isBot
-        />
-      ) : (
-        <Bot
+      />
+    ) : (
+      <Bot
         key={id}
         id={id}
         aircraftRef={player}
@@ -142,16 +137,16 @@ export default function Home() {
         curve={curve}
         playingFieldRef={playingFieldRef}
         startPosition={startPositions[id].position}
-        explosionPoolRef={explosionPoolRef} 
+        explosionPoolRef={explosionPoolRef}
         startQuaternion={startPositions[id].quaternion}
         acceleration={0.01}
         damping={0.99}
         botSpeed={0.9 + id * 0.1}
         minePoolRef={minePoolRef}
         isBot
-        />
-      ),
-    );
+      />
+    ),
+  );
 
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
@@ -166,7 +161,7 @@ export default function Home() {
       emissionRate={200}
     />
   ));
-  
+
   const keyboardControls = [
     [['W', 'S'], 'Pitch Up / Down'],
     [['A', 'D'], 'Roll Left / Right'],
@@ -174,14 +169,14 @@ export default function Home() {
     [['K'], 'Brake'],
     [['J'], 'Use Item'],
   ];
-  
+
   const gamepadControls = [
     [['X'], 'Accelerate'],
     [['☐'], 'Brake'],
     [['Left Stick'], 'Pitch / Roll'],
     [['R2'], 'Use Item'],
   ];
-  
+
   return (
     <>
       <StartCountdown />
@@ -248,14 +243,11 @@ export default function Home() {
               }))}
             />
 
-            <Planet 
-              position={new THREE.Vector3()} 
-              size={350} 
-              />
+            <Planet position={new THREE.Vector3()} size={350} />
 
             {players}
             {boosters}
-              {explosions}
+            {explosions}
 
             <FollowCamera targetRef={aircraftRef} />
           </Suspense>

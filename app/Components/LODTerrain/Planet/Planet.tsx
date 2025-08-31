@@ -36,7 +36,7 @@ type PlanetDebugProps = {
   persistence?: number;
 
   exponentiation?: number;
-  animate?: boolean
+  animate?: boolean;
 };
 
 export function LODPlanet({
@@ -80,7 +80,7 @@ export function LODPlanet({
     tex.wrapT = RepeatWrapping;
 
     tex.minFilter = LinearFilter;
-  }); 
+  });
   // 🔹 Memoize CubeTree with uniforms
   const timeRef = useRef(0);
 
@@ -111,7 +111,7 @@ export function LODPlanet({
           uPersistence: persistence,
 
           uExponentiation: exponentiation,
-          uTime: timeRef.current
+          uTime: timeRef.current,
         },
       ),
 

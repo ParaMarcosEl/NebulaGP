@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
+import { useRef, useMemo, useState, createRef, useEffect, Suspense, ReactElement } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
@@ -35,6 +35,9 @@ import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
 import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
+import MineExplosionParticles, {
+  MineExplosionHandle,
+} from '@/Components/Particles/ExplosionParticles';
 // import { Trail } from 'node_modules/@react-three/drei';
 
 function RaceProgressTracker({
@@ -61,6 +64,8 @@ function ShipCollisionTracker({
   return null;
 }
 
+const EXPLOSION_POOL_SIZE = 100;
+
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
@@ -79,6 +84,21 @@ export default function Stage1() {
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
+
+  // Correctly type the explosion pool ref as an array of RefObjects
+  const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
+
+  // Use useMemo to create the components and their refs only once.
+  // This ensures the refs are created before the components are rendered.
+  const explosions = useMemo(() => {
+    const exps: ReactElement[] = [];
+    for (let i = 0; i < EXPLOSION_POOL_SIZE; i++) {
+      const handle = createRef<MineExplosionHandle>();
+      exps.push(<MineExplosionParticles key={i} ref={handle} />);
+      explosionPoolRef.current.push(handle as React.RefObject<MineExplosionHandle>);
+    }
+    return exps;
+  }, []);
 
   const bounds = { x: 500, y: 250, z: 500 };
   const {
@@ -148,6 +168,7 @@ export default function Stage1() {
       <Aircraft
         trackId={2}
         minePoolRef={minePoolRef}
+        explosionPoolRef={explosionPoolRef}
         key={id}
         id={id}
         aircraftRef={player}
@@ -166,6 +187,7 @@ export default function Stage1() {
       <Bot
         key={id}
         minePoolRef={minePoolRef}
+        explosionPoolRef={explosionPoolRef}
         id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
@@ -344,7 +366,7 @@ export default function Stage1() {
           {/* Players */}
           {players}
           {boosters}
-
+          {explosions}
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>
