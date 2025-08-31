@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useMemo, forwardRef, useRef } from 'react';
-import { Line, useTexture } from '@react-three/drei';
+import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { TUBE_RADIUS } from '@/Constants';
 import { computeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { useCheckpointController } from '@/Controllers/Game/CheckPointController';
 import { useLapTimer } from '@/Controllers/Game/LapTimer';
 import { getShortestFlightPath } from '@/Lib/flightPath';
+import CurveParticles from '../Particles/CurveParticles/CurveParticles';
 
 // Setup BVH on BufferGeometry and raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -48,6 +49,7 @@ const Track = forwardRef<
 
     // Get points along the curve for rendering the line
     const curvePoints = useMemo(() => curve.getPoints(1000), [curve]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const shortestFlightPath = useMemo(
       () => geometry.shortestFlightPath.getPoints(2000),
       [geometry],
@@ -85,8 +87,8 @@ const Track = forwardRef<
         </mesh>
 
         {/* Render the tube path line */}
-        <Line points={curvePoints} color="#00ffff" lineWidth={2} dashed={false} />
-        <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} />
+        <CurveParticles particleSize={.3} orbitSpeed={10} tubeRadius={20} speed={.005} curve={curve} maxParticles={1500} />
+        {/* <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} /> */}
 
         {/* Render the tube mesh with texture */}
         <mesh ref={ref} geometry={geometry.tubeGeometry}>
@@ -100,3 +102,4 @@ const Track = forwardRef<
 Track.displayName = 'Track';
 
 export default Track;
+
