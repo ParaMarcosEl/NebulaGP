@@ -87,7 +87,7 @@ const Track = forwardRef<
         </mesh>
 
         {/* Render the tube path line */}
-        <CurveParticles particleSize={.3} orbitSpeed={10} tubeRadius={20} speed={.005} curve={curve} maxParticles={1500} />
+        <CurveParticles particleSize={.3} orbitSpeed={3} tubeRadius={20} speed={.0} curve={curve} maxParticles={1500} />
         {/* <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} /> */}
 
         {/* Render the tube mesh with texture */}
