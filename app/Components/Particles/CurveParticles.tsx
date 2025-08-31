@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
 interface CurveParticlesOptions {
   curve: THREE.Curve<THREE.Vector3>;
@@ -61,10 +61,7 @@ export default class CurveParticles {
     }
 
     this.geometry = new THREE.BufferGeometry();
-    this.geometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(this.positions, 3)
-    );
+    this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
 
     this.material = new THREE.ShaderMaterial({
       transparent: true,
@@ -116,9 +113,7 @@ export default class CurveParticles {
       if (this.ages[i] > this.lifetimes[i]) {
         // respawn along curve
         const t = Math.random();
-        const point = (this.mesh.userData.curve as THREE.Curve<THREE.Vector3>).getPointAt(
-          t
-        );
+        const point = (this.mesh.userData.curve as THREE.Curve<THREE.Vector3>).getPointAt(t);
 
         this.positions[i3] = point.x + (Math.random() - 0.5) * this.spread;
         this.positions[i3 + 1] = point.y + (Math.random() - 0.5) * this.spread;

@@ -69,8 +69,10 @@ export function useMines(
     // Defensive check to ensure the explosion pool and its contents exist
     if (explosionPoolRefs.current && explosionPoolRefs.current.length > 0) {
       // Find the first inactive explosion in the pool
-      const availableExplosion = explosionPoolRefs.current.find(ref => ref.current && !ref.current.isPlaying());
-      
+      const availableExplosion = explosionPoolRefs.current.find(
+        (ref) => ref.current && !ref.current.isPlaying(),
+      );
+
       // If an available explosion is found, play it at the mine's position
       if (availableExplosion?.current) {
         availableExplosion.current.play(mine.mesh.position);

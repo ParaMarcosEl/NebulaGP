@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
-import { SkeletonUtils } from 'three-stdlib';
 import { useGameStore } from '@/Controllers/Game/GameController';
+import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 
 export type Projectile = {
-  mesh: THREE.Group;
+  mesh: THREE.Mesh;
   direction: THREE.Vector3;
   velocity: number;
   age: number;
@@ -16,117 +15,110 @@ export type Projectile = {
 
 export function useProjectiles(
   shipRef: React.RefObject<THREE.Object3D>,
+  explosionPoolRef: React.RefObject<React.RefObject<MineExplosionHandle>[]>,
   { fireRate = 2, maxProjectiles = 20, velocity = 200 },
 ) {
   const { scene } = useThree();
   const { setCannon, raceData } = useGameStore((s) => s);
+
   const poolRef = useRef<Projectile[]>([]);
   const lastFiredRef = useRef(0); // seconds
   const cooldown = 1 / fireRate;
-  const lifetime = 2; // seconds
-  const gltf = useGLTF('/models/missile.glb');
+  const lifetime = 1; // seconds
+
+  // Reusable geometry and material to avoid new allocations
+  const geometryRef = useRef(new THREE.SphereGeometry(1, 8, 8)); // Small radius, low poly
+  const materialRef = useRef(new THREE.MeshBasicMaterial({ color: 'white' }));
+
+  // Reusable objects to avoid allocations
+  const tempForward = useRef(new THREE.Vector3(0, 0, -1));
+  const tempQuaternion = useRef(new THREE.Quaternion());
+
+  // Centralized cleanup
+  const cleanupProjectiles = () => {
+    poolRef.current.forEach((p) => {
+      scene.remove(p.mesh);
+      p.mesh.geometry.dispose();
+      (Array.isArray(p.mesh.material) ? p.mesh.material : [p.mesh.material]).forEach((m) =>
+        m.dispose(),
+      );
+    });
+    poolRef.current = [];
+  };
 
   useEffect(() => {
-  if (poolRef.current.length === 0) {
-    for (let i = 0; i < maxProjectiles; i++) {
-      const missile = SkeletonUtils.clone(gltf.scene) as THREE.Group;
+    // Initialize projectile pool with elongated spheres
+    poolRef.current = Array.from({ length: maxProjectiles }, () => {
+      const missile = new THREE.Mesh(geometryRef.current, materialRef.current);
+      missile.scale.set(0.1, 0.1, 1); // Elongate along the Z-axis
       missile.visible = false;
       scene.add(missile);
 
-      poolRef.current.push({
+      return {
         mesh: missile,
         direction: new THREE.Vector3(),
         velocity,
         age: 0,
         active: false,
         owner: shipRef,
-      });
-    }
-  }
-}, [gltf, maxProjectiles, scene, shipRef, velocity]);
+      };
+    });
 
-
-  // // Initialize pool once
-  // if (poolRef.current.length === 0) {
-  //   for (let i = 0; i < maxProjectiles; i++) {
-  //     const missile = SkeletonUtils.clone(gltf.scene) as THREE.Group;
-
-  //     missile.visible = false;
-  //     scene.add(missile);
-
-  //     poolRef.current.push({
-  //       mesh: missile,
-  //       direction: new THREE.Vector3(),
-  //       velocity,
-  //       age: 0,
-  //       active: false,
-  //       owner: shipRef,
-  //     });
-  //   }
-  // }
+    return cleanupProjectiles;
+  }, [maxProjectiles, scene, shipRef, velocity]);
 
   const fire = (currentTime: number, id: number) => {
     if (!shipRef.current) return;
     if (currentTime - lastFiredRef.current < cooldown) return;
+
+    const available = poolRef.current.find((p) => !p.active);
+    if (!available) return;
+
     setCannon(id, raceData[id].cannonValue - 1);
     lastFiredRef.current = currentTime;
 
-    const available = poolRef.current.find((p) => !p.active);
-    if (!available) return; // no available projectiles in the pool
+    // Get the ship's world rotation and compute the forward direction
+    shipRef.current.getWorldQuaternion(tempQuaternion.current);
+    tempForward.current.set(0, 0, -1).applyQuaternion(tempQuaternion.current).normalize();
 
-    // Get forward direction in world space
-    const forward = new THREE.Vector3(0, 0, -1)
-      .applyQuaternion(shipRef.current.getWorldQuaternion(new THREE.Quaternion()))
-      .normalize();
+    // Set projectile properties
+    available.mesh.position.copy(shipRef.current.position);
 
-    const origin = new THREE.Vector3().setFromMatrixPosition(shipRef.current.matrixWorld);
+    // Orient the missile correctly to face its direction of travel
+    // This orients the mesh's local -Z axis (its "nose") with the forward direction
+    available.mesh.lookAt(available.mesh.position.clone().add(tempForward.current));
 
-    available.mesh.position.copy(origin);
-    available.direction.copy(forward);
+    // Set the missile's direction
+    available.direction.copy(tempForward.current);
     available.age = 0;
     available.active = true;
     available.mesh.visible = true;
   };
 
-  useEffect(() => {
-    const pool = poolRef.current;
-  return () => {
-    pool.forEach((p) => {
-      scene.remove(p.mesh);
-      p.mesh.traverse((child) => {
-        if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
-        if ((child as THREE.Mesh).material) {
-          const material = (child as THREE.Mesh).material;
-          if (Array.isArray(material)) {
-            material.forEach((m) => m.dispose());
-          } else {
-            material.dispose();
-          }
-        }
-      });
-    });
-  };
-}, [scene]);
-
-
   useFrame((_, delta) => {
-    poolRef.current.forEach((proj) => {
-      if (!proj.active) return;
+    const pool = poolRef.current;
 
-      // Move projectile
+    for (let i = 0; i < pool.length; i++) {
+      const proj = pool[i];
+      if (!proj.active) continue;
+
+      // Move projectile along its direction vector
       proj.mesh.position.addScaledVector(proj.direction, proj.velocity * delta);
 
-      // Make it face the direction it's traveling
-      const targetPos = proj.mesh.position.clone().add(proj.direction);
-      proj.mesh.lookAt(targetPos);
-
+      // Update age
       proj.age += delta;
 
+      // Deactivate if expired
       if (proj.age > lifetime) {
+        const explosions = explosionPoolRef.current;
+        if (explosions?.length) {
+          const exp = explosions.find((ref) => ref.current && !ref.current.isPlaying());
+          exp?.current?.play(proj.mesh.position);
+        }
         proj.active = false;
         proj.mesh.visible = false;
       }
-    });
+    }
   });
 
   return {

@@ -31,7 +31,9 @@ import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
-import MineExplosionParticles, { MineExplosionHandle } from '@/Components/Particles/ExplosionParticles';
+import MineExplosionParticles, {
+  MineExplosionHandle,
+} from '@/Components/Particles/ExplosionParticles';
 import Planet from '@/Components/World/Planet/Planet';
 
 function RaceProgressTracker({
@@ -58,7 +60,7 @@ function ShipCollisionTracker({
   return null;
 }
 
-const EXPLOSION_POOL_SIZE = 10;
+const EXPLOSION_POOL_SIZE = 100;
 
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
@@ -80,7 +82,7 @@ export default function Stage1() {
 
   // Correctly type the explosion pool ref as an array of RefObjects
   const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
-  
+
   // Use useMemo to create the components and their refs only once.
   // This ensures the refs are created before the components are rendered.
   const explosions = useMemo(() => {
@@ -173,7 +175,7 @@ export default function Stage1() {
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}
         // Correctly pass the typed ref object
-        explosionPoolRef={explosionPoolRef} 
+        explosionPoolRef={explosionPoolRef}
         curve={curve}
         obstacleRefs={obstacleRefs.current}
         playingFieldRef={playingFieldRef}
@@ -212,7 +214,7 @@ export default function Stage1() {
       texturePath="/textures/exploded.jpg"
       key={id + 'booster'}
       speed={10}
-      startSize={30}
+      startSize={20}
       endSize={3}
       target={player as React.RefObject<THREE.Object3D>}
       emissionRate={200}
@@ -318,7 +320,7 @@ export default function Stage1() {
           />
           <WeaponsPadSpawner
             curve={curve}
-            padCount={4}
+            padCount={8}
             startT={0.2}
             endT={0.9}
             playerRefs={playerRefs.map((ref, id) => ({
@@ -336,10 +338,7 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-          <Planet
-            position={new THREE.Vector3()}
-            size={350}
-          />
+          <Planet position={new THREE.Vector3()} size={350} />
           {/* Players */}
           {players}
           {boosters}

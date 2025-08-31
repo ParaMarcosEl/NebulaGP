@@ -55,7 +55,7 @@ export default function Bot({
     curve,
     enabled: !!isBot,
     speed: botSpeed,
-    explosionPoolRef
+    explosionPoolRef,
   });
 
   useEffect(() => {

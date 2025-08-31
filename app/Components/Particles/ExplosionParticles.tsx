@@ -1,11 +1,6 @@
 // MineExplosionParticles.tsx
 import * as THREE from 'three';
-import {
-  useMemo,
-  useRef,
-  useImperativeHandle,
-  forwardRef,
-} from 'react';
+import { useMemo, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 export type MineExplosionHandle = {
@@ -13,15 +8,18 @@ export type MineExplosionHandle = {
   isPlaying: () => boolean;
 };
 
-const MineExplosionParticles = forwardRef<MineExplosionHandle, {
-  majorRadius?: number;
-  minorRadius?: number;
-  maxParticles?: number;
-  particleSize?: number;
-  speed?: number;
-  lifetime?: number;
-  duration?: number;
-}>(
+const MineExplosionParticles = forwardRef<
+  MineExplosionHandle,
+  {
+    majorRadius?: number;
+    minorRadius?: number;
+    maxParticles?: number;
+    particleSize?: number;
+    speed?: number;
+    lifetime?: number;
+    duration?: number;
+  }
+>(
   (
     {
       majorRadius = 2,
@@ -30,9 +28,9 @@ const MineExplosionParticles = forwardRef<MineExplosionHandle, {
       particleSize = 2,
       speed = 1,
       lifetime = 3,
-      duration = .1,
+      duration = 0.1,
     },
-    ref
+    ref,
   ) => {
     const pointsRef = useRef<THREE.Points>(null);
     const startTime = useRef<number | null>(null);
@@ -92,7 +90,7 @@ const MineExplosionParticles = forwardRef<MineExplosionHandle, {
         speedFactors[i] = 1.0 - distFromCenter / minorRadius;
 
         spawnTimes[i] = -9999;
-        
+
         rotationAxes[i * 3 + 0] = Math.random() - 0.5;
         rotationAxes[i * 3 + 1] = Math.random() - 0.5;
         rotationAxes[i * 3 + 2] = Math.random() - 0.5;
@@ -197,10 +195,10 @@ const MineExplosionParticles = forwardRef<MineExplosionHandle, {
 
       if (systemAge > lifetime) {
         isPlaying.current = false;
-        pointsRef.current.position.set(10000, 10000, 10000); 
+        pointsRef.current.position.set(10000, 10000, 10000);
         return;
       }
-      
+
       const spawnAttr = geometry.getAttribute('spawnTime') as THREE.BufferAttribute;
       for (let i = 0; i < maxParticles; i++) {
         const age = (t - spawnAttr.getX(i)) / lifetime;
@@ -211,15 +209,8 @@ const MineExplosionParticles = forwardRef<MineExplosionHandle, {
       spawnAttr.needsUpdate = true;
     });
 
-    return (
-      <points
-        ref={pointsRef}
-        geometry={geometry}
-        material={material}
-        frustumCulled={true}
-      />
-    );
-  }
+    return <points ref={pointsRef} geometry={geometry} material={material} frustumCulled={true} />;
+  },
 );
 
 export default MineExplosionParticles;
