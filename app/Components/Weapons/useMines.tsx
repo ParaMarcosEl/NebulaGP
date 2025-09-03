@@ -4,6 +4,8 @@ import { useRef } from 'react';
 import { onBulletCollision } from '@/Utils/collisions';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { MineExplosionHandle } from '../Particles/ExplosionParticles';
+import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
+import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 
 export type Mine = {
   mesh: THREE.Mesh;
@@ -24,6 +26,8 @@ export function useMines(
   const cooldown = 3;
   const lastFiredRef = useRef(0);
   const { raceData, setShieldValue } = useGameStore((s) => s);
+  const { buffers } = useAudioStore((s) => s);
+  const playSound = usePlaySound();
 
   if (poolRef.current.length === 0) {
     for (let i = 0; i < maxMines; i++) {
@@ -60,6 +64,8 @@ export function useMines(
     available.mesh.position.copy(dropPos);
     available.mesh.visible = true;
     available.active = true;
+
+    playSound(buffers['mineDrop'], dropPos, 1);
   };
 
   const deactivateMine = (mine: Mine) => {
@@ -97,6 +103,7 @@ export function useMines(
           onBulletCollision(shipRef.current, 1, 2);
         }
         deactivateMine(mine);
+        playSound(buffers['explosion'], mine.mesh.position, 0.5);
       }
     });
   });

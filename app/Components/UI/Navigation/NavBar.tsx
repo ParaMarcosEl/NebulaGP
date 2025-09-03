@@ -10,6 +10,7 @@ import { useUserStore } from '@/Controllers/Users/useUserStore';
 import Modal from '../Modal/Modal';
 import GameSettings from '../Settings/Settings';
 import AccountSettings from '../Settings/Account';
+import AudioToggleButton from '@/Components/Audio/AudioToggle';
 
 export default function NavBar() {
   const { user } = useUserStore();
@@ -30,6 +31,7 @@ export default function NavBar() {
             <span className="name">Pilot: {user?.displayName} </span>
           </span>
         )}
+        <AudioToggleButton />
         <NavLinks
           setRegisterOpen={setRegisterOpen}
           setAccountOpen={setAccountOpen}

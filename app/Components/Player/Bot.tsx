@@ -9,6 +9,7 @@ import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
 import { Mine } from '../Weapons/useMines';
 import { MineExplosionHandle } from '../Particles/ExplosionParticles';
+import { EngineSound } from '../Audio/EngineSound';
 
 type AircraftProps = {
   id: number;
@@ -72,6 +73,7 @@ export default function Bot({
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
           <object3D ref={trailTarget} position={[0, 0.31, 1.8]} />
+          <EngineSound volume={5} />
         </group>
       </group>
       <Shield

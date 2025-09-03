@@ -33,6 +33,16 @@ import MineExplosionParticles, {
   MineExplosionHandle,
 } from './Components/Particles/ExplosionParticles';
 
+import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
+import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
+
+const InitAudio = () => {
+  useAudioListener();
+  useAudioBuffers();
+
+  return null;
+};
+
 function RaceProgressTracker({
   playerRefs,
 }: {
@@ -184,6 +194,7 @@ export default function Home() {
       <div className="canvas">
         <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
           <Suspense fallback={null}>
+            <InitAudio />
             <RaceProgressTracker
               playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
               curve={curve}

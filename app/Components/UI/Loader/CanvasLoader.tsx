@@ -1,23 +1,31 @@
-// CanvasLoader.tsx
+import { useState, useEffect } from 'react';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useProgress } from '@react-three/drei';
 import { Spinner } from './Spinner';
 
-// CanvasLoader component to show loading progress
 export const useCanvasLoader = () => {
-  const { active, progress: dreiProgress } = useProgress(); // drieProgress for general assets
+  const { active, progress: dreiProgress } = useProgress();
   const { MaterialLoaded, setMaterialLoaded } = useGameStore((s) => s);
-  // Determine if the loader should be active
-  // It's active if general assets are loading, OR
-  // if terrain chunks are still building, OR
-  // if the TerrainMaterial hasn't been reported as loaded yet.
 
+  const [visible, setVisible] = useState(true);
+
+  // Loader is considered active if assets are loading or terrain shaders not compiled
   const isLoaderActive = active || !MaterialLoaded;
+
+  // Smoothly hide loader when finished
+  useEffect(() => {
+    if (!isLoaderActive) {
+      const timeout = setTimeout(() => setVisible(false), 300); // fade-out delay
+      return () => clearTimeout(timeout);
+    } else {
+      setVisible(true);
+    }
+  }, [isLoaderActive]);
 
   return {
     isLoaderActive,
     setMaterialLoaded,
-    loader: (
+    loader: visible && (
       <div
         style={{
           position: 'fixed',
@@ -27,7 +35,7 @@ export const useCanvasLoader = () => {
           height: '100%',
           background: '#111',
           color: '#fff',
-          display: isLoaderActive ? 'flex' : 'none',
+          display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
@@ -36,6 +44,8 @@ export const useCanvasLoader = () => {
           borderRadius: '8px',
           fontFamily: 'Inter, sans-serif',
           gap: '10px',
+          transition: 'opacity 0.3s',
+          opacity: isLoaderActive ? 1 : 0,
         }}
       >
         {active && <p>Loading Scene Assets: {Math.floor(dreiProgress)}%</p>}

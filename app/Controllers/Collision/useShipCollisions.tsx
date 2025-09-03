@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { OBB } from 'three/addons/math/OBB.js';
 import { useRef } from 'react';
 import { useGameStore } from '../Game/GameController';
+import { useAudioStore } from '../Audio/useAudioStore';
+import { usePlaySound } from '../Audio/usePlaySounds';
 
 export function useShipCollisions({
   playerRefs,
@@ -17,6 +19,8 @@ export function useShipCollisions({
   const halfSize = new THREE.Vector3();
   const rotation = new THREE.Matrix3();
   const { setShieldValue } = useGameStore((s) => s);
+  const { buffers } = useAudioStore((s) => s);
+  const playSound = usePlaySound();
 
   // Track ongoing collisions to detect 'enter' only
   const activeCollisions = useRef(new Set<string>());
@@ -76,6 +80,8 @@ export function useShipCollisions({
               setShieldValue(tempDataB.shieldValue - 0.2, obbB.ref.userData.id);
             }
             onCollide(obbA.ref, obbB.ref);
+            playSound(buffers['clank04'], obbA.ref.position, 0.5);
+            playSound(buffers['clank07'], obbB.ref.position, 0.5);
           }
         }
       }

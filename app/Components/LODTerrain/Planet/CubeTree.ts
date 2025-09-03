@@ -165,15 +165,7 @@ class QuadTreeNode {
       );
     } else {
       meshes.push(
-        this.buildMesh(
-          normal,
-          planetSize,
-          cubeSize,
-          lowTexture,
-          midTexture,
-          highTexture,
-          uniforms,
-        ),
+        this.buildMesh(normal, planetSize, cubeSize, lowTexture, midTexture, highTexture, uniforms),
       );
     }
   }

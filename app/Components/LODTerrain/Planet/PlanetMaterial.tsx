@@ -30,7 +30,7 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
     uPersistence: { value: number };
     uExponentiation: { value: number };
   };
-  
+
   // A callback function that can be set to run after the shader is compiled.
   onShaderCompiled: (() => void) | undefined;
 
@@ -198,8 +198,6 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         diffuseColor.rgb = terrainColor;
         `,
       );
-
-      
 
       // Call the optional callback if it exists.
       if (this.onShaderCompiled) {

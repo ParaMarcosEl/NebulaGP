@@ -34,3 +34,4 @@ declare module '*.worker.ts' {
   }
   export default WebpackWorker;
 }
+// src/types/three-declarations.d.ts

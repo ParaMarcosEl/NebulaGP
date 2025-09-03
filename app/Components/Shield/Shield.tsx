@@ -2,6 +2,7 @@ import { extend, useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { ShieldMaterial } from './ShieldMaterial';
+import { ShieldSound } from '../Audio/ShieldSound';
 
 extend({ ShieldMaterial });
 
@@ -28,9 +29,14 @@ export function Shield({
   });
 
   return (
-    <mesh ref={meshRef} scale={[1.5, 0.8, 1.5]}>
-      <sphereGeometry args={[1.8, 5, 5]} />
-      <primitive ref={matRef} object={new ShieldMaterial()} />
-    </mesh>
+    <group>
+      <mesh ref={meshRef} scale={[1.5, 0.8, 1.5]}>
+        <sphereGeometry args={[1.8, 5, 5]} />
+        <primitive ref={matRef} object={new ShieldMaterial()} />
+        <ShieldSound
+          volume={shieldValue * 10}
+        />
+      </mesh>
+    </group>
   );
 }
