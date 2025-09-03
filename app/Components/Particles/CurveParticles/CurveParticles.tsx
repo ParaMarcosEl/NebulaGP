@@ -28,8 +28,8 @@ const CurveParticles = forwardRef<
       loop = true,
       color = new THREE.Color(0, 0.5, 1),
       texture,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ref,
   ) => {
     const pointsRef = useRef<THREE.Points<
