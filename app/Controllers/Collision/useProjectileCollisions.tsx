@@ -71,7 +71,7 @@ export function useProjectileCollisions({
             availableExplosion?.current?.play(proj.mesh.position);
           }
           // play explosion sound
-          playSound(buffers['explosion'], proj.mesh.position, .5 * masterVolume * sfxVolume);
+          playSound(buffers['explosion'], proj.mesh.position, 0.5 * masterVolume * sfxVolume);
           proj.active = false;
           proj.mesh.visible = false;
           break; // prevent multiple hits per projectile

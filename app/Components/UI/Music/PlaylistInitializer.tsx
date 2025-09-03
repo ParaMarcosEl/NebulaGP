@@ -23,35 +23,35 @@ const AudioInitializer = () => {
     nextTrack,
     setMasterVolume,
     setMusicVolume,
-    setAudioEnabled
+    setAudioEnabled,
   } = useAudioStore();
 
   useEffect(() => {
     // Only proceed with audio logic on the client
     if (!isClient || !hasPrompted) return;
-    
+
     // ... rest of your audio logic
     // (This part is already fine as it's wrapped in a useEffect)
-    
+
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.loop = false;
       audioRef.current.volume = 1;
-      audioRef.current.crossOrigin = "anonymous";
-      
+      audioRef.current.crossOrigin = 'anonymous';
+
       audioRef.current.onended = () => {
         nextTrack();
       };
     }
-    
+
     const newTrackUrl = tracks[currentTrack];
     if (audioRef.current.src !== newTrackUrl) {
       audioRef.current.src = newTrackUrl;
     }
-    
+
     if (isPlaying) {
-      audioRef.current.play().catch(error => {
-        console.error("Audio playback failed:", error);
+      audioRef.current.play().catch((error) => {
+        console.error('Audio playback failed:', error);
       });
     } else {
       audioRef.current.pause();
@@ -79,21 +79,15 @@ const AudioInitializer = () => {
   if (!isClient || hasPrompted) {
     return null;
   }
-  
+
   // This UI will now only render on the client side, after hydration.
   return (
     <div className="playlist-prompt-container">
       <p className="prompt-text">Use audio?</p>
-      <button 
-        onClick={handleYes} 
-        className="prompt-button prompt-button-yes"
-      >
+      <button onClick={handleYes} className="prompt-button prompt-button-yes">
         Yes
       </button>
-      <button 
-        onClick={handleNo} 
-        className="prompt-button prompt-button-no"
-      >
+      <button onClick={handleNo} className="prompt-button prompt-button-no">
         No
       </button>
     </div>

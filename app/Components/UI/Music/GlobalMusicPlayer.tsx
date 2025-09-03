@@ -5,15 +5,8 @@ import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import './GlobalMusicPlayer.css';
 
 const GlobalMusicPlayer: React.FC = () => {
-  const {
-    tracks,
-    currentTrack,
-    isPlaying,
-    setPlaying,
-    nextTrack,
-    musicVolume,
-    masterVolume
-  } = useAudioStore();
+  const { tracks, currentTrack, isPlaying, setPlaying, nextTrack, musicVolume, masterVolume } =
+    useAudioStore();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showPrompt, setShowPrompt] = useState(true);
@@ -60,12 +53,7 @@ const GlobalMusicPlayer: React.FC = () => {
         </div>
       )}
 
-      <audio
-        ref={audioRef}
-        src={tracks[currentTrack]}
-        loop
-        onEnded={nextTrack}
-      />
+      <audio ref={audioRef} src={tracks[currentTrack]} loop onEnded={nextTrack} />
     </>
   );
 };

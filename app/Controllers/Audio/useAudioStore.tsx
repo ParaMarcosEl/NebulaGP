@@ -12,7 +12,7 @@ const tracks = [
   '/sound/music/nebula07.mp3',
   '/sound/music/nebula08.mp3',
   '/sound/music/nebula09.mp3',
-]
+];
 
 type AudioState = {
   listener: THREE.AudioListener | null;
@@ -25,18 +25,17 @@ type AudioState = {
   setSfxVolume: (v: number) => void;
   musicVolume: number;
   setMusicVolume: (v: number) => void;
-  
-    audioEnabled: boolean;
-    setAudioEnabled: (enabled: boolean) => void;
-  
 
-  tracks: string[]
-  currentTrack: number
-  isPlaying: boolean
-  setPlaying: (playing: boolean) => void
-  nextTrack: () => void
-  prevTrack: () => void
-  setTrack: (index: number) => void
+  audioEnabled: boolean;
+  setAudioEnabled: (enabled: boolean) => void;
+
+  tracks: string[];
+  currentTrack: number;
+  isPlaying: boolean;
+  setPlaying: (playing: boolean) => void;
+  nextTrack: () => void;
+  prevTrack: () => void;
+  setTrack: (index: number) => void;
 };
 
 export const useAudioStore = create<AudioState>((set, get) => {
@@ -58,22 +57,22 @@ export const useAudioStore = create<AudioState>((set, get) => {
     audio: null,
     audioEnabled: false,
     setAudioEnabled: (enabled: boolean) => set({ audioEnabled: enabled }),
-    
-  tracks,
-  currentTrack: 0,
-  setPlaying: (playing) => set({ isPlaying: playing }),
-  nextTrack: () => {
-    const { currentTrack, tracks } = get()
-    set({ currentTrack: (currentTrack + 1) % tracks.length })
-  },
-  prevTrack: () => {
-    const { currentTrack, tracks } = get()
-    set({ currentTrack: (currentTrack - 1 + tracks.length) % tracks.length })
-  },
-  setTrack: (index) => {
-    const { tracks } = get()
-    if (index >= 0 && index < tracks.length) set({ currentTrack: index })
-  },
+
+    tracks,
+    currentTrack: 0,
+    setPlaying: (playing) => set({ isPlaying: playing }),
+    nextTrack: () => {
+      const { currentTrack, tracks } = get();
+      set({ currentTrack: (currentTrack + 1) % tracks.length });
+    },
+    prevTrack: () => {
+      const { currentTrack, tracks } = get();
+      set({ currentTrack: (currentTrack - 1 + tracks.length) % tracks.length });
+    },
+    setTrack: (index) => {
+      const { tracks } = get();
+      if (index >= 0 && index < tracks.length) set({ currentTrack: index });
+    },
 
     setListener: (listener) => set({ listener }),
     setBuffer: (name, buffer) =>

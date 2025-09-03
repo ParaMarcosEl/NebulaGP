@@ -97,7 +97,11 @@ export function useProjectiles(
     available.age = 0;
     available.active = true;
     available.mesh.visible = true;
-    playSound(buffers.lazer, shipRef.current.position, (id === 0 ? 0.5 : 1) * masterVolume * sfxVolume);
+    playSound(
+      buffers.lazer,
+      shipRef.current.position,
+      (id === 0 ? 0.5 : 1) * masterVolume * sfxVolume,
+    );
   };
 
   useFrame((_, delta) => {

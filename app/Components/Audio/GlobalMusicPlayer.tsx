@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 
 export default function GlobalMusicPlayer() {
@@ -17,11 +17,10 @@ export default function GlobalMusicPlayer() {
 
     if (isPlaying) {
       // If the state says we should be playing, attempt to play
-      audio.play().catch(err => {
+      audio.play().catch((err) => {
         console.error('Failed to play audio:', err);
       });
     }
-
   }, [currentTrack, isPlaying, tracks]);
 
   // Handle play/pause with a single user gesture
@@ -31,7 +30,7 @@ export default function GlobalMusicPlayer() {
 
     if (audio.paused) {
       // User gesture: play the audio
-      audio.play().catch(err => {
+      audio.play().catch((err) => {
         console.error('Could not play audio on user gesture:', err);
         // Fallback for strict browsers: prompt user for interaction
         // You might show a "Play" button here.
@@ -58,14 +57,8 @@ export default function GlobalMusicPlayer() {
   return (
     <>
       {/* This button should be visible to the user to trigger the initial playback */}
-      <button onClick={handlePlayPause}>
-        {isPlaying ? 'Pause' : 'Play'}
-      </button>
-      <audio
-        ref={audioRef}
-        preload="auto"
-        onEnded={nextTrack}
-      />
+      <button onClick={handlePlayPause}>{isPlaying ? 'Pause' : 'Play'}</button>
+      <audio ref={audioRef} preload="auto" onEnded={nextTrack} />
     </>
   );
 }

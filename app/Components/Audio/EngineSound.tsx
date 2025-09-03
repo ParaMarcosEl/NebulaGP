@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 export function EngineSound({ buffer, volume = 20 }: { buffer: AudioBuffer; volume?: number }) {
   const ref = useRef<THREE.PositionalAudio>(null);
-  const { audioEnabled} = useAudioStore();
+  const { audioEnabled } = useAudioStore();
 
   useEffect(() => {
     if (!audioEnabled) {
@@ -17,11 +17,10 @@ export function EngineSound({ buffer, volume = 20 }: { buffer: AudioBuffer; volu
     }
 
     if (ref.current && buffer) {
-      
       ref.current.setBuffer(buffer);
       ref.current.setLoop(true);
       ref.current.setVolume(volume);
-      if(!ref.current.isPlaying) ref.current.play();
+      if (!ref.current.isPlaying) ref.current.play();
     }
   }, [buffer, audioEnabled, volume]);
 

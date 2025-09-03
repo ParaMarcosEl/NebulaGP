@@ -64,7 +64,7 @@ export function useMines(
     available.mesh.position.copy(dropPos);
     available.mesh.visible = true;
     available.active = true;
-    
+
     playSound(buffers['mineDrop'], dropPos, 1 * masterVolume * sfxVolume);
   };
 
@@ -103,7 +103,7 @@ export function useMines(
           onBulletCollision(shipRef.current, 1, 2);
         }
         deactivateMine(mine);
-        playSound(buffers['explosion'], mine.mesh.position, .5 * masterVolume * sfxVolume);
+        playSound(buffers['explosion'], mine.mesh.position, 0.5 * masterVolume * sfxVolume);
       }
     });
   });

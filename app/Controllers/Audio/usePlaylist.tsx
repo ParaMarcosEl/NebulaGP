@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { useAudioStore } from './useAudioStore'
+import { useEffect } from 'react';
+import { useAudioStore } from './useAudioStore';
 
 export const usePlaylist = () => {
-  const setPlaylist = useAudioStore((s) => s.setPlaylist)
-  const play = useAudioStore((s) => s.play)
-  const isPlaying = useAudioStore((s) => s.isPlaying)
+  const setPlaylist = useAudioStore((s) => s.setPlaylist);
+  const play = useAudioStore((s) => s.play);
+  const isPlaying = useAudioStore((s) => s.isPlaying);
 
   useEffect(() => {
     // Just set up the playlist, don't play automatically
@@ -14,10 +14,10 @@ export const usePlaylist = () => {
       { name: 'Track 1', url: '/sound/music/nebula01.mp3' },
       { name: 'Track 2', url: '/sound/music/nebula02.mp3' },
       { name: 'Track 3', url: '/sound/music/nebula03.mp3' },
-    ])
-  }, [setPlaylist])
+    ]);
+  }, [setPlaylist]);
 
-  if (isPlaying) return null
+  if (isPlaying) return null;
 
   return (
     <button
@@ -26,5 +26,5 @@ export const usePlaylist = () => {
     >
       ▶️ Play Music
     </button>
-  )
-}
+  );
+};
