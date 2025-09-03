@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { OBB } from 'three/addons/math/OBB.js';
 import { useGameStore } from '../Game/GameController';
 import { MineExplosionHandle } from '@/Components/Particles/ExplosionParticles';
+import { usePlaySound } from '../Audio/usePlaySounds';
+import { useAudioStore } from '../Audio/useAudioStore';
 
 type Projectile = {
   mesh: THREE.Mesh;
@@ -33,6 +35,8 @@ export function useProjectileCollisions({
   const playerOBB = new OBB();
   const playerBox = new THREE.Box3();
   const { setShieldValue } = useGameStore((s) => s);
+  const playSound = usePlaySound();
+  const { buffers, masterVolume, sfxVolume } = useAudioStore((s) => s);
 
   useFrame(() => {
     for (const proj of projectiles) {
@@ -66,7 +70,8 @@ export function useProjectileCollisions({
             );
             availableExplosion?.current?.play(proj.mesh.position);
           }
-
+          // play explosion sound
+          playSound(buffers['explosion'], proj.mesh.position, .5 * masterVolume * sfxVolume);
           proj.active = false;
           proj.mesh.visible = false;
           break; // prevent multiple hits per projectile

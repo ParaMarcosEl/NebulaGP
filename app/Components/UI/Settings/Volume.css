@@ -1,0 +1,22 @@
+/* SettingsPanel.module.css */
+
+.panel {
+  padding: 1rem;
+  background: #222;
+  color: #fff;
+  border-radius: 8px;
+  width: 250px;
+  font-family: sans-serif;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: #4cafef;
+  cursor: pointer;
+}

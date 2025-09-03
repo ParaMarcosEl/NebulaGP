@@ -1,6 +1,6 @@
 // components/GameSettings.tsx
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
-
+import { Volume } from './Volume';
 export default function GameSettings() {
   const invertPitch = useSettingsStore((s) => s.invertPitch);
   const setInvertPitch = useSettingsStore((s) => s.setInvertPitch);
@@ -12,6 +12,8 @@ export default function GameSettings() {
     <div className="game-settings">
       <h2>Game Settings</h2>
       <div className="settings">
+        <h3>Audio:</h3>
+        <Volume />
         <h3>Controls:</h3>
         <div>
           <label>

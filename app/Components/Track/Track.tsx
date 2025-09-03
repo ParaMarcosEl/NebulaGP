@@ -39,6 +39,8 @@ const Track = forwardRef<
       checkpointMeshRef: checkpointMeshRef as React.RefObject<THREE.Mesh>,
     });
 
+    const particleTexture = useTexture('/textures/particleDot.png');
+
     // Create tube geometry with BVH acceleration
     const geometry = useMemo(() => {
       const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
@@ -87,7 +89,15 @@ const Track = forwardRef<
         </mesh>
 
         {/* Render the tube path line */}
-        <CurveParticles particleSize={.3} orbitSpeed={3} tubeRadius={20} speed={.0} curve={curve} maxParticles={1500} />
+        <CurveParticles
+          texture={particleTexture}
+          particleSize={1800}
+          orbitSpeed={3}
+          tubeRadius={20}
+          speed={0.0001}
+          curve={curve}
+          maxParticles={1500}
+        />
         {/* <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} /> */}
 
         {/* Render the tube mesh with texture */}
@@ -102,4 +112,3 @@ const Track = forwardRef<
 Track.displayName = 'Track';
 
 export default Track;
-

@@ -38,7 +38,8 @@ import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 import MineExplosionParticles, {
   MineExplosionHandle,
 } from '@/Components/Particles/ExplosionParticles';
-// import { Trail } from 'node_modules/@react-three/drei';
+import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
+import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 
 function RaceProgressTracker({
   playerRefs,
@@ -63,6 +64,13 @@ function ShipCollisionTracker({
   });
   return null;
 }
+
+const InitAudio = () => {
+  useAudioListener();
+  useAudioBuffers();
+
+  return null;
+};
 
 const EXPLOSION_POOL_SIZE = 100;
 
@@ -256,6 +264,7 @@ export default function Stage1() {
       {/* Scene */}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
         <Suspense fallback={null}>
+          <InitAudio />
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}

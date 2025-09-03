@@ -32,7 +32,16 @@ import { Mine } from '@/Components/Weapons/useMines';
 import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
-import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
+
+import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
+import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
+
+const InitAudio = () => {
+  useAudioListener();
+  useAudioBuffers();
+
+  return null;
+};
 
 function RaceProgressTracker({
   playerRefs,
@@ -217,6 +226,7 @@ export default function Stage1() {
       {/* Scene */}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
         <Suspense fallback={null}>
+          <InitAudio />
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}

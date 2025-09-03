@@ -9,6 +9,9 @@ import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
 import { Mine } from '../Weapons/useMines';
 import { MineExplosionHandle } from '../Particles/ExplosionParticles';
+import { EngineSound } from '../Audio/EngineSound';
+import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
+import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 
 type AircraftProps = {
   id: number;
@@ -46,6 +49,8 @@ export default function Bot({
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
+  const { engine } = useAudioBuffers();
+  const { masterVolume, sfxVolume } = useAudioStore((s) => s);
 
   useBotController({
     id,
@@ -72,6 +77,7 @@ export default function Bot({
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
           <object3D ref={trailTarget} position={[0, 0.31, 1.8]} />
+          <EngineSound buffer={engine} volume={5 * masterVolume * sfxVolume} />
         </group>
       </group>
       <Shield

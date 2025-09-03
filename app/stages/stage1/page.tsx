@@ -35,6 +35,8 @@ import MineExplosionParticles, {
   MineExplosionHandle,
 } from '@/Components/Particles/ExplosionParticles';
 import Planet from '@/Components/World/Planet/Planet';
+import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
+import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 
 function RaceProgressTracker({
   playerRefs,
@@ -74,6 +76,13 @@ export default function Stage1() {
   const botRef7 = useRef<THREE.Group | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
   const { loader } = useCanvasLoader();
+
+  const InitAudio = () => {
+    useAudioListener();
+    useAudioBuffers();
+
+    return null;
+  };
 
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
@@ -272,6 +281,7 @@ export default function Stage1() {
         }}
       >
         <Suspense fallback={null}>
+          <InitAudio />
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}

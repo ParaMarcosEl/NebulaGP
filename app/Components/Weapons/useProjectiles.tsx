@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { MineExplosionHandle } from '../Particles/ExplosionParticles';
+import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
+import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 
 export type Projectile = {
   mesh: THREE.Mesh;
@@ -20,6 +22,8 @@ export function useProjectiles(
 ) {
   const { scene } = useThree();
   const { setCannon, raceData } = useGameStore((s) => s);
+  const { buffers, masterVolume, sfxVolume } = useAudioStore((s) => s);
+  const playSound = usePlaySound();
 
   const poolRef = useRef<Projectile[]>([]);
   const lastFiredRef = useRef(0); // seconds
@@ -93,6 +97,7 @@ export function useProjectiles(
     available.age = 0;
     available.active = true;
     available.mesh.visible = true;
+    playSound(buffers.lazer, shipRef.current.position, (id === 0 ? 0.5 : 1) * masterVolume * sfxVolume);
   };
 
   useFrame((_, delta) => {

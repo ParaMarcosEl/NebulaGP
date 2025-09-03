@@ -36,6 +36,16 @@ import MineExplosionParticles, {
 } from '@/Components/Particles/ExplosionParticles';
 import Planet from '@/Components/World/Planet/Planet';
 
+import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
+import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
+
+const InitAudio = () => {
+  useAudioListener();
+  useAudioBuffers();
+
+  return null;
+};
+
 function RaceProgressTracker({
   playerRefs,
 }: {
@@ -272,6 +282,7 @@ export default function TestStage() {
         }}
       >
         <Suspense fallback={null}>
+          <InitAudio />
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}

@@ -1,0 +1,51 @@
+.playlist-prompt-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 2rem; /* Using rem for better scalability */
+  border-radius: 10px;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.prompt-text {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.prompt-button {
+  margin: 0 0.5rem; /* Shorter margin for button spacing */
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  min-width: 90px;
+}
+
+.prompt-button:hover {
+  background-color: #555;
+}
+
+.prompt-button-yes {
+  background-color: #28a745; /* Green color for 'Yes' */
+  color: white;
+}
+
+.prompt-button-yes:hover {
+  background-color: #218838;
+}
+
+.prompt-button-no {
+  background-color: #dc3545; /* Red color for 'No' */
+  color: white;
+}
+
+.prompt-button-no:hover {
+  background-color: #c82333;
+}
