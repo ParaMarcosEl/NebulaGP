@@ -36,7 +36,7 @@ export function useProjectileCollisions({
   const playerBox = new THREE.Box3();
   const { setShieldValue } = useGameStore((s) => s);
   const playSound = usePlaySound();
-  const { buffers, masterVolume, sfxVolume } = useAudioStore((s) => s);
+  const { buffers } = useAudioStore((s) => s);
 
   useFrame(() => {
     for (const proj of projectiles) {
@@ -71,7 +71,7 @@ export function useProjectileCollisions({
             availableExplosion?.current?.play(proj.mesh.position);
           }
           // play explosion sound
-          playSound(buffers['explosion'], proj.mesh.position, 0.5 * masterVolume * sfxVolume);
+          playSound(buffers['explosion'], proj.mesh.position, 0.5);
           proj.active = false;
           proj.mesh.visible = false;
           break; // prevent multiple hits per projectile

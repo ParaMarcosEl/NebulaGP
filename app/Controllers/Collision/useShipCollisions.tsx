@@ -19,7 +19,7 @@ export function useShipCollisions({
   const halfSize = new THREE.Vector3();
   const rotation = new THREE.Matrix3();
   const { setShieldValue } = useGameStore((s) => s);
-  const { buffers, masterVolume, sfxVolume } = useAudioStore((s) => s);
+  const { buffers } = useAudioStore((s) => s);
   const playSound = usePlaySound();
 
   // Track ongoing collisions to detect 'enter' only
@@ -80,8 +80,8 @@ export function useShipCollisions({
               setShieldValue(tempDataB.shieldValue - 0.2, obbB.ref.userData.id);
             }
             onCollide(obbA.ref, obbB.ref);
-            playSound(buffers['clank04'], obbA.ref.position, 0.5 * masterVolume * sfxVolume);
-            playSound(buffers['clank07'], obbB.ref.position, 0.5 * masterVolume * sfxVolume);
+            playSound(buffers['clank04'], obbA.ref.position, 0.5);
+            playSound(buffers['clank07'], obbB.ref.position, 0.5);
           }
         }
       }

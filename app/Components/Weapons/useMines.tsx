@@ -26,7 +26,7 @@ export function useMines(
   const cooldown = 3;
   const lastFiredRef = useRef(0);
   const { raceData, setShieldValue } = useGameStore((s) => s);
-  const { buffers, masterVolume, sfxVolume } = useAudioStore((s) => s);
+  const { buffers } = useAudioStore((s) => s);
   const playSound = usePlaySound();
 
   if (poolRef.current.length === 0) {
@@ -65,7 +65,7 @@ export function useMines(
     available.mesh.visible = true;
     available.active = true;
 
-    playSound(buffers['mineDrop'], dropPos, 1 * masterVolume * sfxVolume);
+    playSound(buffers['mineDrop'], dropPos, 1);
   };
 
   const deactivateMine = (mine: Mine) => {
@@ -103,7 +103,7 @@ export function useMines(
           onBulletCollision(shipRef.current, 1, 2);
         }
         deactivateMine(mine);
-        playSound(buffers['explosion'], mine.mesh.position, 0.5 * masterVolume * sfxVolume);
+        playSound(buffers['explosion'], mine.mesh.position, 0.5);
       }
     });
   });

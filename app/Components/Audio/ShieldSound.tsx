@@ -1,28 +1,39 @@
-// EngineSound.tsx
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { PositionalAudio } from '@react-three/drei';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-export function ShieldSound({ buffer, volume = 20 }: { buffer: AudioBuffer; volume?: number }) {
+export function ShieldSound({ volume = 20 }: { volume?: number }) {
   const ref = useRef<THREE.PositionalAudio>(null);
-  const { audioEnabled } = useAudioStore();
+  const { audioEnabled, masterVolume, sfxVolume } = useAudioStore();
 
+  // 🔹 Reactively adjust volume when settings change
   useEffect(() => {
-    if (!audioEnabled) {
-      if (ref.current) {
-        ref.current.stop();
-      }
-      return;
-    }
+    const audio = ref.current;
+    if (!audio) return;
 
-    if (ref.current && buffer) {
-      ref.current.setBuffer(buffer);
-      ref.current.setLoop(true);
-      ref.current.setVolume(volume);
-      if (!ref.current.isPlaying) ref.current.play();
-    }
-  }, [audioEnabled, buffer, volume]);
+    const targetVolume = volume * masterVolume * sfxVolume;
+    audio.setVolume(targetVolume);
+  }, [masterVolume, sfxVolume, volume]);
 
-  return <PositionalAudio distance={1} loop url="/sound/sfx/shield.mp3" ref={ref} />;
+  // 🔹 Control play/stop based on audioEnabled
+  useEffect(() => {
+    const audio = ref.current;
+    if (!audio) return;
+
+    if (!audioEnabled && audio.isPlaying) {
+      audio.stop();
+    } else if (audioEnabled && !audio.isPlaying) {
+      audio.play();
+    }
+  }, [audioEnabled]);
+
+  return (
+    <PositionalAudio
+      ref={ref}
+      url="/sound/sfx/shield.mp3" // ✅ use Drei's loader
+      distance={1}
+      loop
+    />
+  );
 }

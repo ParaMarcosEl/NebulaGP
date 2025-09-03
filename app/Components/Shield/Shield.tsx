@@ -2,7 +2,6 @@ import { extend, useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { ShieldMaterial } from './ShieldMaterial';
-import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { ShieldSound } from '../Audio/ShieldSound';
 
 extend({ ShieldMaterial });
@@ -16,7 +15,6 @@ export function Shield({
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<ShieldMaterial>(null);
-  const { buffers, masterVolume, sfxVolume } = useAudioStore((s) => s);
 
   useFrame((state) => {
     if (target?.current && meshRef.current) {
@@ -36,8 +34,7 @@ export function Shield({
         <sphereGeometry args={[1.8, 5, 5]} />
         <primitive ref={matRef} object={new ShieldMaterial()} />
         <ShieldSound
-          buffer={buffers['shield']}
-          volume={shieldValue * 10 * masterVolume * sfxVolume}
+          volume={shieldValue * 10}
         />
       </mesh>
     </group>

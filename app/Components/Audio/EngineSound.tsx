@@ -1,28 +1,37 @@
-// EngineSound.tsx
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { PositionalAudio } from '@react-three/drei';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-export function EngineSound({ buffer, volume = 20 }: { buffer: AudioBuffer; volume?: number }) {
+export function EngineSound({ volume = 20 }: { volume?: number }) {
   const ref = useRef<THREE.PositionalAudio>(null);
-  const { audioEnabled } = useAudioStore();
+  const { audioEnabled, masterVolume, sfxVolume } = useAudioStore();
 
+  // 🔹 Reactively adjust volume
   useEffect(() => {
-    if (!audioEnabled) {
-      if (ref.current) {
-        ref.current.stop();
-      }
-      return;
-    }
+    const audio = ref.current;
+    if (!audio) return;
+    audio.setVolume(volume * masterVolume * sfxVolume);
+  }, [masterVolume, sfxVolume, volume]);
 
-    if (ref.current && buffer) {
-      ref.current.setBuffer(buffer);
-      ref.current.setLoop(true);
-      ref.current.setVolume(volume);
-      if (!ref.current.isPlaying) ref.current.play();
-    }
-  }, [buffer, audioEnabled, volume]);
+  // 🔹 Play/stop based on audioEnabled
+  useEffect(() => {
+    const audio = ref.current;
+    if (!audio) return;
 
-  return <PositionalAudio distance={1} loop url="/sound/sfx/engine_02.mp3" ref={ref} />;
+    if (!audioEnabled && audio.isPlaying) {
+      audio.stop();
+    } else if (audioEnabled && !audio.isPlaying) {
+      audio.play();
+    }
+  }, [audioEnabled]);
+
+  return (
+    <PositionalAudio
+      ref={ref}
+      url="/sound/sfx/engine_02.mp3"
+      distance={1}
+      loop
+    />
+  );
 }
