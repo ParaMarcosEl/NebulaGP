@@ -34,6 +34,6 @@
     "src",
     "types",
     "app/components/LODTerrain/worker/TerrainWorker.worker.js"
-  ],
+, "app/Components/ServiceWorker/sw.js", "app/Components/ServiceWorker/InitServiceWorker"  ],
   "exclude": ["node_modules"]
 }

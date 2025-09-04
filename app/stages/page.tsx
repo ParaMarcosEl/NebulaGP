@@ -195,6 +195,7 @@ export default function TestStage() {
         damping={0.99}
         onSpeedChange={setSpeed}
         botSpeed={1.6}
+        isBot
       />
     ) : (
       <Bot
