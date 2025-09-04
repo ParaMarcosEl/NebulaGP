@@ -50,7 +50,7 @@ export const metadata = {
     images: ['/og-image.png'],
   },
   // themeColor: '#000000',
-  manifest: '/site.webmanifest', // optional if you're using a PWA setup
+  manifest: '/manifest.json', // optional if you're using a PWA setup
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
@@ -71,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta property="og:description" content="Zero-Gravity Racing" />
         <meta property="og:url" content="https://nebulagp.vercel.app" />
         <meta property="og:type" content="website" />
+        <link rel="manifest" href="/manifest.json" />
       </Head>
       <body>
         {/* <TransitionLayout > */}

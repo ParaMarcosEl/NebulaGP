@@ -15,6 +15,8 @@ import { TOTAL_LAPS } from '@/Constants';
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { useProjectiles } from '../Weapons/useProjectiles';
+import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
+import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
@@ -81,13 +83,15 @@ export function usePlayerController({
     (state) => state,
   );
   const { invertPitch } = useSettingsStore((s) => s);
+  const playSoune = usePlaySound();
+  const { buffers, audioEnabled } = useAudioStore(s => s);
 
   const controlsEnabled = raceStatus === 'racing';
   useBotController({
     id: playerId,
     playerRefs,
     minePoolRef,
-    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
+    enabled: controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
     botRef: aircraftRef,
     curve,
     speed: botSpeed,
@@ -284,9 +288,11 @@ export function usePlayerController({
             if (shieldValue > 0) {
               setShieldValue(shieldValue - 0.5, playerId);
             }
+
             ship.position.copy(hitInfo.point);
             ship.userData.velocity.multiplyScalar(-1);
             speedRef.current = 0;
+            if (audioEnabled) playSoune(buffers['clank04'], ship.position, 0.5);
           }
         }
       }

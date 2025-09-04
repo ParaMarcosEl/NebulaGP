@@ -325,7 +325,7 @@ export default function Stage1() {
 
           <MinePadSpawner
             curve={curve}
-            padCount={4}
+            padCount={5}
             startT={0.3}
             endT={0.85}
             playerRefs={playerRefs.map((ref, id) => ({
@@ -346,7 +346,7 @@ export default function Stage1() {
 
           <WeaponsPadSpawner
             curve={curve}
-            padCount={4}
+            padCount={8}
             startT={0.2}
             endT={0.9}
             playerRefs={playerRefs.map((ref, id) => ({

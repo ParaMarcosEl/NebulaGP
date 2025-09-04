@@ -5,13 +5,14 @@
   background: #222;
   color: #fff;
   border-radius: 8px;
-  width: 250px;
+    width: 50%;
   font-family: sans-serif;
 }
 
 .label {
   display: flex;
   flex-direction: column;
+    width: calc(100% - 4em);
   gap: 0.5rem;
 }
 

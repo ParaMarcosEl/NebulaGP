@@ -11,6 +11,7 @@ import Modal from '../Modal/Modal';
 import GameSettings from '../Settings/Settings';
 import AccountSettings from '../Settings/Account';
 import AudioToggleButton from '@/Components/Audio/AudioToggle';
+import InstallButton from '../Installer/Installer';
 
 export default function NavBar() {
   const { user } = useUserStore();
@@ -37,6 +38,7 @@ export default function NavBar() {
           setAccountOpen={setAccountOpen}
           setSettingsOpen={setSettingsOpen}
         />
+        <InstallButton />
       </div>
       <Modal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)}>
         <GameSettings />
