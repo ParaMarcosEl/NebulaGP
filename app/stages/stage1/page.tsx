@@ -193,7 +193,7 @@ export default function Stage1() {
         acceleration={0.01}
         damping={0.99}
         onSpeedChange={setSpeed}
-        botSpeed={1.6}
+        botSpeed={2.2}
       />
     ) : (
       <Bot
@@ -311,7 +311,7 @@ export default function Stage1() {
           />
           <MinePadSpawner
             curve={curve}
-            padCount={4}
+            padCount={5}
             startT={0.1}
             endT={0.85}
             playerRefs={playerRefs.map((ref, id) => ({

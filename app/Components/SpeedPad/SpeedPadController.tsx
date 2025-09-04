@@ -4,6 +4,8 @@ import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { useGameStore } from '@/Controllers/Game/GameController';
+import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
+import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 
 type SpeedPad = {
   mesh: THREE.Mesh;
@@ -23,6 +25,8 @@ export function useSpeedPadController({
   cooldownTime?: number;
 }) {
   const { applyBoost } = useGameStore((s) => s);
+  const playSound = usePlaySound();
+  const { buffers, audioEnabled } = useAudioStore(s => s);
 
   const speedPad = useRef<SpeedPad>({
     mesh: speedPadRef.current as THREE.Mesh,
@@ -55,6 +59,7 @@ export function useSpeedPadController({
       speedPad.current.didPass = true;
       cooldown.current = cooldownTime;
       applyBoost(craft.id);
+      if (audioEnabled) playSound(buffers['speedup01'], speedPadRef.current.position, 1)
     }
 
     if (!craft && cooldown.current <= 0 && speedPad.current.didPass) {
