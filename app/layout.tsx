@@ -8,7 +8,7 @@ import { SettingsInitializer } from './Controllers/Settings/SettingsInitializer'
 import GlobalAlert from './Components/UI/Alert/GlobalAlert';
 import { AudioUnlocker } from './Components/Audio/AudioUnlocker';
 import AudioInitializer from './Components/UI/Music/AudioInitializer';
-import { InitSW } from '@/Components/ServiceWorker/InitServiceWorker';
+import { InitSW } from './Components/InitServiceWorker';
 
 export const metadata = {
   title: 'Nebula GP | Zero-Gravity Racing',
@@ -59,9 +59,9 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  if (typeof window !== 'undefined' && document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen();
-  }
+  // if (typeof window !== 'undefined' && document.documentElement.requestFullscreen) {
+  //   document.documentElement.requestFullscreen();
+  // }
 
   return (
     <html lang="en">

@@ -1,0 +1,39 @@
+{
+  "id": "nebula-grand-prix",
+  "name": "Nebula Grand Prix",
+  "short_name": "NebulaGP",
+  "description": "The ultimate race for space.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00aaff",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/icons/spaceship192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/spaceship512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop view of Nebula GP"
+    },
+    {
+      "src": "/screenshots/screenshot-mobile.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Mobile view of Nebula GP"
+    }
+  ]
+}
