@@ -21,7 +21,7 @@ const AudioToggleButton: React.FC = () => {
       aria-label={audioEnabled ? 'Mute Audio' : 'Unmute Audio'}
     >
       <Image
-        src={audioEnabled ? '/textures/icons/sound_on.png' : '/textures/icons/sound_off.png'}
+        src={audioEnabled ? '/icons/sound_on.png' : '/icons/sound_off.png'}
         alt={audioEnabled ? 'Sound On' : 'Sound Off'}
         width={48}
         height={48}
