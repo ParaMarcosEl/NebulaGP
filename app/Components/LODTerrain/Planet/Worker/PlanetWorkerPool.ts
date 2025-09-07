@@ -1,3 +1,5 @@
+'use client';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as THREE from 'three';
 import { FBMParams } from './fbm';

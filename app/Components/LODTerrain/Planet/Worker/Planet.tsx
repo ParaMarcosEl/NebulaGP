@@ -1,3 +1,5 @@
+'use client';
+
 import { useThree } from '@react-three/fiber';
 import { CubeTree } from './CubeTree';
 import { Vector3, Group } from 'three';

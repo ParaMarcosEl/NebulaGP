@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import LODPlanet from '@/Components/LODTerrain/Planet/Worker/Planet';
+import { LODPlanetWrapper } from '@/Components/LODTerrain/Planet/LODPlanetWrapper';
 
 export default function WorldPlanet({
   ref,
@@ -66,7 +66,7 @@ export default function WorldPlanet({
         color="#fffde4"
         castShadow
       />
-      <LODPlanet
+      <LODPlanetWrapper
         planetSize={250}
         cubeSize={16}
         lowTextPath="/textures/molten_rock.png"

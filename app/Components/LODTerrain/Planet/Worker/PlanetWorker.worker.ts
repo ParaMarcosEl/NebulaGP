@@ -1,3 +1,5 @@
+'use client';
+
 /// <reference lib="webworker" />
 
 // import { Vector3 } from 'three';

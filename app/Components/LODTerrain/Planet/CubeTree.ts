@@ -8,8 +8,8 @@ import {
   computeBoundsTree,
   disposeBoundsTree,
 } from 'three-mesh-bvh';
-import { FBMParams, PlanetCollisionRef } from '@/Controllers/Collision/usePlanetCollisions';
-import { fbm } from './fbm'; // Helper function for Fractal Brownian Motion (FBM).
+import { PlanetCollisionRef } from '@/Controllers/Collision/usePlanetCollisions';
+import { fbm, FBMParams } from './fbm'; // Helper function for Fractal Brownian Motion (FBM).
 
 // Patch THREE.BufferGeometry and THREE.Mesh prototypes to enable BVH support.
 // This is done once at the application's start to optimize raycasting.
@@ -148,7 +148,6 @@ class QuadTreeNode {
       uLacunarity: uniforms.uLacunarity ?? 3,
       uPersistence: uniforms.uPersistence ?? .15,
       uExponentiation: uniforms.uExponentiation ?? 6,
-      uPlanetSize: planetSize
     });
 
     // Create a custom material and mesh, then store it.
