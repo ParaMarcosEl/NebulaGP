@@ -79,6 +79,6 @@ export const useAudioStore = create<AudioState>()(
         musicVolume: state.musicVolume,
         audioEnabled: state.audioEnabled,
       }),
-    }
-  )
+    },
+  ),
 );

@@ -34,7 +34,7 @@ import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import MineExplosionParticles, {
   MineExplosionHandle,
 } from '@/Components/Particles/ExplosionParticles';
-import Planet from '@/Components/World/Planet/Planet';
+import Planet from '@/Components/World/Planet/WorldPlanet';
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 
@@ -291,10 +291,10 @@ export default function Stage1() {
             onCollide={onShipCollision}
           />
           {/* Lighting */}
-          <ambientLight intensity={0.2} />
+          <ambientLight intensity={0.5} />
           <directionalLight
             position={[150, 0, 0]}
-            intensity={0.8}
+            intensity={0.5}
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}

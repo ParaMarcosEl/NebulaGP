@@ -190,10 +190,10 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         vec3 midColor  = texture2D(uMidMap, uv).rgb;
         vec3 highColor = texture2D(uHighMap, uv).rgb;
 
-        float h = clamp(vDisplacement / uMaxHeight, 0.0, 0.1);
+        float h = vDisplacement / uMaxHeight;
 
-        vec3 terrainColor = mix(midColor, lowColor, smoothstep(0.0, 0.01, h));
-        terrainColor = mix(terrainColor, highColor, smoothstep(0.1, 1.0, h));
+        vec3 terrainColor = mix(midColor, lowColor, smoothstep(0.0, 0.2, h));
+        terrainColor = mix(terrainColor, highColor, smoothstep(0.2, 1.0, h));
 
         diffuseColor.rgb = terrainColor;
         `,

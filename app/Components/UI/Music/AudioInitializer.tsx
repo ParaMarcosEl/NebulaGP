@@ -24,7 +24,7 @@ const AudioInitializer = () => {
     setAudioEnabled,
     masterVolume,
     musicVolume,
-    audioEnabled
+    audioEnabled,
   } = useAudioStore();
 
   // 🔹 Initialize and handle track changes

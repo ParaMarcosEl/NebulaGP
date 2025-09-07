@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import LODPlanet from '@/Components/LODTerrain/Planet/Planet';
+import { LODPlanetWrapper } from '@/Components/LODTerrain/Planet/LODPlanetWrapper';
 
-export default function Planet({
+export default function WorldPlanet({
   ref,
   size = 500,
   position = new THREE.Vector3(0, 0, 0),
@@ -66,23 +66,28 @@ export default function Planet({
         color="#fffde4"
         castShadow
       />
-      <LODPlanet
-        planetSize={350}
-        cubeSize={100}
+      <LODPlanetWrapper
+        planetSize={250}
+        cubeSize={16}
         lowTextPath="/textures/molten_rock.png"
         midTextPath="/textures/rocky_ground.png"
         highTextPath="/textures/molten_rock.png"
-        maxHeight={50}
-        frequency={10}
-        amplitude={3}
-        octaves={10}
-        lacunarity={1.0}
-        persistence={0.1}
-        exponentiation={6}
+        maxHeight={200}
+        frequency={7}
+        amplitude={0.1}
+        octaves={2}
+        lacunarity={1.1}
+        persistence={0.7}
+        exponentiation={1}
       />
       <mesh ref={planetRef} position={position}>
-        <sphereGeometry args={[size / 2, 64, 64]} />
-        <meshStandardMaterial />
+        <sphereGeometry args={[size, 64, 64]} />
+        <meshStandardMaterial
+          color={'orange'}
+          transparent
+          opacity={0.8}
+          blending={THREE.AdditiveBlending}
+        />
       </mesh>
       {clouds && (
         <>

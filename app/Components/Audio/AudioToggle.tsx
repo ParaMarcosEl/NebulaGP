@@ -2,11 +2,12 @@
 
 import React from 'react';
 import Image from 'next/image';
+import cx from 'classnames';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore'; // adjust path
 
 import './AudioToggleButton.css';
 
-const AudioToggleButton: React.FC = () => {
+const AudioToggleButton = ({ className = '' }: { className?: string }) => {
   const audioEnabled = useAudioStore((s) => s.audioEnabled);
   const setAudioEnabled = useAudioStore((s) => s.setAudioEnabled);
 
@@ -16,7 +17,7 @@ const AudioToggleButton: React.FC = () => {
 
   return (
     <button
-      className="audio-toggle-button"
+      className={cx(className, 'audio-toggle-button')}
       onClick={toggleAudio}
       aria-label={audioEnabled ? 'Mute Audio' : 'Unmute Audio'}
     >

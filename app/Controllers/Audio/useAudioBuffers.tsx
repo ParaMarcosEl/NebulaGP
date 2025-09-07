@@ -21,8 +21,7 @@ export function useAudioBuffers() {
     shield,
     mineDrop,
     speedup01,
-    speedup02
-
+    speedup02,
   ] = useLoader(THREE.AudioLoader, [
     '/sound/sfx/engine_02.mp3',
     '/sound/sfx/lazer.mp3',
@@ -75,7 +74,7 @@ export function useAudioBuffers() {
     shield,
     mineDrop,
     speedup01,
-    speedup02
+    speedup02,
   ]);
 
   return {
