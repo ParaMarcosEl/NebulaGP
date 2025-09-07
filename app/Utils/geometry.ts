@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { sdfSphere } from './SDF'; // using your SDF library
-import { FBMParams } from '@/Components/LODTerrain/Planet/fbm';
+import { FBMParams, fbm } from '@/Components/LODTerrain/Planet/fbm';
 
 interface DeformationSphere {
   t: number; // parameter along curve (0-1)
