@@ -26,7 +26,7 @@ export function useSpeedPadController({
 }) {
   const { applyBoost } = useGameStore((s) => s);
   const playSound = usePlaySound();
-  const { buffers, audioEnabled } = useAudioStore(s => s);
+  const { buffers, audioEnabled } = useAudioStore((s) => s);
 
   const speedPad = useRef<SpeedPad>({
     mesh: speedPadRef.current as THREE.Mesh,
@@ -59,7 +59,7 @@ export function useSpeedPadController({
       speedPad.current.didPass = true;
       cooldown.current = cooldownTime;
       applyBoost(craft.id);
-      if (audioEnabled) playSound(buffers['speedup01'], speedPadRef.current.position, 1)
+      if (audioEnabled) playSound(buffers['speedup01'], speedPadRef.current.position, 1);
     }
 
     if (!craft && cooldown.current <= 0 && speedPad.current.didPass) {

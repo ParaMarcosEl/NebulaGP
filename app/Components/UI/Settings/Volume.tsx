@@ -3,14 +3,14 @@ import './Volume.css';
 import AudioToggleButton from '@/Components/Audio/AudioToggle';
 
 export function Volume() {
-  const { 
-    masterVolume, 
-    sfxVolume, 
-    musicVolume, 
-    setMasterVolume, 
-    setSfxVolume, 
+  const {
+    masterVolume,
+    sfxVolume,
+    musicVolume,
+    setMasterVolume,
+    setSfxVolume,
     setMusicVolume,
-    audioEnabled
+    audioEnabled,
   } = useAudioStore((s) => s);
 
   return (

@@ -84,7 +84,7 @@ export function usePlayerController({
   );
   const { invertPitch } = useSettingsStore((s) => s);
   const playSoune = usePlaySound();
-  const { buffers, audioEnabled } = useAudioStore(s => s);
+  const { buffers, audioEnabled } = useAudioStore((s) => s);
 
   const controlsEnabled = raceStatus === 'racing';
   useBotController({

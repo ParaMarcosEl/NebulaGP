@@ -26,12 +26,5 @@ export function EngineSound({ volume = 20 }: { volume?: number }) {
     }
   }, [audioEnabled]);
 
-  return (
-    <PositionalAudio
-      ref={ref}
-      url="/sound/sfx/engine_02.mp3"
-      distance={1}
-      loop
-    />
-  );
+  return <PositionalAudio ref={ref} url="/sound/sfx/engine_02.mp3" distance={1} loop />;
 }

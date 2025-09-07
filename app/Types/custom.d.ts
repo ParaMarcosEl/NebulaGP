@@ -35,3 +35,12 @@ declare module '*.worker.ts' {
   export default WebpackWorker;
 }
 // src/types/three-declarations.d.ts
+
+// types/worker-loader.d.ts
+declare module '*.worker.ts' {
+  class WebpackWorker extends Worker {
+    constructor();
+  }
+  export default WebpackWorker;
+}
+

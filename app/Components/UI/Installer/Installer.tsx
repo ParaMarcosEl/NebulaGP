@@ -10,7 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 export default function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-    const { setAlert } = useAlertStore(s => s);
+  const { setAlert } = useAlertStore((s) => s);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -26,16 +26,13 @@ export default function InstallButton() {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
-    setAlert({ type:'info', message: `Installation ${choice.outcome}` });
+    setAlert({ type: 'info', message: `Installation ${choice.outcome}` });
     console.log(`User ${choice.outcome} the installation`);
     setDeferredPrompt(null);
   };
 
   return (
-    <button
-      onClick={handleInstall}
-      disabled={!deferredPrompt}
-    >
+    <button onClick={handleInstall} disabled={!deferredPrompt}>
       Install
     </button>
   );

@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber';
 import { CubeTree } from './CubeTree';
-import { Vector3 } from 'three';
-import { useMemo, memo, useRef } from 'react';
+import { Vector3, Group } from 'three';
+import { useMemo, memo, useRef, useState, useEffect } from 'react';
 import { useTexture } from '@react-three/drei';
 import { RepeatWrapping, LinearFilter } from 'three';
 
@@ -11,11 +11,11 @@ type PlanetDebugProps = {
   cubeSize?: number;
   lowTextPath?: string;
   midTextPath?: string;
-  highTextPath?: string; // 🔹 Noise uniforms
+  highTextPath?: string;
   maxHeight?: number;
   frequency?: number;
   amplitude?: number;
- octaves?: number;
+  octaves?: number;
   lacunarity?: number;
   persistence?: number;
   exponentiation?: number;
@@ -24,8 +24,7 @@ type PlanetDebugProps = {
 
 export function LODPlanet({
   position,
-
- planetSize = 5,
+  planetSize = 5,
   cubeSize = 16,
   lowTextPath = '/textures/icy_ground.png',
   midTextPath = '/textures/rocky_ground.png',
@@ -34,7 +33,7 @@ export function LODPlanet({
   frequency = 20,
   amplitude = 0.5,
   octaves = 2,
- lacunarity = 3.0,
+  lacunarity = 3.0,
   persistence = 0.5,
   exponentiation = 2,
 }: PlanetDebugProps) {
@@ -49,10 +48,14 @@ export function LODPlanet({
     tex.wrapT = RepeatWrapping;
     tex.minFilter = LinearFilter;
   });
-  // 🔹 Memoize CubeTree with uniforms
+
   const timeRef = useRef(0);
+  const { camera } = useThree();
+  const [planetGroup, setPlanetGroup] = useState<Group | null>(null);
+
+  // Memoize CubeTree
   const cubeTree = useMemo(
-   () =>
+    () =>
       new CubeTree(
         planetSize,
         cubeSize,
@@ -68,7 +71,7 @@ export function LODPlanet({
           uPersistence: persistence,
           uExponentiation: exponentiation,
           uTime: timeRef.current,
-        },
+        }
       ),
     [
       planetSize,
@@ -83,16 +86,22 @@ export function LODPlanet({
       lacunarity,
       persistence,
       exponentiation,
-    ],
+    ]
   );
 
-  const { camera } = useThree();
+  // Async update
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const group = await cubeTree.getDynamicMeshesAsync(camera);
+      if (mounted) setPlanetGroup(group);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [cubeTree, camera]);
 
-  return (
-    <group position={position}>
-            <primitive object={cubeTree.getDynamicMeshes(camera)} />   {' '}
-    </group>
-  );
+  return <group position={position}>{planetGroup && <primitive object={planetGroup} />}</group>;
 }
 
 export default memo(LODPlanet);

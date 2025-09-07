@@ -33,9 +33,7 @@ export function Shield({
       <mesh ref={meshRef} scale={[1.5, 0.8, 1.5]}>
         <sphereGeometry args={[1.8, 5, 5]} />
         <primitive ref={matRef} object={new ShieldMaterial()} />
-        <ShieldSound
-          volume={shieldValue * 10}
-        />
+        <ShieldSound volume={shieldValue * 10} />
       </mesh>
     </group>
   );

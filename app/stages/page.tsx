@@ -34,7 +34,7 @@ import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import MineExplosionParticles, {
   MineExplosionHandle,
 } from '@/Components/Particles/ExplosionParticles';
-import Planet from '@/Components/World/Planet/Planet';
+import Planet from '@/Components/World/Planet/WorldPlanet';
 
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';

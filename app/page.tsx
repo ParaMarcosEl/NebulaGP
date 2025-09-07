@@ -19,7 +19,7 @@ import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import { useFullscreen } from '@/Controllers/UI/useFullscreen';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
-import Planet from '@/Components/World/Planet/Planet';
+import Planet from '@/Components/World/Planet/WorldPlanet';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
