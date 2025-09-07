@@ -7,6 +7,7 @@ const nextConfig = {
         loader: 'worker-loader',
         options: {
           filename: 'static/[hash].worker.js',
+          publicPath: '/_next/',
           inline: 'no-fallback', // always separate file
         },
       });
