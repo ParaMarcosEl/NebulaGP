@@ -7,7 +7,7 @@ import { useAudioStore } from '@/Controllers/Audio/useAudioStore'; // adjust pat
 
 import './AudioToggleButton.css';
 
-const AudioToggleButton = ({ className = '' }: { className?: string}) => {
+const AudioToggleButton = ({ className = '' }: { className?: string }) => {
   const audioEnabled = useAudioStore((s) => s.audioEnabled);
   const setAudioEnabled = useAudioStore((s) => s.setAudioEnabled);
 
@@ -17,7 +17,7 @@ const AudioToggleButton = ({ className = '' }: { className?: string}) => {
 
   return (
     <button
-      className={cx(className, "audio-toggle-button")}
+      className={cx(className, 'audio-toggle-button')}
       onClick={toggleAudio}
       aria-label={audioEnabled ? 'Mute Audio' : 'Unmute Audio'}
     >

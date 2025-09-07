@@ -15,7 +15,7 @@ type PlanetDebugProps = {
   maxHeight?: number;
   frequency?: number;
   amplitude?: number;
- octaves?: number;
+  octaves?: number;
   lacunarity?: number;
   persistence?: number;
   exponentiation?: number;
@@ -25,7 +25,7 @@ type PlanetDebugProps = {
 export function LODPlanet({
   position,
 
- planetSize = 5,
+  planetSize = 5,
   cubeSize = 16,
   lowTextPath = '/textures/icy_ground.png',
   midTextPath = '/textures/rocky_ground.png',
@@ -34,7 +34,7 @@ export function LODPlanet({
   frequency = 20,
   amplitude = 0.5,
   octaves = 2,
- lacunarity = 3.0,
+  lacunarity = 3.0,
   persistence = 0.5,
   exponentiation = 2,
 }: PlanetDebugProps) {
@@ -52,24 +52,17 @@ export function LODPlanet({
   // 🔹 Memoize CubeTree with uniforms
   const timeRef = useRef(0);
   const cubeTree = useMemo(
-   () =>
-      new CubeTree(
-        planetSize,
-        cubeSize,
-        lowTexture,
-        midTexture,
-        highTexture,
-        {
-          uMaxHeight: maxHeight,
-          uFrequency: frequency,
-          uAmplitude: amplitude,
-          uOctaves: octaves,
-          uLacunarity: lacunarity,
-          uPersistence: persistence,
-          uExponentiation: exponentiation,
-          uTime: timeRef.current,
-        },
-      ),
+    () =>
+      new CubeTree(planetSize, cubeSize, lowTexture, midTexture, highTexture, {
+        uMaxHeight: maxHeight,
+        uFrequency: frequency,
+        uAmplitude: amplitude,
+        uOctaves: octaves,
+        uLacunarity: lacunarity,
+        uPersistence: persistence,
+        uExponentiation: exponentiation,
+        uTime: timeRef.current,
+      }),
     [
       planetSize,
       cubeSize,

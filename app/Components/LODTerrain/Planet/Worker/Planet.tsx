@@ -58,23 +58,16 @@ export function LODPlanet({
   // Memoize CubeTree
   const cubeTree = useMemo(
     () =>
-      new CubeTree(
-        planetSize,
-        cubeSize,
-        lowTexture,
-        midTexture,
-        highTexture,
-        {
-          uMaxHeight: maxHeight,
-          uFrequency: frequency,
-          uAmplitude: amplitude,
-          uOctaves: octaves,
-          uLacunarity: lacunarity,
-          uPersistence: persistence,
-          uExponentiation: exponentiation,
-          uTime: timeRef.current,
-        }
-      ),
+      new CubeTree(planetSize, cubeSize, lowTexture, midTexture, highTexture, {
+        uMaxHeight: maxHeight,
+        uFrequency: frequency,
+        uAmplitude: amplitude,
+        uOctaves: octaves,
+        uLacunarity: lacunarity,
+        uPersistence: persistence,
+        uExponentiation: exponentiation,
+        uTime: timeRef.current,
+      }),
     [
       planetSize,
       cubeSize,
@@ -88,7 +81,7 @@ export function LODPlanet({
       lacunarity,
       persistence,
       exponentiation,
-    ]
+    ],
   );
 
   // Async update

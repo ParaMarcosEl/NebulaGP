@@ -26,7 +26,12 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private shaderUniforms: any;
 
-  constructor(lowMap: THREE.Texture, midMap: THREE.Texture, highMap: THREE.Texture, params?: Partial<PlanetUniforms>) {
+  constructor(
+    lowMap: THREE.Texture,
+    midMap: THREE.Texture,
+    highMap: THREE.Texture,
+    params?: Partial<PlanetUniforms>,
+  ) {
     super({ side: THREE.DoubleSide });
 
     const placeholder = new THREE.Texture();
@@ -77,7 +82,7 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         #include <uv_vertex>
         vUv = uv;
         vElevation = elevation;
-        `
+        `,
       );
 
       // Inject uniform and varying declaration into the fragment shader
@@ -117,7 +122,7 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
 
         diffuseColor.rgb = blended.rgb;
 
-        `
+        `,
       );
     };
   }

@@ -19,8 +19,23 @@ export type WorkerPayload = {
 let isReady = false;
 const messageQueue: MessageEvent[] = [];
 
-const processBuildChunk = async (payload: WorkerPayload & { elevationBuffer: SharedArrayBuffer; orientation?: { x:number,y:number,z:number,w:number }, translation?: { x:number,y:number,z:number } }) => {
-  const { posBuffer, normalBuffer, uvBuffer, elevationBuffer, planetSize, params, orientation, translation } = payload;
+const processBuildChunk = async (
+  payload: WorkerPayload & {
+    elevationBuffer: SharedArrayBuffer;
+    orientation?: { x: number; y: number; z: number; w: number };
+    translation?: { x: number; y: number; z: number };
+  },
+) => {
+  const {
+    posBuffer,
+    normalBuffer,
+    uvBuffer,
+    elevationBuffer,
+    planetSize,
+    params,
+    orientation,
+    translation,
+  } = payload;
   const positions = new Float32Array(posBuffer);
   const normals = new Float32Array(normalBuffer);
   const uvs = new Float32Array(uvBuffer);
@@ -32,10 +47,18 @@ const processBuildChunk = async (payload: WorkerPayload & { elevationBuffer: Sha
   const cols = rows;
 
   // Helper: rotate a point by quaternion (if orientation supplied)
-  const rotateByQuat = (px:number, py:number, pz:number, q?:{x:number,y:number,z:number,w:number}) => {
+  const rotateByQuat = (
+    px: number,
+    py: number,
+    pz: number,
+    q?: { x: number; y: number; z: number; w: number },
+  ) => {
     if (!q) return [px, py, pz];
     // quat * v * quat_conj
-    const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
+    const qx = q.x,
+      qy = q.y,
+      qz = q.z,
+      qw = q.w;
     // t = 2 * cross(q.xyz, v)
     const tx = 2 * (qy * pz - qz * py);
     const ty = 2 * (qz * px - qx * pz);
@@ -47,77 +70,76 @@ const processBuildChunk = async (payload: WorkerPayload & { elevationBuffer: Sha
     return [vpx, vpy, vpz];
   };
 
-
   // --- Precompute raw elevations and displaced positions ---
-const dispArr = new Float32Array(vertexCount * 3);
-const rawElev = new Float32Array(vertexCount);
+  const dispArr = new Float32Array(vertexCount * 3);
+  const rawElev = new Float32Array(vertexCount);
 
-let minElevation = Infinity;
-let maxElevation = -Infinity;
+  let minElevation = Infinity;
+  let maxElevation = -Infinity;
 
-for (let y = 0; y < rows; y++) {
-  const v = y / (rows - 1);
-  const phi = v * Math.PI;
-  const sinPhi = Math.sin(phi);
-  const cosPhi = Math.cos(phi);
+  for (let y = 0; y < rows; y++) {
+    const v = y / (rows - 1);
+    const phi = v * Math.PI;
+    const sinPhi = Math.sin(phi);
+    const cosPhi = Math.cos(phi);
 
-  for (let x = 0; x < cols; x++) {
-    const u = x / (cols - 1);
-    const theta = u * Math.PI * 2;
+    for (let x = 0; x < cols; x++) {
+      const u = x / (cols - 1);
+      const theta = u * Math.PI * 2;
 
-    const px = Math.cos(theta) * sinPhi;
-    const py = cosPhi;
-    const pz = Math.sin(theta) * sinPhi;
+      const px = Math.cos(theta) * sinPhi;
+      const py = cosPhi;
+      const pz = Math.sin(theta) * sinPhi;
 
-    const disp = params.useRidged
-      ? terrainElevationRidged([px, py, pz], params)
-      : terrainElevationFBM([px, py, pz], params);
+      const disp = params.useRidged
+        ? terrainElevationRidged([px, py, pz], params)
+        : terrainElevationFBM([px, py, pz], params);
 
-    const r = radius + disp * (params.uMaxHeight ?? 10);
+      const r = radius + disp * (params.uMaxHeight ?? 10);
 
-    const ix = (y * cols + x) * 3;
-    dispArr[ix] = px * r;
-    dispArr[ix + 1] = py * r;
-    dispArr[ix + 2] = pz * r;
-    rawElev[y * cols + x] = disp;
+      const ix = (y * cols + x) * 3;
+      dispArr[ix] = px * r;
+      dispArr[ix + 1] = py * r;
+      dispArr[ix + 2] = pz * r;
+      rawElev[y * cols + x] = disp;
 
-    // Track min/max elevations
-    if (disp < minElevation) minElevation = disp;
-    if (disp > maxElevation) maxElevation = disp;
-  }
-}
-
-// --- Fill buffers like before ---
-for (let y = 0; y < rows; y++) {
-  for (let x = 0; x < cols; x++) {
-    const idx = y * cols + x;
-    const sIdx = idx * 3;
-
-    let vx = dispArr[sIdx];
-    let vy = dispArr[sIdx + 1];
-    let vz = dispArr[sIdx + 2];
-
-    if (orientation) {
-      [vx, vy, vz] = rotateByQuat(vx, vy, vz, orientation);
+      // Track min/max elevations
+      if (disp < minElevation) minElevation = disp;
+      if (disp > maxElevation) maxElevation = disp;
     }
-    if (translation) {
-      vx += translation.x;
-      vy += translation.y;
-      vz += translation.z;
-    }
-
-    positions[sIdx] = vx;
-    positions[sIdx + 1] = vy;
-    positions[sIdx + 2] = vz;
-
-    uvs[idx * 2] = x / (cols - 1);
-    uvs[idx * 2 + 1] = 1 - y / (rows - 1);
-
-    elevations[idx] = rawElev[idx];
   }
-}
 
-//Compute normals using central differences on dispArr (or positions)
+  // --- Fill buffers like before ---
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const idx = y * cols + x;
+      const sIdx = idx * 3;
+
+      let vx = dispArr[sIdx];
+      let vy = dispArr[sIdx + 1];
+      let vz = dispArr[sIdx + 2];
+
+      if (orientation) {
+        [vx, vy, vz] = rotateByQuat(vx, vy, vz, orientation);
+      }
+      if (translation) {
+        vx += translation.x;
+        vy += translation.y;
+        vz += translation.z;
+      }
+
+      positions[sIdx] = vx;
+      positions[sIdx + 1] = vy;
+      positions[sIdx + 2] = vz;
+
+      uvs[idx * 2] = x / (cols - 1);
+      uvs[idx * 2 + 1] = 1 - y / (rows - 1);
+
+      elevations[idx] = rawElev[idx];
+    }
+  }
+
+  //Compute normals using central differences on dispArr (or positions)
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const idx = y * cols + x;
@@ -145,7 +167,9 @@ for (let y = 0; y < rows; y++) {
 
       // normalize
       const len = Math.hypot(nx, ny, nz) || 1e-9;
-      nx /= len; ny /= len; nz /= len;
+      nx /= len;
+      ny /= len;
+      nz /= len;
 
       normals[sIdx] = nx;
       normals[sIdx + 1] = ny;
@@ -153,19 +177,17 @@ for (let y = 0; y < rows; y++) {
     }
   }
 
-// --- Post result with min/max elevations ---
-self.postMessage({
-  type: 'chunk_ready',
-  posBuffer,
-  normalBuffer,
-  uvBuffer,
-  elevationBuffer,
-  minElevation,
-  maxElevation
-});
-
+  // --- Post result with min/max elevations ---
+  self.postMessage({
+    type: 'chunk_ready',
+    posBuffer,
+    normalBuffer,
+    uvBuffer,
+    elevationBuffer,
+    minElevation,
+    maxElevation,
+  });
 };
-
 
 // const processBuildChunk = async (payload: WorkerPayload & { elevationBuffer: SharedArrayBuffer }) => {
 //   const { posBuffer, normalBuffer, uvBuffer, elevationBuffer, planetSize, params } = payload;

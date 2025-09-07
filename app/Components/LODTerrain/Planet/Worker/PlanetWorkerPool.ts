@@ -23,9 +23,12 @@ class PlanetWorkerPool {
   private workerReady: Map<Worker, boolean> = new Map();
   // cache index arrays by segments
   private indexCache = new Map<number, Uint32Array>();
-  private material : PlanetMaterial;
+  private material: PlanetMaterial;
 
-  constructor(workerCount = navigator.hardwareConcurrency || 4, material = new PlanetMaterial(new THREE.Texture(), new THREE.Texture(), new THREE.Texture())) {
+  constructor(
+    workerCount = navigator.hardwareConcurrency || 4,
+    material = new PlanetMaterial(new THREE.Texture(), new THREE.Texture(), new THREE.Texture()),
+  ) {
     this.material = material;
     this.workers = Array.from({ length: workerCount }, () => {
       const worker = new Worker(new URL('./PlanetWorker.worker.ts', import.meta.url), {
@@ -61,7 +64,12 @@ class PlanetWorkerPool {
    * Enqueue a grid request. segments = number of subdivisions along one edge (like PlaneGeometry segments).
    * vertexCount used by worker should be (segments+1)*(segments+1)
    */
-  enqueue(segments: number, planetSize: number, material: PlanetMaterial, params: FBMParams): Promise<THREE.BufferGeometry> {
+  enqueue(
+    segments: number,
+    planetSize: number,
+    material: PlanetMaterial,
+    params: FBMParams,
+  ): Promise<THREE.BufferGeometry> {
     return new Promise((resolve) => {
       const vertexCount = (segments + 1) * (segments + 1);
       const posBuffer = new SharedArrayBuffer(vertexCount * 3 * Float32Array.BYTES_PER_ELEMENT);
@@ -69,7 +77,16 @@ class PlanetWorkerPool {
       const normalBuffer = new SharedArrayBuffer(vertexCount * 3 * Float32Array.BYTES_PER_ELEMENT);
       const uvBuffer = new SharedArrayBuffer(vertexCount * 2 * Float32Array.BYTES_PER_ELEMENT);
 
-      const task: Task = { posBuffer, elevationBuffer, normalBuffer, uvBuffer, planetSize, params, segments, resolve };
+      const task: Task = {
+        posBuffer,
+        elevationBuffer,
+        normalBuffer,
+        uvBuffer,
+        planetSize,
+        params,
+        segments,
+        resolve,
+      };
       this.queue.push(task);
       this.dispatch();
     });
@@ -94,7 +111,6 @@ class PlanetWorkerPool {
         planetSize: task.planetSize,
         params: task.params,
         segments: task.segments,
-
       },
     });
 
@@ -113,7 +129,7 @@ class PlanetWorkerPool {
     const elevations = new Float32Array(task.elevationBuffer);
     const normals = new Float32Array(task.normalBuffer);
     const uvs = new Float32Array(task.uvBuffer);
-    
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
@@ -122,7 +138,7 @@ class PlanetWorkerPool {
     this.material.setParams({
       uMaxElevation: maxElevation,
       uMinElevation: minElevation,
-    })
+    });
 
     // set index: reuse cached index for given segments
     const segments = task.segments;

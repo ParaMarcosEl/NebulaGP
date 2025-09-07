@@ -43,4 +43,3 @@ declare module '*.worker.ts' {
   }
   export default WebpackWorker;
 }
-

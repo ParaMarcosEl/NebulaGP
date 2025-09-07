@@ -77,12 +77,17 @@ export default function WorldPlanet({
         amplitude={0.1}
         octaves={2}
         lacunarity={1.1}
-        persistence={.7}
+        persistence={0.7}
         exponentiation={1}
       />
       <mesh ref={planetRef} position={position}>
         <sphereGeometry args={[size, 64, 64]} />
-        <meshStandardMaterial color={'orange'} transparent opacity={0.8} blending={THREE.AdditiveBlending}/>
+        <meshStandardMaterial
+          color={'orange'}
+          transparent
+          opacity={0.8}
+          blending={THREE.AdditiveBlending}
+        />
       </mesh>
       {clouds && (
         <>

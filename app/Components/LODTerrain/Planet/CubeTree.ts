@@ -29,7 +29,7 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 export function spherifyGeometry(
   geometry: THREE.BufferGeometry,
   radius: number,
-  uniforms?: FBMParams
+  uniforms?: FBMParams,
 ) {
   // Get the position attribute of the geometry.
   const pos = geometry.attributes.position as THREE.BufferAttribute;
@@ -45,13 +45,13 @@ export function spherifyGeometry(
     const cubeV = v.clone().divideScalar(len);
     const sx =
       cubeV.x *
-      Math.sqrt(1 - (cubeV.y ** 2) / 2 - (cubeV.z ** 2) / 2 + (cubeV.y ** 2 * cubeV.z ** 2) / 3);
+      Math.sqrt(1 - cubeV.y ** 2 / 2 - cubeV.z ** 2 / 2 + (cubeV.y ** 2 * cubeV.z ** 2) / 3);
     const sy =
       cubeV.y *
-      Math.sqrt(1 - (cubeV.z ** 2) / 2 - (cubeV.x ** 2) / 2 + (cubeV.z ** 2 * cubeV.x ** 2) / 3);
+      Math.sqrt(1 - cubeV.z ** 2 / 2 - cubeV.x ** 2 / 2 + (cubeV.z ** 2 * cubeV.x ** 2) / 3);
     const sz =
       cubeV.z *
-      Math.sqrt(1 - (cubeV.x ** 2) / 2 - (cubeV.y ** 2) / 2 + (cubeV.x ** 2 * cubeV.y ** 2) / 3);
+      Math.sqrt(1 - cubeV.x ** 2 / 2 - cubeV.y ** 2 / 2 + (cubeV.x ** 2 * cubeV.y ** 2) / 3);
     v.set(sx, sy, sz);
 
     // Apply FBM (Fractal Brownian Motion) displacement if uniforms are provided.
@@ -111,7 +111,7 @@ class QuadTreeNode {
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
     uniforms: NoiseUniforms,
-    registerPlanet?: (ref: PlanetCollisionRef) => void
+    registerPlanet?: (ref: PlanetCollisionRef) => void,
   ): THREE.Mesh {
     // Return the existing mesh if it's already built.
     if (this.mesh) return this.mesh;
@@ -125,7 +125,7 @@ class QuadTreeNode {
       quadWidth * cubeSize,
       quadHeight * cubeSize,
       segments,
-      segments
+      segments,
     );
 
     // Orient and translate the plane to match its position and orientation on the cube face.
@@ -146,7 +146,7 @@ class QuadTreeNode {
       uAmplitude: uniforms.uAmplitude ?? 3,
       uOctaves: uniforms.uOctaves ?? 10,
       uLacunarity: uniforms.uLacunarity ?? 3,
-      uPersistence: uniforms.uPersistence ?? .15,
+      uPersistence: uniforms.uPersistence ?? 0.15,
       uExponentiation: uniforms.uExponentiation ?? 6,
     });
 
@@ -184,7 +184,7 @@ class QuadTreeNode {
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
     uniforms: NoiseUniforms,
-    registerPlanet?: (ref: PlanetCollisionRef) => void
+    registerPlanet?: (ref: PlanetCollisionRef) => void,
   ): void {
     const [bl, , tr] = this.bounds;
 
@@ -218,8 +218,8 @@ class QuadTreeNode {
           midTexture,
           highTexture,
           uniforms,
-          registerPlanet
-        )
+          registerPlanet,
+        ),
       );
     } else {
       // If the camera is far or at max depth, build and add the mesh for this node.
@@ -232,8 +232,8 @@ class QuadTreeNode {
           midTexture,
           highTexture,
           uniforms,
-          registerPlanet
-        )
+          registerPlanet,
+        ),
       );
     }
   }
@@ -249,13 +249,33 @@ class QuadTreeNode {
     // Define the bounds for the four new child nodes.
     const newBounds = [
       // Top-left quad
-      [new THREE.Vector2(bl.x, midY), new THREE.Vector2(midX, midY), new THREE.Vector2(midX, tr.y), new THREE.Vector2(bl.x, tr.y)],
+      [
+        new THREE.Vector2(bl.x, midY),
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(midX, tr.y),
+        new THREE.Vector2(bl.x, tr.y),
+      ],
       // Top-right quad
-      [new THREE.Vector2(midX, midY), new THREE.Vector2(tr.x, midY), new THREE.Vector2(tr.x, tr.y), new THREE.Vector2(midX, tr.y)],
+      [
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(tr.x, midY),
+        new THREE.Vector2(tr.x, tr.y),
+        new THREE.Vector2(midX, tr.y),
+      ],
       // Bottom-left quad
-      [new THREE.Vector2(bl.x, bl.y), new THREE.Vector2(midX, bl.y), new THREE.Vector2(midX, midY), new THREE.Vector2(bl.x, midY)],
+      [
+        new THREE.Vector2(bl.x, bl.y),
+        new THREE.Vector2(midX, bl.y),
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(bl.x, midY),
+      ],
       // Bottom-right quad
-      [new THREE.Vector2(midX, bl.y), new THREE.Vector2(tr.x, bl.y), new THREE.Vector2(tr.x, midY), new THREE.Vector2(midX, midY)],
+      [
+        new THREE.Vector2(midX, bl.y),
+        new THREE.Vector2(tr.x, bl.y),
+        new THREE.Vector2(tr.x, midY),
+        new THREE.Vector2(midX, midY),
+      ],
     ];
     // Create new QuadTreeNode instances for each set of bounds.
     this.children = newBounds.map((bounds) => new QuadTreeNode(this.level + 1, bounds));
@@ -301,7 +321,7 @@ class CubeFace {
     lowTexture: THREE.Texture,
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
-    uniforms: NoiseUniforms
+    uniforms: NoiseUniforms,
   ): THREE.Mesh[] {
     const meshes: THREE.Mesh[] = [];
     // Start the recursive mesh gathering from the root node.
@@ -315,7 +335,7 @@ class CubeFace {
       lowTexture,
       midTexture,
       highTexture,
-      uniforms
+      uniforms,
     );
     return meshes;
   }
@@ -341,7 +361,7 @@ export class CubeTree {
     lowTexture: THREE.Texture,
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
-    uniforms: NoiseUniforms = {}
+    uniforms: NoiseUniforms = {},
   ) {
     this.planetSize = planetSize;
     this.cubeSize = cubeSize;
@@ -383,8 +403,8 @@ export class CubeTree {
           this.lowTexture,
           this.midTexture,
           this.highTexture,
-          this.uniforms
-        )
+          this.uniforms,
+        ),
       );
     }
     return meshes;

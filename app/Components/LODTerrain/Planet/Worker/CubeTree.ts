@@ -24,7 +24,7 @@ type NoiseUniforms = FBMParams;
 // Utility to convert FBMParams to PlanetUniforms
 function fbmToUniforms(params: FBMParams): Record<string, { value: number }> {
   return Object.fromEntries(
-    Object.entries(params).map(([key, value]) => [key, { value: value as number }])
+    Object.entries(params).map(([key, value]) => [key, { value: value as number }]),
   );
 }
 
@@ -53,7 +53,7 @@ class QuadTreeNode {
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
     uniforms: NoiseUniforms,
-    registerPlanet?: (ref: PlanetCollisionRef) => void
+    registerPlanet?: (ref: PlanetCollisionRef) => void,
   ): Promise<THREE.Mesh> {
     if (this.mesh) return this.mesh;
 
@@ -66,7 +66,10 @@ class QuadTreeNode {
     material.setParams(fbmToUniforms(uniforms));
 
     // Get geometry from worker pool
-    const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, { ...uniforms, useRidged: true });
+    const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
+      ...uniforms,
+      useRidged: true,
+    });
 
     // Apply orientation
     const up = new THREE.Vector3(0, 0, 1);
@@ -103,7 +106,7 @@ class QuadTreeNode {
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
     uniforms: NoiseUniforms,
-    registerPlanet?: (ref: PlanetCollisionRef) => void
+    registerPlanet?: (ref: PlanetCollisionRef) => void,
   ): Promise<void> {
     const [bl, , tr] = this.bounds;
 
@@ -134,7 +137,7 @@ class QuadTreeNode {
           midTexture,
           highTexture,
           uniforms,
-          registerPlanet
+          registerPlanet,
         );
       }
     } else {
@@ -147,8 +150,8 @@ class QuadTreeNode {
           midTexture,
           highTexture,
           uniforms,
-          registerPlanet
-        )
+          registerPlanet,
+        ),
       );
     }
   }
@@ -164,13 +167,33 @@ class QuadTreeNode {
 
     const newBounds = [
       // Top-left
-      [new THREE.Vector2(bl.x, midY), new THREE.Vector2(midX, midY), new THREE.Vector2(midX, tr.y), new THREE.Vector2(bl.x, tr.y)],
+      [
+        new THREE.Vector2(bl.x, midY),
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(midX, tr.y),
+        new THREE.Vector2(bl.x, tr.y),
+      ],
       // Top-right
-      [new THREE.Vector2(midX, midY), new THREE.Vector2(tr.x, midY), new THREE.Vector2(tr.x, tr.y), new THREE.Vector2(midX, tr.y)],
+      [
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(tr.x, midY),
+        new THREE.Vector2(tr.x, tr.y),
+        new THREE.Vector2(midX, tr.y),
+      ],
       // Bottom-left
-      [new THREE.Vector2(bl.x, bl.y), new THREE.Vector2(midX, bl.y), new THREE.Vector2(midX, midY), new THREE.Vector2(bl.x, midY)],
+      [
+        new THREE.Vector2(bl.x, bl.y),
+        new THREE.Vector2(midX, bl.y),
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(bl.x, midY),
+      ],
       // Bottom-right
-      [new THREE.Vector2(midX, bl.y), new THREE.Vector2(tr.x, bl.y), new THREE.Vector2(tr.x, midY), new THREE.Vector2(midX, midY)],
+      [
+        new THREE.Vector2(midX, bl.y),
+        new THREE.Vector2(tr.x, bl.y),
+        new THREE.Vector2(tr.x, midY),
+        new THREE.Vector2(midX, midY),
+      ],
     ];
     this.children = newBounds.map((bounds) => new QuadTreeNode(this.level + 1, bounds));
   }
@@ -201,7 +224,7 @@ class CubeFace {
     lowTexture: THREE.Texture,
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
-    uniforms: NoiseUniforms
+    uniforms: NoiseUniforms,
   ): Promise<THREE.Mesh[]> {
     const meshes: THREE.Mesh[] = [];
     await this.root.getMeshesAsync(
@@ -214,7 +237,7 @@ class CubeFace {
       lowTexture,
       midTexture,
       highTexture,
-      uniforms
+      uniforms,
     );
     return meshes;
   }
@@ -239,7 +262,7 @@ export class CubeTree {
     lowTexture: THREE.Texture,
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
-    uniforms: NoiseUniforms
+    uniforms: NoiseUniforms,
   ) {
     this.planetSize = planetSize;
     this.cubeSize = cubeSize;
@@ -275,7 +298,7 @@ export class CubeTree {
         this.lowTexture,
         this.midTexture,
         this.highTexture,
-        this.uniforms
+        this.uniforms,
       );
       meshes.push(...faceMeshes);
     }
@@ -303,8 +326,8 @@ export class CubeTree {
           this.lowTexture,
           this.midTexture,
           this.highTexture,
-          this.uniforms
-        ))
+          this.uniforms,
+        )),
       );
     }
     return meshes;

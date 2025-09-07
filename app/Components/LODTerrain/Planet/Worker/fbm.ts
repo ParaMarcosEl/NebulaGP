@@ -77,7 +77,7 @@ function fbmStandard(
   lacunarity: number,
   persistence: number,
   octaves: number,
-  noiseFn: (p: [number, number, number]) => number
+  noiseFn: (p: [number, number, number]) => number,
 ): number {
   let sum = 0;
   let amp = 0.5;
@@ -97,7 +97,7 @@ function ridgedFBM(
   lacunarity: number,
   persistence: number,
   octaves: number,
-  noiseFn: (p: [number, number, number]) => number
+  noiseFn: (p: [number, number, number]) => number,
 ): number {
   let sum = 0;
   let amp = 0.5;
@@ -114,7 +114,7 @@ function ridgedFBM(
 export function terrainElevationFBM(
   pos: [number, number, number],
   params: FBMParams,
-  noiseFn = noiseArray
+  noiseFn = noiseArray,
 ): number {
   const { uFrequency, uLacunarity, uPersistence, uOctaves, uExponentiation } = params;
   const elevation = fbmStandard(pos, uFrequency, uLacunarity, uPersistence, uOctaves, noiseFn);
@@ -125,7 +125,7 @@ export function terrainElevationFBM(
 export function terrainElevationRidged(
   pos: [number, number, number],
   params: FBMParams,
-  noiseFn = noiseArray
+  noiseFn = noiseArray,
 ): number {
   const { uFrequency, uLacunarity, uPersistence, uOctaves, uExponentiation } = params;
 
@@ -148,7 +148,7 @@ export function terrainElevationRidged(
     uLacunarity,
     uPersistence,
     Math.max(3, Math.floor(uOctaves / 2)),
-    noiseFn
+    noiseFn,
   );
 
   return Math.pow(base + detail * 0.3, uExponentiation);

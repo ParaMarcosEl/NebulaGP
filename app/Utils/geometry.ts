@@ -185,8 +185,6 @@ export interface TerrainBuildTask {
   };
 }
 
-
-
 /**
  * Spherifies and displaces geometry using FBM, but in async chunks
  */
