@@ -31,7 +31,7 @@ class PlanetWorkerPool {
   ) {
     this.material = material;
     this.workers = Array.from({ length: workerCount }, () => {
-      const worker = new Worker(new URL('./PlanetWorker.worker.ts', import.meta.url), {
+      const worker = new Worker(new URL('@/workers/PlanetWorker.worker.ts', import.meta.url), {
         type: 'module',
       });
 

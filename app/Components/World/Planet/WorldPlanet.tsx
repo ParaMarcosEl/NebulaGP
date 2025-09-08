@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import LODPlanetWrapper from '@/Components/LODTerrain/Planet/Planet';
+import { LODPlanetWrapper } from '@/Components/LODTerrain/Planet/LODPlanetWrapper';
 
 export default function WorldPlanet({
   ref,
