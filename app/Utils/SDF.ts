@@ -126,7 +126,7 @@ export function evaluateSDF(p: THREE.Vector3) {
 // import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 
-interface SphereSpec {
+export interface SphereSpec {
   t: number;      // Position along curve (0 to 1)
   radius: number; // Radius of the sphere
 }

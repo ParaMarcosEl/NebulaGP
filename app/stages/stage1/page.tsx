@@ -301,6 +301,7 @@ export default function Stage1() {
             ref={playingFieldRef}
             aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
             curve={curve}
+            spheres={[{ t: 0.4, radius: 100 }]}
           />
           <MinePadSpawner
             curve={curve}
@@ -343,11 +344,11 @@ export default function Stage1() {
           />
           <Planet 
             position={new THREE.Vector3()} 
-            size={300} 
+            size={350} 
             maxHeight={100}
             lacunarity={1.6}
             frequency={4}
-            exponentiation={3}
+            exponentiation={6}
           />
           {/* Players */}
           {players}

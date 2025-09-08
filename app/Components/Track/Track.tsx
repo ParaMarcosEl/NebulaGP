@@ -9,7 +9,7 @@ import { useCheckpointController } from '@/Controllers/Game/CheckPointController
 import { useLapTimer } from '@/Controllers/Game/LapTimer';
 import { getShortestFlightPath } from '@/Lib/flightPath';
 import CurveParticles from '../Particles/CurveParticles/CurveParticles';
-import { modifyTubeGeometrySDF } from '@/Utils/SDF';
+import { modifyTubeGeometrySDF, SphereSpec } from '@/Utils/SDF';
 
 // Setup BVH on BufferGeometry and raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -21,12 +21,14 @@ const Track = forwardRef<
     aircraftRef: React.RefObject<THREE.Object3D>;
     curve: THREE.Curve<THREE.Vector3>;
     onLapComplete?: () => void;
+    spheres?: SphereSpec[]
   }
 >(
   (
     {
       aircraftRef,
       curve,
+      spheres = [],
       // onLapComplete,
     },
     ref,
@@ -46,7 +48,7 @@ const Track = forwardRef<
     const geometry = useMemo(() => {
       const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
 
-      const modifiedGeometry = modifyTubeGeometrySDF(tubeGeometry, curve, [{ t: 0.1, radius: 50 }, { t: 0.5, radius: 100 }, { t: 0.75, radius: 75 }], TUBE_RADIUS)
+      const modifiedGeometry = modifyTubeGeometrySDF(tubeGeometry, curve, spheres, TUBE_RADIUS)
 
       modifiedGeometry.computeBoundsTree();
       const shortestFlightPath = getShortestFlightPath(curve, TUBE_RADIUS);
