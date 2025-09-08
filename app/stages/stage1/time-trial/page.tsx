@@ -35,6 +35,7 @@ import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
+import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 
 const InitAudio = () => {
   useAudioListener();
@@ -215,14 +216,13 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUD playerRefs={playerRefs} trackId={0} />
-      <ControlButtons />
-      <MiniMap positions={positions} curve={curve} />
-      <StandingsUI />
-      <RaceOver />
-      <Speedometer speed={speed} />
-      <StartCountdown />
-      {loader}
+      <HUDUI 
+        playerRefs={playerRefs}
+        trackId={0}
+        positions={positions}
+        curve={curve}
+        speed={speed}
+      />
       {/* Scene */}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
         <Suspense fallback={null}>

@@ -8,6 +8,7 @@ import WeaponStatus from '../WeaponStatus/WeaponStatus';
 import { RaceOver } from '../RaceOver';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import './HUDUI.css';
+import PrevNextButtons from '@/Components/Audio/PrevNextButtons';
 
 export const HUDUI = ({
   speed,
@@ -28,6 +29,7 @@ export const HUDUI = ({
     <>
       <HUD trackId={trackId} playerRefs={playerRefs} />
       <AudioToggleButton className={'hud-audio-toggle'} />
+      <PrevNextButtons className={'prev-next'} />
       <StandingsUI />
       <WeaponStatus />
       <RaceOver />

@@ -7,20 +7,14 @@ import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-import HUD from '@/Components/UI/HUD/HUD';
 import { onShipCollision } from '@/Utils/collisions';
 import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
-import MiniMap from '@/Components/UI/MiniMap/MiniMap';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
-import { StandingsUI } from '@/Components/UI/Standings/StandingsUI';
-import { RaceOver } from '@/Components/UI/RaceOver';
-import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
-import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
@@ -32,15 +26,13 @@ import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { Mine } from '@/Components/Weapons/useMines';
 import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
-import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
-import RadialTouchInput from '@/Components/UI/TouchControls/RadialTouchInput';
-import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 import MineExplosionParticles, {
   MineExplosionHandle,
 } from '@/Components/Particles/ExplosionParticles';
 
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
+import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 
 const InitAudio = () => {
   useAudioListener();
@@ -252,14 +244,13 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUD playerRefs={playerRefs} trackId={2} />
-      <WeaponStatus />
-      <MiniMap positions={positions} curve={curve} />
-      <StandingsUI />
-      <RaceOver />
-      <Speedometer speed={speed} />
-      <StartCountdown />
-      <RadialTouchInput /> <ControlButtons />
+      <HUDUI 
+        playerRefs={playerRefs} 
+        trackId={2}
+        positions={positions}
+        curve={curve}
+        speed={speed}
+      />
       {loader}
       {/* Scene */}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>

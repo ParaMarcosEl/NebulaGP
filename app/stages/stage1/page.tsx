@@ -7,20 +7,14 @@ import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-import HUD from '@/Components/UI/HUD/HUD';
 import { getStartPoseFromCurve } from '@/Utils';
 import { onShipCollision } from '@/Utils/collisions';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
-import MiniMap from '@/Components/UI/MiniMap/MiniMap';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
-import { StandingsUI } from '@/Components/UI/Standings/StandingsUI';
-import { RaceOver } from '@/Components/UI/RaceOver';
-import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
-import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
@@ -28,8 +22,6 @@ import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
-import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
-import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import MineExplosionParticles, {
   MineExplosionHandle,
@@ -37,6 +29,7 @@ import MineExplosionParticles, {
 import Planet from '@/Components/World/Planet/WorldPlanet';
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
+import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 
 function RaceProgressTracker({
   playerRefs,
@@ -255,14 +248,14 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUD playerRefs={playerRefs} trackId={0} />
-      <WeaponStatus />
-      <ControlButtons />
-      <MiniMap positions={positions} curve={curve} />
-      <StandingsUI />
-      <RaceOver />
-      <Speedometer speed={speed} />
-      <StartCountdown />
+
+      <HUDUI 
+        playerRefs={playerRefs}
+        trackId={0}
+        positions={positions}
+        curve={curve}
+        speed={speed}
+      />
       {loader}
       {/* Scene */}
       <Canvas
@@ -348,7 +341,14 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-          <Planet position={new THREE.Vector3()} size={350} />
+          <Planet 
+            position={new THREE.Vector3()} 
+            size={300} 
+            maxHeight={100}
+            lacunarity={1.6}
+            frequency={4}
+            exponentiation={3}
+          />
           {/* Players */}
           {players}
           {boosters}

@@ -114,8 +114,8 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
         vec4 highColor = texture2D(uHighMap, vUv * uTextureScale);
 
         // Blend based on adjustable thresholds
-        float lowToMid = smoothstep(0.4, 0.6, height);
-        float midToHigh = smoothstep(0.6, 0.8, height);
+        float lowToMid = smoothstep(0.3, 0.4, height);
+        float midToHigh = smoothstep(0.4, 0.8, height);
 
         vec4 blended = mix(lowColor, midColor, lowToMid);
         blended = mix(blended, highColor, midToHigh);
