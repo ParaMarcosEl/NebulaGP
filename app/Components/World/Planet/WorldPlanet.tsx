@@ -6,12 +6,20 @@ import { LODPlanetWrapper } from '@/Components/LODTerrain/Planet/LODPlanetWrappe
 
 export default function WorldPlanet({
   ref,
-  size = 500,
+  size = 350,
   position = new THREE.Vector3(0, 0, 0),
   texturePath = 'planet_texture01',
   cloudsPath = 'clouds',
   cloudRadius = 150,
   clouds = true,
+  maxHeight = 200,
+  frequency = 7,
+  amplitude = 0.1,
+  octaves = 2,
+  lacunarity = 1.1,
+  persistence = 0.7,
+  exponentiation = 1,
+
 }: {
   ref?: React.RefObject<THREE.Object3D>;
   size?: number;
@@ -24,6 +32,13 @@ export default function WorldPlanet({
   emissive?: boolean;
   emissiveColor?: string;
   clouds?: boolean;
+  maxHeight?: number;
+  frequency?: number;
+  amplitude?: number;
+  octaves?: number;
+  lacunarity?: number;
+  persistence?: number;
+  exponentiation?: number;
 }) {
   const planetRef = useRef<THREE.Object3D>(null!);
   const cloudRef = useRef<THREE.Object3D>(null!);
@@ -67,18 +82,18 @@ export default function WorldPlanet({
         castShadow
       />
       <LODPlanetWrapper
-        planetSize={250}
+        planetSize={size}
         cubeSize={16}
         lowTextPath="/textures/molten_rock.png"
         midTextPath="/textures/rocky_ground.png"
         highTextPath="/textures/molten_rock.png"
-        maxHeight={200}
-        frequency={7}
-        amplitude={0.1}
-        octaves={2}
-        lacunarity={1.1}
-        persistence={0.7}
-        exponentiation={1}
+        maxHeight={maxHeight}
+        frequency={frequency}
+        amplitude={amplitude}
+        octaves={octaves}
+        lacunarity={lacunarity}
+        persistence={persistence}
+        exponentiation={exponentiation}
       />
       <mesh ref={planetRef} position={position}>
         <sphereGeometry args={[size, 64, 64]} />

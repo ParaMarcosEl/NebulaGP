@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Canvas } from '@react-three/fiber';
@@ -7,20 +6,14 @@ import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-import HUD from '@/Components/UI/HUD/HUD';
 import { onShipCollision } from '@/Utils/collisions';
 import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
-import MiniMap from '@/Components/UI/MiniMap/MiniMap';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
-import { StandingsUI } from '@/Components/UI/Standings/StandingsUI';
-import { RaceOver } from '@/Components/UI/RaceOver';
-import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
-import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
@@ -29,8 +22,7 @@ import { Mine } from '@/Components/Weapons/useMines';
 import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
-import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
-import WeaponStatus from '@/Components/UI/WeaponStatus/WeaponStatus';
+import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 
 function RaceProgressTracker({
   playerRefs,
@@ -62,7 +54,6 @@ export default function Stage1() {
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
   const planetRef = useRef<THREE.Mesh>(null);
   const minePoolRef = useRef<Mine[]>([]);
-  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
   const { loader } = useCanvasLoader();
 
   const playerRefs = useMemo(
@@ -126,6 +117,7 @@ export default function Stage1() {
   // HUD state
   const [speed, setSpeed] = useState(0);
   const startPositions = useMemo(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01)),
     [curve, playerRefs],
   );
@@ -202,14 +194,13 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUD trackId={2} playerRefs={playerRefs} />
-      <WeaponStatus />
-      <MiniMap positions={positions} curve={curve} />
-      <StandingsUI />
-      <RaceOver />
-      <Speedometer speed={speed} />
-      <StartCountdown />
-      <ControlButtons />
+      <HUDUI 
+        trackId={2}
+        playerRefs={playerRefs}
+        positions={positions}
+        curve={curve}
+        speed={speed}
+      />
       {loader}
       {/* Scene */}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>

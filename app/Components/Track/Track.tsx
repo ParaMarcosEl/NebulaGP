@@ -9,6 +9,7 @@ import { useCheckpointController } from '@/Controllers/Game/CheckPointController
 import { useLapTimer } from '@/Controllers/Game/LapTimer';
 import { getShortestFlightPath } from '@/Lib/flightPath';
 import CurveParticles from '../Particles/CurveParticles/CurveParticles';
+import { modifyTubeGeometrySDF, SphereSpec } from '@/Utils/SDF';
 
 // Setup BVH on BufferGeometry and raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -20,12 +21,14 @@ const Track = forwardRef<
     aircraftRef: React.RefObject<THREE.Object3D>;
     curve: THREE.Curve<THREE.Vector3>;
     onLapComplete?: () => void;
+    spheres?: SphereSpec[]
   }
 >(
   (
     {
       aircraftRef,
       curve,
+      spheres = [],
       // onLapComplete,
     },
     ref,
@@ -44,9 +47,12 @@ const Track = forwardRef<
     // Create tube geometry with BVH acceleration
     const geometry = useMemo(() => {
       const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
-      tubeGeometry.computeBoundsTree();
+
+      const modifiedGeometry = modifyTubeGeometrySDF(tubeGeometry, curve, spheres, TUBE_RADIUS)
+
+      modifiedGeometry.computeBoundsTree();
       const shortestFlightPath = getShortestFlightPath(curve, TUBE_RADIUS);
-      return { tubeGeometry, shortestFlightPath };
+      return { modifiedGeometry, shortestFlightPath };
     }, [curve]);
 
     // Get points along the curve for rendering the line
@@ -101,7 +107,7 @@ const Track = forwardRef<
         {/* <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} /> */}
 
         {/* Render the tube mesh with texture */}
-        <mesh ref={ref} geometry={geometry.tubeGeometry}>
+        <mesh ref={ref} geometry={geometry.modifiedGeometry}>
           <meshStandardMaterial map={texture} side={THREE.BackSide} wireframe />
         </mesh>
       </>

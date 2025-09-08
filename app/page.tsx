@@ -254,7 +254,14 @@ export default function Home() {
               }))}
             />
 
-            <Planet position={new THREE.Vector3()} size={350} />
+          <Planet 
+            position={new THREE.Vector3()} 
+            size={350} 
+            maxHeight={100}
+            lacunarity={1.6}
+            frequency={4}
+            exponentiation={6}
+          />
 
             {players}
             {boosters}

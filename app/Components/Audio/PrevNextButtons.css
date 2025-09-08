@@ -1,0 +1,19 @@
+.audio-toggle-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+  color: white;
+}
+
+.audio-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.audio-toggle-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
