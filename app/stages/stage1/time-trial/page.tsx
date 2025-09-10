@@ -22,7 +22,7 @@ import { RaceOver } from '@/Components/UI/RaceOver';
 import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
-import Planet from '@/Components/World/Planet';
+import Planet from '@/Components/World/Planet/WorldPlanet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
@@ -289,7 +289,15 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           /> */}
-          <Planet size={350} />
+          
+                    <Planet 
+                      position={new THREE.Vector3(0, 0, 0)} 
+                      size={320} 
+                      maxHeight={80}
+                      lacunarity={1.1}
+                      frequency={4}
+                      exponentiation={6}
+                    />
 
           {/* Players */}
           {players}

@@ -1,3 +1,5 @@
+'use client';
+
 import * as THREE from 'three';
 
 export interface PlanetUniforms {
@@ -13,40 +15,25 @@ export interface PlanetUniforms {
   uLacunarity: { value: number };
   uPersistence: { value: number };
   uExponentiation: { value: number };
+  uLightDir: { value: THREE.Vector3 };
+  uTextureScale: { value: number };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: THREE.IUniform<any>;
 }
 
 export class PlanetMaterial extends THREE.MeshStandardMaterial {
-  customUniforms: {
-    uTime: { value: number };
-    uMaxHeight: { value: number };
-    uPlanetSize: { value: number };
-    uLowMap: { value: THREE.Texture };
-    uMidMap: { value: THREE.Texture };
-    uHighMap: { value: THREE.Texture };
-    uFrequency: { value: number };
-    uAmplitude: { value: number };
-    uOctaves: { value: number };
-    uLacunarity: { value: number };
-    uPersistence: { value: number };
-    uExponentiation: { value: number };
-  };
-
-  // A callback function that can be set to run after the shader is compiled.
-  onShaderCompiled: (() => void) | undefined;
+  customUniforms: PlanetUniforms;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private shaderUniforms: any;
 
   constructor(
-    color: THREE.Color | number = 0x2288ff,
-    lowMap?: THREE.Texture,
-    midMap?: THREE.Texture,
-    highMap?: THREE.Texture,
+    lowMap: THREE.Texture,
+    midMap: THREE.Texture,
+    highMap: THREE.Texture,
+    params?: Partial<PlanetUniforms>,
   ) {
-    super({
-      color,
-      flatShading: false,
-    });
-
-    this.metalness = 0.0;
-    this.roughness = 1.0;
+    super({ side: THREE.DoubleSide });
 
     const placeholder = new THREE.Texture();
     placeholder.needsUpdate = true;
@@ -64,159 +51,102 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
       uLacunarity: { value: 2.0 },
       uPersistence: { value: 0.5 },
       uExponentiation: { value: 1.0 },
+      uMaxElevation: { value: 1.0 },
+      uMinElevation: { value: 0.0 },
+      uLightDir: { value: new THREE.Vector3(1, 1, 1).normalize() },
+      uTextureScale: { value: 100.0 }, // Added new uniform for texture scaling
+      ...(params || {}),
     };
 
     this.onBeforeCompile = (shader) => {
+      // Merge custom uniforms with the shader's uniforms
       Object.assign(shader.uniforms, this.customUniforms);
+      this.shaderUniforms = shader.uniforms;
 
-      // --- Vertex Shader ---
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <common>',
-        `
-        #include <common>
-        uniform float uTime;
+      // Inject varying declaration into the vertex shader
+      shader.vertexShader = `
+        varying vec2 vUv;
+        attribute float elevation;
+        varying float vElevation; 
         uniform float uMaxHeight;
-        uniform float uPlanetSize;
-        uniform float uFrequency;
-        uniform float uAmplitude;
-        uniform int uOctaves;
-        uniform float uLacunarity;
-        uniform float uPersistence;
         uniform float uExponentiation;
+        uniform float uMaxElevation;
+        uniform float uMinElevation;
 
-        varying vec3 vWorldPosition;
-        varying float vDisplacement;
+        ${shader.vertexShader}
+      `;
 
-        float hash(vec3 p) {
-          p = fract(p * 0.3183099 + .1);
-          p *= 17.0;
-          return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-        }
-
-        float noise(vec3 p) {
-          vec3 i = floor(p);
-          vec3 f = fract(p);
-          f = f*f*(3.0-2.0*f);
-
-          float n = mix(
-            mix(
-              mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
-              mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x),
-              f.y
-            ),
-            mix(
-              mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
-              mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x),
-              f.y
-            ),
-            f.z
-          );
-          return n;
-        }
-
-        float fbm(vec3 p) {
-          float total = 0.0;
-          float freq = uFrequency;
-          float amp = uAmplitude;
-          float maxAmp = 0.0;
-
-          for (int i = 0; i < 20; i++) {
-            if (i >= uOctaves) break;
-            float n = noise(p * freq); // 0..1 range
-            total += n * amp;
-            maxAmp += amp;
-            freq *= uLacunarity;
-            amp *= uPersistence;
-          }
-
-          float normalized = total / maxAmp;  // stays in 0..1
-          return pow(normalized, uExponentiation);
-        }
-        `,
-      );
-
+      // Assign UVs to the new varying variable
       shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
+        '#include <uv_vertex>',
         `
-        vec3 transformed = position;
-        vec3 unitPos = normalize(transformed);
-
-        float displacement = fbm(unitPos + vec3(uTime * 0.05)) * uMaxHeight;
-
-        vec3 posOffsetX = normalize(transformed + vec3(0.001, 0, 0));
-        vec3 posOffsetY = normalize(transformed + vec3(0, 0.001, 0));
-
-        float dispX = fbm(posOffsetX + vec3(uTime * 0.05)) * uMaxHeight;
-        float dispY = fbm(posOffsetY + vec3(uTime * 0.05)) * uMaxHeight;
-
-        vec3 p = unitPos * (uPlanetSize + displacement);
-        vec3 pX = posOffsetX * (uPlanetSize + dispX);
-        vec3 pY = posOffsetY * (uPlanetSize + dispY);
-
-        vec3 tangentX = pX - p;
-        vec3 tangentY = pY - p;
-        vec3 newNormal = cross(tangentY, tangentX);
-        transformedNormal = normalize(newNormal);
-
-        transformed = p;
-        vWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
-        vDisplacement = displacement;
+        #include <uv_vertex>
+        vUv = uv;
+        vElevation = elevation;
         `,
       );
 
-      // --- Fragment Shader ---
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <common>',
-        `
-        #include <common>
-        varying vec3 vWorldPosition;
-        varying float vDisplacement;
-        uniform sampler2D uLowMap;
-        uniform sampler2D uMidMap;
-        uniform sampler2D uHighMap;
+      // Inject uniform and varying declaration into the fragment shader
+      shader.fragmentShader = `
         uniform float uMaxHeight;
-        `,
-      );
+        uniform sampler2D uLowMap;
+        uniform sampler2D uHighMap;
+        uniform sampler2D uMidMap;
+        uniform float uExponentiation;
+        uniform float uMaxElevation;
+        uniform float uMinElevation;
+        uniform float uTextureScale; // Declare the new uniform
+        varying vec2 vUv;
+        varying float vElevation;
+        ${shader.fragmentShader}
+      `;
 
+      // Replace the final color calculation to use the mid texture with scaling
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <map_fragment>',
         `
-        vec3 p = normalize(vWorldPosition);
-        float u = 0.5 + atan(p.z, p.x) / (2.0 * 3.1415926);
-        float v = 0.5 - asin(p.y) / 3.1415926;
-        vec2 uv = vec2(u, v) * 10.0;
+        float height = (vElevation - uMinElevation) / (uMaxElevation - uMinElevation);
 
-        vec3 lowColor  = texture2D(uLowMap, uv).rgb;
-        vec3 midColor  = texture2D(uMidMap, uv).rgb;
-        vec3 highColor = texture2D(uHighMap, uv).rgb;
+        // Optionally remap height
+        // height = clamp(pow(height, uExponentiation), 0.0, 1.0);
 
-        float h = clamp(vDisplacement / uMaxHeight, 0.0, 0.1);
+        vec4 lowColor = texture2D(uLowMap, vUv * uTextureScale);
+        vec4 midColor = texture2D(uMidMap, vUv * uTextureScale);
+        vec4 highColor = texture2D(uHighMap, vUv * uTextureScale);
 
-        vec3 terrainColor = mix(midColor, lowColor, smoothstep(0.0, 0.01, h));
-        terrainColor = mix(terrainColor, highColor, smoothstep(0.1, 1.0, h));
+        // Blend based on adjustable thresholds
+        float lowToMid = smoothstep(0.05, 0.1, height);
+        float midToHigh = smoothstep(0.4, 0.8, height);
 
-        diffuseColor.rgb = terrainColor;
+        vec4 blended = mix(lowColor, midColor, lowToMid);
+        blended = mix(blended, highColor, midToHigh);
+
+        diffuseColor.rgb = blended.rgb;
+
         `,
       );
-
-      // Call the optional callback if it exists.
-      if (this.onShaderCompiled) {
-        this.onShaderCompiled();
-      }
     };
   }
 
   updateTime(time: number) {
-    this.customUniforms.uTime.value = time;
+    if (this.shaderUniforms) {
+      this.shaderUniforms.uTime.value = time;
+    } else {
+      this.customUniforms.uTime.value = time;
+    }
   }
 
-  setParams(params: Partial<Record<keyof PlanetMaterial['customUniforms'], number>>) {
-    (Object.keys(params) as (keyof typeof this.customUniforms)[]).forEach((key) => {
+  setParams(params: Partial<Record<keyof PlanetUniforms, number | { value: number }>>) {
+    (Object.keys(params) as (keyof PlanetUniforms)[]).forEach((key) => {
       const uniform = this.customUniforms[key];
       const value = params[key];
-      if (uniform && typeof value === 'number') {
-        uniform.value = value;
+      if (uniform) {
+        uniform.value = typeof value === 'number' ? value : value?.value;
+        if (this.shaderUniforms && this.shaderUniforms[key]) {
+          this.shaderUniforms[key].value = uniform.value;
+        }
       }
     });
+    this.needsUpdate = true;
   }
 }

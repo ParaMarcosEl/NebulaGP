@@ -255,11 +255,13 @@ export default function Home() {
             />
 
           <Planet 
-            position={new THREE.Vector3()} 
-            size={350} 
-            maxHeight={100}
+            position={new THREE.Vector3(0, -1300, 0)} 
+            size={1200} 
+            maxHeight={1000}
             lacunarity={1.6}
-            frequency={4}
+            amplitude={0.2}
+            octaves={4}
+            frequency={7}
             exponentiation={6}
           />
 

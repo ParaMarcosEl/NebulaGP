@@ -22,7 +22,7 @@ export const MAX_DEPTH = 4;
 export const SPLIT_THRESHOLD = 1.5;
 
 // SHIP
-export const MAX_SPEED = 2.5;
+export const MAX_SPEED = 4;
 export const SHIP_SCALE = 1;
 
 // AI

@@ -343,10 +343,10 @@ export default function Stage1() {
             }))}
           />
           <Planet 
-            position={new THREE.Vector3()} 
-            size={350} 
-            maxHeight={100}
-            lacunarity={1.6}
+            position={new THREE.Vector3(0, 0, 0)} 
+            size={320} 
+            maxHeight={80}
+            lacunarity={1.1}
             frequency={4}
             exponentiation={6}
           />

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { sdfSphere } from './SDF'; // using your SDF library
-import { FBMParams, fbm } from '@/Components/LODTerrain/Planet/fbm';
+import { FBMParams } from '@/Components/LODTerrain/Planet/fbm';
 
 interface DeformationSphere {
   t: number; // parameter along curve (0-1)
@@ -46,34 +46,6 @@ export function deformGeometryWithSpheres(
   position.needsUpdate = true;
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
-}
-
-// --- Apply FBM to Geometry at creation time ---
-
-export function applyFBMtoGeometry(
-  geometry: THREE.BufferGeometry,
-
-  radius: number,
-
-  params: FBMParams,
-) {
-  const pos = geometry.attributes.position as THREE.BufferAttribute;
-
-  const v = new THREE.Vector3();
-
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i).normalize(); // unit vector
-
-    const disp = fbm(v, params);
-
-    v.multiplyScalar(radius + disp);
-
-    pos.setXYZ(i, v.x, v.y, v.z);
-  }
-
-  pos.needsUpdate = true;
-
-  geometry.computeVertexNormals();
 }
 
 import { BufferGeometry, BufferAttribute, Vector3 } from 'three';

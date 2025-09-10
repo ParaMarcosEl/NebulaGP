@@ -12,7 +12,7 @@ const TerrainChunkManager = ({
   lowMapPath,
   midMapPath,
   highMapPath,
-  segments = 128,
+  segments = 32,
   maxHeight = 400,
   frequency = 0.0006,
   amplitude = 5,
