@@ -35,6 +35,7 @@ import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 // import LODPlanet from '@/Components/LODTerrain/Planet/Worker/Planet';
 import WorldPlanet from '@/Components/World/Planet/WorldPlanet';
+import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 
 const InitAudio = () => {
   useAudioListener();
@@ -82,6 +83,7 @@ export default function Stage1() {
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
   const { loader, setMaterialLoaded } = useCanvasLoader();
+  const { setPlanetMeshes } = usePlanetStore(s => s);
 
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
@@ -164,6 +166,7 @@ export default function Stage1() {
     return () => {
       setMaterialLoaded(false);
       setRaceComplete(false);
+      setPlanetMeshes([]);
     };
   }, [reset, setMaterialLoaded, setRaceComplete, setTrack]);
 

@@ -16,7 +16,7 @@ function fbmToUniforms(params: FBMParams): Record<string, { value: number }> {
   );
 }
 
-function prepareMeshBounds(mesh: THREE.Mesh) {
+export function prepareMeshBounds(mesh: THREE.Mesh) {
   const geometry = mesh.geometry as THREE.BufferGeometry & { boundingBox?: THREE.Box3; boundingSphere?: THREE.Sphere };
 
   if (!geometry.boundingBox) geometry.computeBoundingBox();
@@ -33,7 +33,7 @@ class QuadTreeNode {
   bounds: THREE.Vector2[];
   children: QuadTreeNode[] = [];
   mesh: THREE.Mesh | null = null;
-  private isSubdivided = false; // 🔥 Add this flag
+  private isSubdivided = false; 
   private meshCache: Map<string, THREE.Mesh>;
 
   constructor(level: number, bounds: THREE.Vector2[], meshCache: Map<string, THREE.Mesh>) {
@@ -65,13 +65,13 @@ class QuadTreeNode {
     if (this.mesh) return this.mesh;
 
     const [bl, , tr] = this.bounds;
-    const segments = 128;
+    const segments = 64;
 
     const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
     material.customUniforms.uPlanetSize.value = planetSize;
     material.setParams(fbmToUniforms(uniforms));
 
-    // ✅ Worker builds displaced geometry
+    // Worker builds displaced geometry
     const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
       ...uniforms,
       useRidged: true,
@@ -93,22 +93,22 @@ class QuadTreeNode {
     translation.multiplyScalar(cubeSize / 2);
     this.mesh.position.copy(translation);
 
-    // ✅ Apply transform to geometry so BVH matches world
-    this.mesh.updateMatrixWorld(true);
-    geometry.applyMatrix4(this.mesh.matrixWorld);
+    // Apply transform to geometry so BVH matches world
+    // this.mesh.updateMatrixWorld(true);
+    // geometry.applyMatrix4(this.mesh.matrixWorld);
 
-    // Reset transform
-    this.mesh.position.set(0, 0, 0);
-    this.mesh.quaternion.identity();
-    this.mesh.scale.set(1, 1, 1);
-    this.mesh.updateMatrixWorld(true);
+    // // Reset transform
+    // this.mesh.position.set(0, 0, 0);
+    // this.mesh.quaternion.identity();
+    // this.mesh.scale.set(1, 1, 1);
+    // this.mesh.updateMatrixWorld(true);
 
     prepareMeshBounds(this.mesh);
     buildBVHForMeshes(this.mesh);
     
     if (addMesh) addMesh(this.mesh);
     
-    // 🔥 Store in cache
+    // Store in cache
     this.meshCache.set(cacheKey, this.mesh);
     
     window.dispatchEvent(new Event('mesh-ready'));
@@ -140,7 +140,7 @@ async getMeshesAsync(
 
   const dist = camera.position.distanceTo(center);
 
-  // 🔥 Replace simple distance threshold with screen-space error check
+  // Replace simple distance threshold with screen-space error check
   const cameraFov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
   const viewportHeight = window.innerHeight; 
   const projectedScreenSize = (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
