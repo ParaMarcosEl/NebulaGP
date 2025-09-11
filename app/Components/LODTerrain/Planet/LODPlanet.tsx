@@ -46,24 +46,46 @@ function collectBVHMeshes(obj: THREE.Object3D, out: THREE.Mesh[]) {
   }
 }
 
-function buildBVHForMeshes(root: THREE.Object3D) {
-  root.traverse(obj => {
-    if ((obj as THREE.Mesh).isMesh) {
-      const mesh = obj as THREE.Mesh;
-      const geom = mesh.geometry as THREE.BufferGeometry;
-
-      if (!geom.boundsTree) {
-        // Attach BVH to this mesh
-        geom.computeBoundsTree = computeBoundsTree;
-        geom.disposeBoundsTree = disposeBoundsTree;
-        geom.computeBoundsTree();
-
-        mesh.userData.isPlanet = true;
-        mesh.userData.hasBVH = true;
-        console.log(`BVH built for ${mesh.name || 'planet mesh'}`);
-      }
+export function buildBVHForMeshes(root: THREE.Object3D | THREE.Object3D[]) {
+  setTimeout(() => {
+    if(Array.isArray(root)) {
+      root.forEach(obj => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          const geom = mesh.geometry as THREE.BufferGeometry;
+    
+          if (!geom.boundsTree) {
+            // Attach BVH to this mesh
+            geom.computeBoundsTree = computeBoundsTree;
+            geom.disposeBoundsTree = disposeBoundsTree;
+            geom.computeBoundsTree();
+    
+            mesh.userData.isPlanet = true;
+            mesh.userData.hasBVH = true;
+            console.log(`BVH built for ${mesh.name || 'planet mesh'}`);
+          }
+        }
+      })
+      return;
     }
-  });
+    root.traverse(obj => {
+      if ((obj as THREE.Mesh).isMesh) {
+        const mesh = obj as THREE.Mesh;
+        const geom = mesh.geometry as THREE.BufferGeometry;
+  
+        if (!geom.boundsTree) {
+          // Attach BVH to this mesh
+          geom.computeBoundsTree = computeBoundsTree;
+          geom.disposeBoundsTree = disposeBoundsTree;
+          geom.computeBoundsTree();
+  
+          mesh.userData.isPlanet = true;
+          mesh.userData.hasBVH = true;
+          console.log(`BVH built for ${mesh.name || 'planet mesh'}`);
+        }
+      }
+    });
+  }, 0);
 }
 
 
@@ -86,7 +108,20 @@ export function LODPlanet({
   const { camera } = useThree();
   const [planetGroup, setPlanetGroup] = useState<Group | null>(null);
   const groupRef = useRef<THREE.Group>(null);
-  const { setPlanetMeshes } = usePlanetStore(s => s);
+  const { setPlanetMeshes, setCubeTreeRef } = usePlanetStore(s => s);
+  const cubeTreeRef = useRef<CubeTree>(null);
+
+  useEffect(() => {
+    const handleMeshReady = () => {
+      (async () => {
+        const meshes = await cubeTree.getMeshesForBVH(camera, 1.5);
+        window.dispatchEvent(new Event('planet-ready'));
+        buildBVHForMeshes(meshes);
+      })();
+    }
+    window.addEventListener('mesh-ready', handleMeshReady);
+    return window.removeEventListener('mesh-ready', handleMeshReady);
+  }, []);
 
   useEffect(() => {
     if (!planetGroup) return;
@@ -120,16 +155,22 @@ export function LODPlanet({
   // Memoize CubeTree
   const cubeTree = useMemo(
     () =>
-      new CubeTree(planetSize, cubeSize, lowTexture, midTexture, highTexture, {
-        uMaxHeight: maxHeight,
-        uFrequency: frequency,
-        uAmplitude: amplitude,
-        uOctaves: octaves,
-        uLacunarity: lacunarity,
-        uPersistence: persistence,
-        uExponentiation: exponentiation,
-        uTime: timeRef.current,
-      }),
+      {
+
+        const cubeTree = new CubeTree(planetSize, cubeSize, lowTexture, midTexture, highTexture, {
+          uMaxHeight: maxHeight,
+          uFrequency: frequency,
+          uAmplitude: amplitude,
+          uOctaves: octaves,
+          uLacunarity: lacunarity,
+          uPersistence: persistence,
+          uExponentiation: exponentiation,
+          uTime: timeRef.current,
+        })
+        cubeTreeRef.current = cubeTree;
+        setCubeTreeRef(cubeTreeRef as React.RefObject<CubeTree>);
+        return cubeTree;
+      },
     [planetSize, cubeSize, lowTexture, midTexture, highTexture, maxHeight, frequency, amplitude, octaves, lacunarity, persistence, exponentiation],
   );
 
@@ -139,6 +180,7 @@ export function LODPlanet({
     (async () => {
       const group = await cubeTree.getDynamicMeshesAsync(camera, 1.5);
       window.dispatchEvent(new Event('planet-ready'));
+      buildBVHForMeshes(group);
 
       if (mounted) setPlanetGroup(group);
     })();

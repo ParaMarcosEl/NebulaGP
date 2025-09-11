@@ -18,7 +18,6 @@ import { useProjectiles } from '../Weapons/useProjectiles';
 import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
-import { ensureBVH } from '@/Controllers/Game/usePlanetStore';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
@@ -276,47 +275,45 @@ export function usePlayerController({
       ship.userData.impulseVelocity.multiplyScalar(0.9);
     }
     ship.position.add(ship.userData.velocity);
-    console.log({ planetMeshes })
+
     if (planetMeshes.length > 0) {
       //implement traversal of group here to find bvh enabled meshes
       for (const planetMesh of planetMeshes) {
-        ensureBVH(planetMesh);
-
         const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
-        if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
+if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
 
-        const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
+const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
 
-        if (geometry.boundsTree.closestPointToPoint(ship.position, hitInfo)) {
-          const dist = ship.position.distanceTo(hitInfo.point);
-          const minDistance = 6; // safe distance outside planet surface
+if (geometry.boundsTree.closestPointToPoint(ship.position, hitInfo)) {
+  const dist = ship.position.distanceTo(hitInfo.point);
+  const minDistance = 6; // safe distance outside planet surface
 
-          if (dist < minDistance) {
+  if (dist < minDistance) {
 
-            // Direction to push the ship outward
-            const pushDir = new THREE.Vector3()
-              .subVectors(ship.position, hitInfo.point)
-              .normalize();
+    // Direction to push the ship outward
+    const pushDir = new THREE.Vector3()
+      .subVectors(ship.position, hitInfo.point)
+      .normalize();
 
-            // Fallback if pushDir is invalid
-            if (pushDir.lengthSq() === 0) {
-              pushDir.copy(ship.position).normalize();
-            }
+    // Fallback if pushDir is invalid
+    if (pushDir.lengthSq() === 0) {
+      pushDir.copy(ship.position).normalize();
+    }
 
-            // Teleport ship outside mesh boundary
-            ship.position.copy(
-              hitInfo.point.clone().addScaledVector(pushDir, minDistance)
-            );
+    // Teleport ship outside mesh boundary
+    ship.position.copy(
+      hitInfo.point.clone().addScaledVector(pushDir, minDistance)
+    );
 
-            // Reduce velocity to avoid jitter
-            if (ship.userData.velocity) {
-              ship.userData.velocity.multiplyScalar(0.5);
-            }
+    // Reduce velocity to avoid jitter
+    if (ship.userData.velocity) {
+      ship.userData.velocity.multiplyScalar(0.5);
+    }
 
-            if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
-            if (audioEnabled) playSound(buffers['clank04'], ship.position, .25, 3);
-          }
-        }
+    if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.25);
+    if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
+  }
+}
 
       }
     }
