@@ -82,9 +82,10 @@ export default function WorldPlanet({
         castShadow
       />
       <LODPlanetWrapper
+        position={position}
         planetSize={size}
         cubeSize={16}
-        lowTextPath="/textures/molten_rock.png"
+        lowTextPath="/textures/planet_texture03.png"
         midTextPath="/textures/rocky_ground.png"
         highTextPath="/textures/molten_rock.png"
         maxHeight={maxHeight}
@@ -100,7 +101,7 @@ export default function WorldPlanet({
         <meshStandardMaterial
           color={'orange'}
           transparent
-          opacity={0.8}
+          opacity={0.0}
           blending={THREE.AdditiveBlending}
         />
       </mesh>

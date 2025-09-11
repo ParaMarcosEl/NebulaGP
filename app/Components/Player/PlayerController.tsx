@@ -17,10 +17,12 @@ import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
+import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
 const firingRef = { current: false };
+
 
 export const playerInputAxis = {
   set: (axis: { x: number; y: number }) => {
@@ -79,12 +81,14 @@ export function usePlayerController({
   const angularVelocity = useRef(new THREE.Vector3());
   const previousInputState = useRef({ accelerating: false, braking: false });
   const gamepadIndex = useRef<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { raceStatus, playerSpeed, raceData, setUseMine, setShieldValue } = useGameStore(
     (state) => state,
   );
   const { invertPitch } = useSettingsStore((s) => s);
-  const playSoune = usePlaySound();
+  const playSound = usePlaySound();
   const { buffers, audioEnabled } = useAudioStore((s) => s);
+  const { planetMeshes } = usePlanetStore(s => s);
 
   const controlsEnabled = raceStatus === 'racing';
   useBotController({
@@ -175,6 +179,7 @@ export function usePlayerController({
     if (!enabled) return;
     const ship = aircraftRef.current;
     if (!controlsEnabled || !ship || !ship.userData.velocity) return;
+    
     const nearestT = getNearestCurveT(ship.position, curve);
     const curvePosition = curve.getPointAt(nearestT);
     ship.userData.curvePosition = curvePosition.clone();
@@ -210,6 +215,7 @@ export function usePlayerController({
     const accelerating = !!(keys.current['i'] || gp?.buttons?.[0]?.pressed || throttle > 0);
     const braking = !!(keys.current['k'] || gp?.buttons?.[2]?.pressed || throttle < 0);
     const shooting = !!(keys.current['j'] || gp?.buttons?.[7]?.pressed);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { cannonValue, useMine, shieldValue } = raceData[playerId];
 
     if (accelerating !== previousInputState.current.accelerating) {
@@ -270,6 +276,49 @@ export function usePlayerController({
     }
     ship.position.add(ship.userData.velocity);
 
+    if (planetMeshes.length > 0) {
+      //implement traversal of group here to find bvh enabled meshes
+      for (const planetMesh of planetMeshes) {
+        const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
+if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
+
+const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
+
+if (geometry.boundsTree.closestPointToPoint(ship.position, hitInfo)) {
+  const dist = ship.position.distanceTo(hitInfo.point);
+  const minDistance = 6; // safe distance outside planet surface
+
+  if (dist < minDistance) {
+
+    // Direction to push the ship outward
+    const pushDir = new THREE.Vector3()
+      .subVectors(ship.position, hitInfo.point)
+      .normalize();
+
+    // Fallback if pushDir is invalid
+    if (pushDir.lengthSq() === 0) {
+      pushDir.copy(ship.position).normalize();
+    }
+
+    // Teleport ship outside mesh boundary
+    ship.position.copy(
+      hitInfo.point.clone().addScaledVector(pushDir, minDistance)
+    );
+
+    // Reduce velocity to avoid jitter
+    if (ship.userData.velocity) {
+      ship.userData.velocity.multiplyScalar(0.5);
+    }
+
+    if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.25);
+    if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
+  }
+}
+
+      }
+    }
+
+    
     if (playingFieldRef?.current) {
       const field = playingFieldRef.current;
       const geometry = field.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
@@ -285,14 +334,14 @@ export function usePlayerController({
         if (geometry.boundsTree.closestPointToPoint(ship.position, hitInfo)) {
           const dist = ship.position.distanceTo(hitInfo.point);
           if (dist > 10) {
-            if (shieldValue > 0) {
-              setShieldValue(shieldValue - 0.5, playerId);
-            }
+            // if (shieldValue > 0) {
+            //   setShieldValue(shieldValue - 0.5, playerId);
+            // }
 
-            ship.position.copy(hitInfo.point);
-            ship.userData.velocity.multiplyScalar(-1);
-            speedRef.current = 0;
-            if (audioEnabled) playSoune(buffers['clank04'], ship.position, 0.5);
+            // ship.position.copy(hitInfo.point);
+            // ship.userData.velocity.multiplyScalar(-1);
+            // speedRef.current = 0;
+            // if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.5);
           }
         }
       }

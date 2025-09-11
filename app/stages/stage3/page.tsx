@@ -21,7 +21,7 @@ import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
 // import Satellite from '@/Components/World/Satellite';
-import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
+// import TerrainChunkManager from '@/Components/LODTerrain/TerrainChunkManager';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import { Mine } from '@/Components/Weapons/useMines';
 import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
@@ -33,6 +33,8 @@ import MineExplosionParticles, {
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
+// import LODPlanet from '@/Components/LODTerrain/Planet/Worker/Planet';
+import WorldPlanet from '@/Components/World/Planet/WorldPlanet';
 
 const InitAudio = () => {
   useAudioListener();
@@ -157,6 +159,7 @@ export default function Stage1() {
 
   useEffect(() => {
     setTrack(tracks[2]);
+    setMaterialLoaded(true);
     reset();
     return () => {
       setMaterialLoaded(false);
@@ -285,19 +288,21 @@ export default function Stage1() {
             ref={playingFieldRef}
             aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
             curve={curve}
+            spheres={[{ t: 0.1, radius: 59 }]}
           />
-          <TerrainChunkManager
-            yOffset={-300}
-            chunkSize={512}
-            segments={128}
-            frequency={0.001}
-            amplitude={1}
-            exponentiation={3}
-            maxHeight={1024}
-            octaves={8}
-            midMapPath="/textures/icy_ground.png"
-            lowMapPath="/textures/molten_rock.png"
-            highMapPath="/textures/rocky_ground.png"
+          
+          <WorldPlanet 
+            position={new THREE.Vector3(0, -1300, 0)} 
+            size={1200} 
+            maxHeight={100}
+            lacunarity={.6}
+            amplitude={0.2}
+            octaves={6}
+            frequency={9}
+            exponentiation={6}
+            persistence={.6}
+            cloudRadius={300}
+            clouds={false}
           />
           <Planet
             position={new THREE.Vector3(900, 0, 0)}

@@ -22,6 +22,8 @@ const AudioInitializer = () => {
     setMasterVolume,
     setMusicVolume,
     setAudioEnabled,
+    sfxVolume,
+    setSfxVolume,
     masterVolume,
     musicVolume,
     audioEnabled,
@@ -35,6 +37,7 @@ const AudioInitializer = () => {
       audioRef.current = new Audio();
       audioRef.current.loop = false;
       audioRef.current.crossOrigin = 'anonymous';
+      audioRef.current.volume = musicVolume;
 
       audioRef.current.onended = () => {
         nextTrack();
@@ -66,8 +69,9 @@ const AudioInitializer = () => {
     setAudioEnabled(true);
     setHasPrompted(true);
     setPlaying(true);
-    setMasterVolume(1);
-    setMusicVolume(1);
+    setMasterVolume(masterVolume);
+    setMusicVolume(musicVolume);
+    setSfxVolume(sfxVolume);
   };
 
   const handleNo = () => {

@@ -1,11 +1,12 @@
+'use client';
+
 import * as THREE from 'three';
 
 /**
  * Interface for FBM parameters, matching the uniforms used in the shader.
  */
-
 export interface FBMParams {
-  uTime?: number;
+  uTime: number;
   uFrequency: number;
   uAmplitude: number;
   uOctaves: number;
@@ -13,33 +14,21 @@ export interface FBMParams {
   uPersistence: number;
   uExponentiation: number;
   uMaxHeight?: number;
+  useRidged?: boolean; // ✅ Fixed typo
 }
 
-/**
- * A utility function to compute the fractional part of a number.
- * @param x The input number.
- * @returns The fractional part.
- */
+/** Fractional part utility */
 function fract(x: number): number {
   return x - Math.floor(x);
 }
 
-/**
- * A pseudo-random hash function based on the one from the GLSL shader.
- * @param p A 3D vector representing a point in space.
- * @returns A pseudo-random float between 0.0 and 1.0.
- */
+/** Hash for pseudo-random noise */
 function hash(p: THREE.Vector3): number {
   const v = p.clone().multiplyScalar(0.3183099).addScalar(0.1);
   return fract(v.x * v.y * v.z * (v.x + v.y + v.z));
 }
 
-/**
- * A noise function based on the GLSL shader's implementation.
- * It interpolates hash values at the corners of a 3D grid cell.
- * @param p A 3D vector representing a point in space.
- * @returns A noise value between 0.0 and 1.0.
- */
+/** Value noise with smooth interpolation */
 function noise(p: THREE.Vector3): number {
   const i = new THREE.Vector3(Math.floor(p.x), Math.floor(p.y), Math.floor(p.z));
   const f = p.clone().sub(i);
@@ -48,7 +37,6 @@ function noise(p: THREE.Vector3): number {
   const fx = fade(f.x);
   const fy = fade(f.y);
   const fz = fade(f.z);
-
   const mix = (a: number, b: number, t: number) => a * (1 - t) + b * t;
 
   const n000 = hash(i);
@@ -64,36 +52,104 @@ function noise(p: THREE.Vector3): number {
   const x10 = mix(n010, n110, fx);
   const x01 = mix(n001, n101, fx);
   const x11 = mix(n011, n111, fx);
-
   const y0 = mix(x00, x10, fy);
   const y1 = mix(x01, x11, fy);
 
   return mix(y0, y1, fz);
 }
 
-/**
- * Calculates Fractal Brownian Motion (FBM) noise.
- * This function aggregates noise from multiple octaves to create complex, organic patterns.
- * @param p The input position vector.
- * @param params The FBM parameters.
- * @returns The final FBM noise value.
- */
-export function fbm(p: THREE.Vector3, params: FBMParams): number {
-  let total = 0.0;
-  let freq = params.uFrequency;
-  let amp = params.uAmplitude;
-  let maxAmp = 0.0;
+/** Convert array coords to Vector3 and call noise() */
+function noiseArray(p: [number, number, number]): number {
+  return noise(new THREE.Vector3(...p));
+}
 
-  for (let i = 0; i < params.uOctaves; i++) {
-    // Add time for animation if provided. The GLSL code uses uTime * 0.05.
-    const timeOffset = params.uTime !== undefined ? params.uTime * 0.05 : 0;
-    const n = noise(p.clone().multiplyScalar(freq).addScalar(timeOffset));
-    total += n * amp;
-    maxAmp += amp;
-    freq *= params.uLacunarity;
-    amp *= params.uPersistence;
+/** Ridge shaping function */
+function ridge(n: number): number {
+  n = Math.abs(n);
+  n = 1.0 - n;
+  return n * n;
+}
+
+/** Standard FBM (smooth terrain) */
+function fbmStandard(
+  p: [number, number, number],
+  freq: number,
+  lacunarity: number,
+  persistence: number,
+  octaves: number,
+  noiseFn: (p: [number, number, number]) => number,
+): number {
+  let sum = 0;
+  let amp = 0.5;
+  let f = freq;
+  for (let i = 0; i < octaves; i++) {
+    sum += noiseFn([p[0] * f, p[1] * f, p[2] * f]) * amp;
+    f *= lacunarity;
+    amp *= persistence;
   }
+  return sum;
+}
 
-  const normalized = total / maxAmp;
-  return Math.pow(normalized, params.uExponentiation);
+/** Ridged FBM (rugged terrain) */
+function ridgedFBM(
+  p: [number, number, number],
+  freq: number,
+  lacunarity: number,
+  persistence: number,
+  octaves: number,
+  noiseFn: (p: [number, number, number]) => number,
+): number {
+  let sum = 0;
+  let amp = 0.5;
+  let f = freq;
+  for (let i = 0; i < octaves; i++) {
+    sum += ridge(noiseFn([p[0] * f, p[1] * f, p[2] * f])) * amp;
+    f *= lacunarity;
+    amp *= persistence;
+  }
+  return sum;
+}
+
+/** Smooth terrain elevation */
+export function terrainElevationFBM(
+  pos: [number, number, number],
+  params: FBMParams,
+  noiseFn = noiseArray,
+): number {
+  const { uFrequency, uLacunarity, uPersistence, uOctaves, uExponentiation } = params;
+  const elevation = fbmStandard(pos, uFrequency, uLacunarity, uPersistence, uOctaves, noiseFn);
+  return Math.pow(elevation, uExponentiation);
+}
+
+/** Ridged terrain elevation */
+export function terrainElevationRidged(
+  pos: [number, number, number],
+  params: FBMParams,
+  noiseFn = noiseArray,
+): number {
+  const { uFrequency, uLacunarity, uPersistence, uOctaves, uExponentiation } = params;
+
+  const base = ridgedFBM(pos, uFrequency, uLacunarity, uPersistence, uOctaves, noiseFn);
+
+  const warp = [
+    noiseFn([pos[0] * 0.5, pos[1] * 0.5, pos[2] * 0.5]),
+    noiseFn([pos[0] * 0.5 + 100, pos[1] * 0.5, pos[2] * 0.5]),
+    noiseFn([pos[0] * 0.5, pos[1] * 0.5 + 200, pos[2] * 0.5]),
+  ];
+  const warpedPos: [number, number, number] = [
+    pos[0] + warp[0] * 0.3,
+    pos[1] + warp[1] * 0.3,
+    pos[2] + warp[2] * 0.3,
+  ];
+
+  const detail = ridgedFBM(
+    warpedPos,
+    uFrequency * 2.5,
+    uLacunarity,
+    uPersistence,
+    Math.max(3, Math.floor(uOctaves / 2)),
+    noiseFn,
+  );
+
+  return Math.pow(base + detail * 0.3, uExponentiation);
 }

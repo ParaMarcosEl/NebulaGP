@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { sdfSphere } from './SDF'; // using your SDF library
-import { FBMParams, fbm } from '@/Components/LODTerrain/Planet/fbm';
 
 interface DeformationSphere {
   t: number; // parameter along curve (0-1)
@@ -46,34 +45,6 @@ export function deformGeometryWithSpheres(
   position.needsUpdate = true;
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
-}
-
-// --- Apply FBM to Geometry at creation time ---
-
-export function applyFBMtoGeometry(
-  geometry: THREE.BufferGeometry,
-
-  radius: number,
-
-  params: FBMParams,
-) {
-  const pos = geometry.attributes.position as THREE.BufferAttribute;
-
-  const v = new THREE.Vector3();
-
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i).normalize(); // unit vector
-
-    const disp = fbm(v, params);
-
-    v.multiplyScalar(radius + disp);
-
-    pos.setXYZ(i, v.x, v.y, v.z);
-  }
-
-  pos.needsUpdate = true;
-
-  geometry.computeVertexNormals();
 }
 
 import { BufferGeometry, BufferAttribute, Vector3 } from 'three';
@@ -183,91 +154,4 @@ export interface TerrainBuildTask {
     quaternion: [number, number, number, number];
     translation: [number, number, number];
   };
-}
-
-/**
- * Spherifies and displaces geometry using FBM, but in async chunks
- */
-export function globifyGeometryAsync(
-  positions: Float32Array,
-  normals: Float32Array,
-  radius: number,
-  uniforms: FBMParams,
-  chunkSize = 5000, // number of vertices per chunk
-): Promise<void> {
-  const count = positions.length / 3;
-  const uMaxHeight = uniforms.uMaxHeight || 0;
-
-  // Reusable vectors
-  const v = new Vector3();
-  const unitPos = new Vector3();
-  const pos = new Vector3();
-  const posOffsetX = new Vector3();
-  const posOffsetY = new Vector3();
-  const pX = new Vector3();
-  const pY = new Vector3();
-  const tangentX = new Vector3();
-  const tangentY = new Vector3();
-  const normal = new Vector3();
-
-  let i = 0;
-
-  return new Promise((resolve) => {
-    function processChunk() {
-      const end = Math.min(i + chunkSize, count);
-
-      for (; i < end; i++) {
-        const idx = i * 3;
-
-        // Load vertex
-        v.set(positions[idx], positions[idx + 1], positions[idx + 2]);
-
-        // Cube-to-sphere approximation
-        const len = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
-        const invLen = 1 / len;
-        v.multiplyScalar(invLen);
-
-        const sx = v.x * Math.sqrt(1 - v.y ** 2 / 2 - v.z ** 2 / 2 + (v.y ** 2 * v.z ** 2) / 3);
-        const sy = v.y * Math.sqrt(1 - v.z ** 2 / 2 - v.x ** 2 / 2 + (v.z ** 2 * v.x ** 2) / 3);
-        const sz = v.z * Math.sqrt(1 - v.x ** 2 / 2 - v.y ** 2 / 2 + (v.x ** 2 * v.y ** 2) / 3);
-
-        unitPos.set(sx, sy, sz);
-
-        const displacement = fbm(unitPos, uniforms) * uMaxHeight;
-        pos.copy(unitPos).multiplyScalar(radius + displacement);
-
-        // Offset positions for normals
-        posOffsetX.copy(unitPos).add({ x: 0.001, y: 0, z: 0 }).normalize();
-        posOffsetY.copy(unitPos).add({ x: 0, y: 0.001, z: 0 }).normalize();
-
-        const dispX = fbm(posOffsetX, uniforms) * uMaxHeight;
-        const dispY = fbm(posOffsetY, uniforms) * uMaxHeight;
-
-        pX.copy(posOffsetX).multiplyScalar(radius + dispX);
-        pY.copy(posOffsetY).multiplyScalar(radius + dispY);
-
-        tangentX.copy(pX).sub(pos);
-        tangentY.copy(pY).sub(pos);
-
-        normal.copy(tangentY).cross(tangentX).normalize();
-
-        positions[idx] = pos.x;
-        positions[idx + 1] = pos.y;
-        positions[idx + 2] = pos.z;
-
-        normals[idx] = normal.x;
-        normals[idx + 1] = normal.y;
-        normals[idx + 2] = normal.z;
-      }
-
-      if (i < count) {
-        // yield to event loop to stay responsive
-        setTimeout(processChunk, 0);
-      } else {
-        resolve();
-      }
-    }
-
-    processChunk();
-  });
 }

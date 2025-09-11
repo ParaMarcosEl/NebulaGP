@@ -42,7 +42,7 @@ export function useGhostRecorder({
   }, []);
 
   useEffect(() => {
-    if (loading || !records || !records.length) return;
+    if (loading || !records || !records.length || false) return;
 
     const { ghostFrames, totalTime } = records?.[0];
     if (!ghostFrames || !totalTime) return;
@@ -56,7 +56,7 @@ export function useGhostRecorder({
     if (mode !== 'record' || !targetRef.current) return;
     if (startTime.current === null) startTime.current = state.clock.elapsedTime * 1000;
 
-    const elapsed = state.clock.elapsedTime * 1000 - startTime.current;
+    const elapsed = state.clock.elapsedTime * 1000 - (startTime?.current) || 0;
     if (elapsed - lastSampleTime.current >= sampleRate) {
       const offset = frameCount.current * 7;
       bufferRef.current[offset] = elapsed;
@@ -77,7 +77,7 @@ export function useGhostRecorder({
     if (mode !== 'playback' || !targetRef.current || !playback) return;
     if (startTime.current === null) startTime.current = state.clock.elapsedTime * 1000;
 
-    const elapsed = state.clock.elapsedTime * 1000 - startTime.current;
+    const elapsed = state.clock.elapsedTime * 1000 - (startTime?.current || 0);
 
     let idx = -1;
     for (let i = 0; i < playback.length; i += 7) {
@@ -148,6 +148,7 @@ export function useGhostRecorder({
 
   // Reset on mode change
   useEffect(() => {
+    return;
     bufferRef.current = new Float32Array(maxFrames * 7);
     frameCount.current = 0;
     lastSampleTime.current = 0;

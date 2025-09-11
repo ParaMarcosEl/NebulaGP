@@ -1,5 +1,5 @@
 import { extend, ThreeElement } from '@react-three/fiber';
-import { PlanetMaterial } from '@/Components/LODTerrain/Planet/Worker/PlanetMaterial';
+import { PlanetMaterial } from '@/Components/LODTerrain/Planet/PlanetMaterial';
 import { LitTerrainMaterial } from '@/Components/Terrain/Terrain/LitTerrainMaterial';
 import { WorkerTerrainMaterial } from '@/Components/LODTerrain/Worker/WorkerTerrainMaterial';
 import { WorkerTerrainShader } from '@/Components/LODTerrain/Worker/WorkerTerrainShader';
