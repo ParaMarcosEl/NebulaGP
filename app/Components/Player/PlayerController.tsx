@@ -276,49 +276,62 @@ export function usePlayerController({
     }
     ship.position.add(ship.userData.velocity);
 
-    if (planetMeshes.length > 0) {
-      //implement traversal of group here to find bvh enabled meshes
-      for (const planetMesh of planetMeshes) {
-        const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
-if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
+    // in your collision detection loop
 
-const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
+if (planetMeshes.length > 0) {
+  for (const planetMesh of planetMeshes) {
+    const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
+    if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
 
-if (geometry.boundsTree.closestPointToPoint(ship.position, hitInfo)) {
-  const dist = ship.position.distanceTo(hitInfo.point);
-  const minDistance = 6; // safe distance outside planet surface
+    const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
 
-  if (dist < minDistance) {
+    // Create a new vector for the ship's position in local space
+    const localShipPosition = new THREE.Vector3();
 
-    // Direction to push the ship outward
-    const pushDir = new THREE.Vector3()
-      .subVectors(ship.position, hitInfo.point)
-      .normalize();
+    // Get the inverse of the mesh's world matrix
+    const meshMatrixInverse = new THREE.Matrix4();
+    meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
 
-    // Fallback if pushDir is invalid
-    if (pushDir.lengthSq() === 0) {
-      pushDir.copy(ship.position).normalize();
+    // Transform the ship's world position to the mesh's local space
+    localShipPosition.copy(ship.position).applyMatrix4(meshMatrixInverse);
+
+    // Perform the intersection test using the transformed local position
+    if (geometry.boundsTree.closestPointToPoint(localShipPosition, hitInfo)) {
+      // The hitInfo.point is also in local space.
+      // We need to transform it back to world space to calculate the distance.
+      const worldHitPoint = hitInfo.point.clone().applyMatrix4(planetMesh.matrixWorld);
+
+      const dist = ship.position.distanceTo(worldHitPoint);
+      const minDistance = 6; // safe distance outside planet surface
+
+      if (dist < minDistance) {
+        // Direction to push the ship outward
+        const pushDir = new THREE.Vector3()
+          .subVectors(ship.position, worldHitPoint)
+          .normalize();
+
+        // Fallback if pushDir is invalid
+        if (pushDir.lengthSq() === 0) {
+          pushDir.copy(ship.position).normalize();
+        }
+
+        // Teleport ship outside mesh boundary
+        ship.position.copy(
+          worldHitPoint.clone().addScaledVector(pushDir, minDistance)
+        );
+
+        // Reduce velocity to avoid jitter
+        if (ship.userData.velocity) {
+          ship.userData.velocity.multiplyScalar(0.5);
+        }
+
+        if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.25);
+        if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
+      }
     }
-
-    // Teleport ship outside mesh boundary
-    ship.position.copy(
-      hitInfo.point.clone().addScaledVector(pushDir, minDistance)
-    );
-
-    // Reduce velocity to avoid jitter
-    if (ship.userData.velocity) {
-      ship.userData.velocity.multiplyScalar(0.5);
-    }
-
-    if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.25);
-    if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
   }
 }
 
-      }
-    }
-
-    
     if (playingFieldRef?.current) {
       const field = playingFieldRef.current;
       const geometry = field.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };

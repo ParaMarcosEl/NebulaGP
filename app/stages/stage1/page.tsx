@@ -30,6 +30,7 @@ import Planet from '@/Components/World/Planet/WorldPlanet';
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
+import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 
 function RaceProgressTracker({
   playerRefs,
@@ -69,6 +70,7 @@ export default function Stage1() {
   const botRef7 = useRef<THREE.Group | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
   const { loader } = useCanvasLoader();
+  const { setPlanetMeshes } = usePlanetStore(s => s);
 
   const InitAudio = () => {
     useAudioListener();
@@ -104,6 +106,8 @@ export default function Stage1() {
     if (explosionPoolRef.current.length === 0) {
       console.error('Explosion pool is empty!');
     }
+
+
   }, []); // Run only once after initial render
 
   const bounds = { x: 500, y: 250, z: 500 };
@@ -164,6 +168,7 @@ export default function Stage1() {
     return () => {
       setMaterialLoaded(false);
       setRaceComplete(false);
+      setPlanetMeshes([]);
     };
   }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
 

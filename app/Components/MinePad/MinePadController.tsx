@@ -1,5 +1,6 @@
 'use client';
-// controllers/CheckpointController.ts
+// MinePadController.tsx
+
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';

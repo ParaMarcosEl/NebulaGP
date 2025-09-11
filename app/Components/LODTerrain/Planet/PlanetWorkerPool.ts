@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { FBMParams } from './fbm';
 import { PlanetMaterial } from './PlanetMaterial';
 import { buildBVHForMeshes } from './LODPlanet';
+import { prepareMeshBounds } from './CubeTree';
 
 
 type Task = {
@@ -145,6 +146,7 @@ private onWorkerDone(worker: Worker, data: any) {
       geometry.computeBoundsTree();
     }
 
+    prepareMeshBounds(mesh);
     task.resolve(geometry);
     window.dispatchEvent(new Event('mesh-geometry-updated'));
   } else {

@@ -85,8 +85,8 @@ export default function WorldPlanet({
         position={position}
         planetSize={size}
         cubeSize={16}
-        lowTextPath="/textures/planet_texture03.png"
-        midTextPath="/textures/rocky_ground.png"
+        lowTextPath="/textures/ruby_ground.png"
+        midTextPath="/textures/gold_ground.png"
         highTextPath="/textures/molten_rock.png"
         maxHeight={maxHeight}
         frequency={frequency}

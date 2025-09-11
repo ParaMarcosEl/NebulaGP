@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber'; // Imports the useFrame hook from
 import * as THREE from 'three'; // Imports the entire Three.js library for 3D math and objects.
 import { useGameStore } from '@/Controllers/Game/GameController'; // Imports the Zustand game state store.
 import { useRef } from 'react'; // Imports the useRef hook from React for mutable references.
-import { TOTAL_LAPS } from '@/Constants'; // Imports the constant defining the total number of laps in the race.
+// import { TOTAL_LAPS } from '@/Constants'; // Imports the constant defining the total number of laps in the race.
 
 // Constants for controlling the update frequency of race progress.
 const UPDATE_INTERVAL_MS = 50; // How often (in milliseconds) the race progress updates are processed.
@@ -21,8 +21,8 @@ const MAX_DELTA_MS = 200; // Maximum allowed delta time (in milliseconds) to pre
  */
 export function useRaceProgress({
   playerRefs,
-  onLapComplete,
-  onRaceComplete,
+  // onLapComplete,
+  // onRaceComplete,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[]; // Array of references to bot 3D models.
   onLapComplete?: () => void; // Callback for when any racer completes a lap.
@@ -30,9 +30,9 @@ export function useRaceProgress({
 }) {
   // Destructure state and actions from the game store.
   const {
-    completeLap,
-    setRaceComplete,
-    setPlayerPhase,
+    // completeLap,
+    // setRaceComplete,
+    // setPlayerPhase,
     lastProgresses, // Stores the previous progress values for all racers (used for lap detection).
     playerId, // The ID of the local player.
     setRacePosition, // Action to set a racer's 3D position in the store.
@@ -99,17 +99,17 @@ export function useRaceProgress({
         const crossedFinishLine = last > 0.9 && player.progress < 0.1;
 
         if (crossedFinishLine) {
-          completeLap(Number(id)); // Dispatch action to record a completed lap for this racer.
-          onLapComplete?.(); // Call the optional `onLapComplete` callback.
+          // completeLap(Number(id)); // Dispatch action to record a completed lap for this racer.
+          // onLapComplete?.(); // Call the optional `onLapComplete` callback.
 
-          // Check if the current racer is the player AND they have completed more than TOTAL_LAPS.
-          // Note: The condition `player.lapCount > TOTAL_LAPS` seems to imply laps are counted *after* completion.
-          // If TOTAL_LAPS is the target, then `player.lapCount === TOTAL_LAPS` might be more accurate for detecting race completion.
-          if (parseInt(id) === playerId && player.lapCount > TOTAL_LAPS) {
-            setRaceComplete(); // Mark the player's race as completed in the store.
-            setPlayerPhase('Finished'); // Set the player's phase to 'Finished'.
-            onRaceComplete?.(); // Call the optional `onRaceComplete` callback.
-          }
+          // // Check if the current racer is the player AND they have completed more than TOTAL_LAPS.
+          // // Note: The condition `player.lapCount > TOTAL_LAPS` seems to imply laps are counted *after* completion.
+          // // If TOTAL_LAPS is the target, then `player.lapCount === TOTAL_LAPS` might be more accurate for detecting race completion.
+          // if (parseInt(id) === playerId && player.lapCount > TOTAL_LAPS) {
+          //   setRaceComplete(); // Mark the player's race as completed in the store.
+          //   setPlayerPhase('Finished'); // Set the player's phase to 'Finished'.
+          //   onRaceComplete?.(); // Call the optional `onRaceComplete` callback.
+          // }
         }
       });
     }

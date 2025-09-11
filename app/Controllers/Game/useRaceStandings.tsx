@@ -59,8 +59,6 @@ export function useRaceStandings() {
       // 2. If lap counts are equal, by progress along the current lap (descending: further along means higher rank).
       // 3. If both are equal, by total accumulated time (ascending: faster time means higher rank).
       .sort(([, a], [, b]) => {
-        if (b.lapCount !== a.lapCount) return b.lapCount - a.lapCount; // Sort by lap count (desc).
-        if (b.progress !== a.progress) return b.progress - a.progress; // Sort by progress (desc).
         return (
           a?.history.reduce((sum, lap) => sum + lap.time, 0) - // Sort by total time (asc).
           b?.history.reduce((sum, lap) => sum + lap.time, 0)
