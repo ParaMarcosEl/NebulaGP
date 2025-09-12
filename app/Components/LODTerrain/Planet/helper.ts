@@ -11,7 +11,11 @@ export class BVHVisualizer {
   constructor(scene: THREE.Scene) {
     this.wireframeGroup = new THREE.Group();
     scene.add(this.wireframeGroup);
-    this.material = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
+    this.material = new THREE.LineBasicMaterial({
+      color: 0x00ff00,
+      transparent: true,
+      opacity: 0.5,
+    });
   }
 
   /**

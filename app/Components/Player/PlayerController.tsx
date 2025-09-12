@@ -11,18 +11,18 @@ import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { onBulletCollision } from '@/Utils/collisions';
 import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
-import { TOTAL_LAPS } from '@/Constants';
+import { TOTAL_LAPS, TUBE_RADIUS } from '@/Constants';
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
+import { checkOutOfBoundsSDF } from '@/Utils/SDF';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
 const firingRef = { current: false };
-
 
 export const playerInputAxis = {
   set: (axis: { x: number; y: number }) => {
@@ -82,13 +82,19 @@ export function usePlayerController({
   const previousInputState = useRef({ accelerating: false, braking: false });
   const gamepadIndex = useRef<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { raceStatus, playerSpeed, raceData, setUseMine, setShieldValue } = useGameStore(
-    (state) => state,
-  );
+  const {
+    raceStatus,
+    playerSpeed,
+    raceData,
+    setOutOfBounds,
+    addOutOfBoundsTime,
+    setUseMine,
+    setShieldValue,
+  } = useGameStore((s) => s);
   const { invertPitch } = useSettingsStore((s) => s);
   const playSound = usePlaySound();
   const { buffers, audioEnabled } = useAudioStore((s) => s);
-  const { planetMeshes } = usePlanetStore(s => s);
+  const { planetMeshes } = usePlanetStore((s) => s);
 
   const controlsEnabled = raceStatus === 'racing';
   useBotController({
@@ -175,11 +181,11 @@ export function usePlayerController({
     return () => window.removeEventListener('gamepadconnected', handler);
   }, [enabled]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!enabled) return;
     const ship = aircraftRef.current;
     if (!controlsEnabled || !ship || !ship.userData.velocity) return;
-    
+
     const nearestT = getNearestCurveT(ship.position, curve);
     const curvePosition = curve.getPointAt(nearestT);
     ship.userData.curvePosition = curvePosition.clone();
@@ -278,86 +284,73 @@ export function usePlayerController({
 
     // in your collision detection loop
 
-if (planetMeshes.length > 0) {
-  for (const planetMesh of planetMeshes) {
-    const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
-    if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
+    if (planetMeshes.length > 0) {
+      for (const planetMesh of planetMeshes) {
+        const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
+        if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
 
-    const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
-
-    // Create a new vector for the ship's position in local space
-    const localShipPosition = new THREE.Vector3();
-
-    // Get the inverse of the mesh's world matrix
-    const meshMatrixInverse = new THREE.Matrix4();
-    meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
-
-    // Transform the ship's world position to the mesh's local space
-    localShipPosition.copy(ship.position).applyMatrix4(meshMatrixInverse);
-
-    // Perform the intersection test using the transformed local position
-    if (geometry.boundsTree.closestPointToPoint(localShipPosition, hitInfo)) {
-      // The hitInfo.point is also in local space.
-      // We need to transform it back to world space to calculate the distance.
-      const worldHitPoint = hitInfo.point.clone().applyMatrix4(planetMesh.matrixWorld);
-
-      const dist = ship.position.distanceTo(worldHitPoint);
-      const minDistance = 6; // safe distance outside planet surface
-
-      if (dist < minDistance) {
-        // Direction to push the ship outward
-        const pushDir = new THREE.Vector3()
-          .subVectors(ship.position, worldHitPoint)
-          .normalize();
-
-        // Fallback if pushDir is invalid
-        if (pushDir.lengthSq() === 0) {
-          pushDir.copy(ship.position).normalize();
-        }
-
-        // Teleport ship outside mesh boundary
-        ship.position.copy(
-          worldHitPoint.clone().addScaledVector(pushDir, minDistance)
-        );
-
-        // Reduce velocity to avoid jitter
-        if (ship.userData.velocity) {
-          ship.userData.velocity.multiplyScalar(0.5);
-        }
-
-        if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.25);
-        if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
-      }
-    }
-  }
-}
-
-    if (playingFieldRef?.current) {
-      const field = playingFieldRef.current;
-      const geometry = field.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
-      if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
-      const raycaster = new THREE.Raycaster();
-      raycaster.ray.origin.copy(ship.position).add(new THREE.Vector3(0, 1000, 0));
-      raycaster.ray.direction.set(0, -1, 0);
-      raycaster.firstHitOnly = false;
-      const hits = raycaster.intersectObject(field);
-
-      if (hits.length === 0) {
         const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
-        if (geometry.boundsTree.closestPointToPoint(ship.position, hitInfo)) {
-          const dist = ship.position.distanceTo(hitInfo.point);
-          if (dist > 10) {
-            // if (shieldValue > 0) {
-            //   setShieldValue(shieldValue - 0.5, playerId);
-            // }
 
-            // ship.position.copy(hitInfo.point);
-            // ship.userData.velocity.multiplyScalar(-1);
-            // speedRef.current = 0;
-            // if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.5);
+        // Create a new vector for the ship's position in local space
+        const localShipPosition = new THREE.Vector3();
+
+        // Get the inverse of the mesh's world matrix
+        const meshMatrixInverse = new THREE.Matrix4();
+        meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
+
+        // Transform the ship's world position to the mesh's local space
+        localShipPosition.copy(ship.position).applyMatrix4(meshMatrixInverse);
+
+        // Perform the intersection test using the transformed local position
+        if (geometry.boundsTree.closestPointToPoint(localShipPosition, hitInfo)) {
+          // The hitInfo.point is also in local space.
+          // We need to transform it back to world space to calculate the distance.
+          const worldHitPoint = hitInfo.point.clone().applyMatrix4(planetMesh.matrixWorld);
+
+          const dist = ship.position.distanceTo(worldHitPoint);
+          const minDistance = 6; // safe distance outside planet surface
+
+          if (dist < minDistance) {
+            // Direction to push the ship outward
+            const pushDir = new THREE.Vector3()
+              .subVectors(ship.position, worldHitPoint)
+              .normalize();
+
+            // Fallback if pushDir is invalid
+            if (pushDir.lengthSq() === 0) {
+              pushDir.copy(ship.position).normalize();
+            }
+
+            // Teleport ship outside mesh boundary
+            ship.position.copy(worldHitPoint.clone().addScaledVector(pushDir, minDistance));
+
+            // Reduce velocity to avoid jitter
+            if (ship.userData.velocity) {
+              ship.userData.velocity.multiplyScalar(0.5);
+            }
+
+            if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.25, 3);
+            if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
           }
         }
       }
+    }
+
+    // call this inside your game loop / update step
+    if (playingFieldRef?.current) {
+      if (!ship) return;
+
+      checkOutOfBoundsSDF(
+        ship,
+        curve, // the same curve you used for TubeGeometry
+        TUBE_RADIUS, // your base radius
+        [], // SphereSpec[] for swells
+        playerId,
+        delta,
+        raceData,
+        setOutOfBounds,
+        addOutOfBoundsTime,
+      );
     }
 
     const value = cannonValue || 0;

@@ -25,6 +25,12 @@ const defaultRaceData = (id: number): RaceData => ({
   lapCount: 0, // Initial lap count.
   isPlayer: false, // Flag to indicate if this data belongs to the local player.
   history: [], // Array to store records of completed laps.
+  lapTime: 0, // Current time for the active lap (for the local player).
+  totalTime: 0, // Total accumulated time for the local player across all completed laps.
+  lapStartTime: 0, // Timestamp when the current lap started.
+  outOfBounds: false,
+  outOfBoundsTime: 0,
+  penaltyTime: 0,
 });
 
 // --- Types Definitions ---
@@ -53,6 +59,12 @@ type RaceData = {
   lapCount: number; // Number of laps completed by this racer.
   isPlayer: boolean; // True if this data corresponds to the local player.
   history: LapRecord[]; // Historical records of each completed lap.
+  outOfBounds: boolean; // <-- NEW
+  outOfBoundsTime: number;
+  lapTime: number; // Current time for the active lap (for the local player).
+  totalTime: number; // Total accumulated time for the local player across all completed laps.
+  lapStartTime: number; // Timestamp when the current lap started.
+  penaltyTime: number;
 };
 
 /**
@@ -98,6 +110,12 @@ export type RaceDataType = Record<
     lapCount: number;
     isPlayer: boolean;
     history: LapRecord[];
+    outOfBounds?: boolean;
+    outOfBoundsTime?: number;
+    lapTime: number; // Current time for the active lap (for the local player).
+    totalTime: number; // Total accumulated time for the local player across all completed laps.
+    lapStartTime: number; // Timestamp when the current lap started.
+    penaltyTime: number;
   }
 >;
 
@@ -116,11 +134,11 @@ type GameState = {
   showNav: boolean;
   baseSpeed: number;
   playerSpeed: number;
-  lapTime: number; // Current time for the active lap (for the local player).
-  totalTime: number; // Total accumulated time for the local player across all completed laps.
   raceCompleted: boolean; // True if the local player has completed the race.
   lapHistory: SingleLapRecord[]; // Historical lap records for the local player.
   settings: GameSettings; // Current game settings.
+  lapTime: number; // Current time for the active lap (for the local player).
+  totalTime: number; // Total accumulated time for the local player across all completed laps.
   lapStartTime: number; // Timestamp when the current lap started.
   lastProgresses: Record<number, number>; // Stores the last known progress for each racer ID.
   finishedCrafts: number[]; // An array of racer IDs that have completed the race.
@@ -141,6 +159,12 @@ type GameState = {
       lapCount: number;
       isPlayer: boolean;
       history: LapRecord[];
+      lapTime: number; // Current time for the active lap (for the local player).
+      totalTime: number; // Total accumulated time for the local player across all completed laps.
+      lapStartTime: number; // Timestamp when the current lap started.
+      outOfBounds: boolean;
+      outOfBoundsTime: number;
+      penaltyTime: number;
     }
   >;
   playerPhase: 'Idle' | 'Race' | 'Finished'; // The current phase of the local player.
@@ -183,8 +207,8 @@ type GameActions = {
   applyBoost: (id: number) => void;
   setPlayerSpeed: (speed: number) => void;
   setPlayerId: (id: number) => void; // Sets the ID of the local player.
-  setLapTime: (time: number) => void; // Updates the current lap time and total time.
-  completeLap: (id: number) => void; // Records a completed lap for a specific racer.
+  setLapTime: () => void; // Updates the current lap time and total time.
+  completeLap: (id: number, time: number) => void; // Records a completed lap for a specific racer.
   setRaceComplete: (complete?: boolean) => void; // Marks the local player's race as completed.
   reset: () => void; // Resets the entire game state to its initial values.
   setLapStartTime: (time: number) => void; // Sets the timestamp for the start of the current lap.
@@ -201,6 +225,8 @@ type GameActions = {
   setBaseSpeed: (speed: number) => void;
   setGhostLoaded: (loaded: boolean) => void;
   setShowNav: (loaded: boolean) => void;
+  setOutOfBounds: (id: number, outOfBounds: boolean) => void;
+  addOutOfBoundsTime: (id: number, delta: number) => void;
 };
 
 /**
@@ -268,6 +294,46 @@ export const useGameStore = create(
     MaterialLoaded: false,
     touchEnabled: false,
     // --- Actions (Functions to modify state) ---
+    setOutOfBounds: (id: number, outOfBounds: boolean) =>
+      set((state) => ({
+        raceData: {
+          ...state.raceData,
+          [id]: {
+            ...state.raceData[id],
+            outOfBounds: outOfBounds,
+          },
+        },
+      })),
+
+    addOutOfBoundsTime: (id, delta) =>
+      set((state) => {
+        const racer = state.raceData[id];
+
+        if (!racer || !racer.outOfBounds) return state;
+
+        const timeSpent = racer.outOfBoundsTime + delta;
+
+        // Penalty scales with distance from track
+        const penaltyRate = 2.5;
+        const penalty = delta * penaltyRate * 1000;
+
+        const newPenaltyTime = (racer.penaltyTime ?? 0) + penalty;
+
+        return {
+          raceData: {
+            ...state.raceData,
+            [id]: {
+              ...racer,
+              penaltyTime: newPenaltyTime,
+              outOfBoundsTime: timeSpent,
+            },
+          },
+          finishedCrafts:
+            timeSpent > 10000 && !state.finishedCrafts.includes(id)
+              ? [...state.finishedCrafts, id]
+              : state.finishedCrafts,
+        };
+      }),
 
     setTouchEnabled: (enabled) => set({ touchEnabled: enabled }),
     setShowNav: (show: boolean) => set({ showNav: show }),
@@ -435,23 +501,28 @@ export const useGameStore = create(
     setPlayerId: (id) => set({ playerId: id }),
 
     /**
-     * Updates the current lap time and calculates the total race time for the local player.
-     * @param newTime - The elapsed time for the current lap.
+     * Updates the current lap time and calculates the total race time for the players.
+     * @param now - performance.now().
      */
-    setLapTime: (newTime) => {
-      const { raceCompleted, lapHistory } = get(); // Get current state values.
+    setLapTime: () => {
+      const { raceCompleted, lapHistory, raceData } = get();
       if (raceCompleted) return; // If race is completed, do not update lap time.
+      const newRaceData = Object.assign({}, raceData);
 
-      // Calculate total time from completed laps in history.
-      const completedTime = lapHistory.reduce(
-        (sum, lap, idx) => (idx < TOTAL_LAPS ? sum + lap.time : 0), // Sum times for laps up to TOTAL_LAPS.
-        0,
-      );
-      // Update lapTime and totalTime in the state.
-      set({
-        lapTime: newTime,
-        totalTime: completedTime + newTime,
-      });
+      for (const racer in newRaceData) {
+        const { history, lapStartTime } = newRaceData[racer];
+        const newTime = performance.now() - lapStartTime;
+
+        const completedTime = history.reduce(
+          (sum, lap, idx) => (idx < TOTAL_LAPS ? sum + lap.time : 0), // Sum times for laps up to TOTAL_LAPS.
+          0,
+        );
+
+        newRaceData[racer].totalTime = completedTime + newTime;
+        newRaceData[racer].lapTime = newTime;
+      }
+
+      set({ raceData: newRaceData });
     },
 
     /**
@@ -459,7 +530,7 @@ export const useGameStore = create(
      * This action updates their lap count, history, and calculates the lap time.
      * @param id - The ID of the racer who completed a lap.
      */
-    completeLap: (id) =>
+    completeLap: (id, time) =>
       set((state) => {
         // If the racer has already completed all total laps, do nothing.
         if ((state.raceData[id]?.history?.length || 0) >= TOTAL_LAPS) return state;
@@ -474,11 +545,15 @@ export const useGameStore = create(
           lapCount: 0,
           isPlayer: false,
           history: [],
+          lapTime: 0, // Current time for the active lap (for the local player).
+          totalTime: 0, // Total accumulated time for the local player across all completed laps.
+          lapStartTime: 0, // Timestamp when the current lap started.
+          penaltyTime: 0,
         };
 
         // Calculate the time taken for the just-completed lap.
         // It's `now` minus the timestamp of the last recorded lap, or `lapStartTime` if it's the first lap.
-        const lapTime = now - ((prev?.history || []).at(-1)?.timestamp ?? state.lapStartTime);
+        const lapTime = now - ((prev?.history || []).at(-1)?.timestamp ?? prev?.lapStartTime);
 
         // Create a new lap record.
         const updatedLap = {
@@ -498,6 +573,8 @@ export const useGameStore = create(
               ...prev, // Copy existing data for this racer.
               lapCount: (prev?.lapCount || 0) + 1, // Increment lap count.
               history: newHistory, // Update history with the new lap.
+              lapTime,
+              lapStartTime: time,
             },
           },
         };
@@ -528,6 +605,12 @@ export const useGameStore = create(
           progress: 0,
           position: new THREE.Vector3(),
           history: [],
+          lapTime: 0, // Current time for the active lap (for the local player).
+          totalTime: 0, // Total accumulated time for the local player across all completed laps.
+          lapStartTime: 0, // Timestamp when the current lap started.
+          outOfBounds: false,
+          outOfBoundsTime: 0,
+          penaltyTime: 0,
         };
       }
 

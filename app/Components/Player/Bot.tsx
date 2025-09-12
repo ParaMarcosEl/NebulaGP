@@ -73,7 +73,7 @@ export default function Bot({
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
           <object3D ref={trailTarget} position={[0, 0.31, 1.8]} />
-          <EngineSound volume={5} />
+          <EngineSound volume={1} />
         </group>
       </group>
       <Shield

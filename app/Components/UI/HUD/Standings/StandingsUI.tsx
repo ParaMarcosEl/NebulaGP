@@ -11,10 +11,10 @@ export function StandingsUI() {
       <div className="standings">
         <h4>🏁 Standings</h4>
         <ol>
-          {finished.map(({ id, time, place }, i) => (
+          {finished.map(({ id, time, place, penaltyTime }, i) => (
             <li key={i}>
               {id === useGameStore.getState().playerId ? 'You' : `Bot${id}`} — Placed #{place}{' '}
-              {formatTime(time)}
+              {formatTime(time + penaltyTime)}
             </li>
           ))}
         </ol>

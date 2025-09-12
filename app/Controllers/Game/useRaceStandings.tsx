@@ -38,30 +38,33 @@ export function useRaceStandings() {
       // Sort finished racers by their total accumulated race time in ascending order.
       .sort(
         ([, a], [, b]) =>
-          a?.history.reduce((sum, lap) => sum + lap.time, 0) - // Calculate total time for racer 'a'.
-          b?.history.reduce((sum, lap) => sum + lap.time, 0), // Calculate total time for racer 'b'.
+          a?.history.reduce((sum, lap) => sum + lap.time, 0) +
+          a.penaltyTime - // Calculate total time for racer 'a'.
+          (b?.history.reduce((sum, lap) => sum + lap.time, 0) + b.penaltyTime), // Calculate total time for racer 'b'.
       )
       // Map the sorted filtered data into a simplified structure for the standings.
-      .map(([id, { history }], idx) => ({
+      .map(([id, { history, penaltyTime }], idx) => ({
         id: parseInt(id), // Convert string ID back to number.
         place: idx + 1, // Assign place based on sorted index (1st, 2nd, 3rd...).
         finished: true, // Mark as finished.
         time: history.reduce((sum, lap) => sum + lap.time, 0), // Total time for the racer.
         history, // Include full history if needed for display.
+        penaltyTime,
       }));
 
     // 2. Calculate the list of in-progress racers
-    const inProgress = Object.entries(raceData) // Get all racer entries.
+    const progressList = Object.entries(raceData) // Get all racer entries.
       // Filter for racers who have NOT completed all laps and have a valid ID.
-      .filter(([id, player]) => (player?.history?.length || 0) < TOTAL_LAPS && parseInt(id) >= 0)
+      .filter(([id]) => parseInt(id) >= 0)
       // Sort in-progress racers based on a hierarchy:
       // 1. By lap count (descending: more laps means higher rank).
       // 2. If lap counts are equal, by progress along the current lap (descending: further along means higher rank).
       // 3. If both are equal, by total accumulated time (ascending: faster time means higher rank).
       .sort(([, a], [, b]) => {
         return (
-          a?.history.reduce((sum, lap) => sum + lap.time, 0) - // Sort by total time (asc).
-          b?.history.reduce((sum, lap) => sum + lap.time, 0)
+          a?.history.reduce((sum, lap) => sum + lap.time, 0) +
+          a.penaltyTime - // Sort by total time (asc).
+          (b?.history.reduce((sum, lap) => sum + lap.time, 0) + b.penaltyTime)
         );
       })
       // Map the sorted filtered data into a simplified structure for the standings.
@@ -70,7 +73,7 @@ export function useRaceStandings() {
           id: parseInt(id), // Convert string ID back to number.
           // Calculate place by adding the number of already finished racers.
           place: idx + 1 + finishedList.length,
-          finished: false,
+          finished: history.length >= TOTAL_LAPS,
           time: history?.reduce((sum, lap) => sum + lap.time, 0) || 0, // Total time so far.
           history, // Include full history.
         };
@@ -79,7 +82,7 @@ export function useRaceStandings() {
     // Return the combined standings and a flag indicating if the local player's race is over.
     return {
       finished: finishedList,
-      inProgress,
+      progressList,
       // Check if the local player has completed all laps.
       raceOver: (raceData[playerId]?.history?.length || 0) >= TOTAL_LAPS,
     };

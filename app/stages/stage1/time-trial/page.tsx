@@ -216,7 +216,7 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUDUI 
+      <HUDUI
         playerRefs={playerRefs}
         trackId={0}
         positions={positions}
@@ -289,15 +289,15 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           /> */}
-          
-                    <Planet 
-                      position={new THREE.Vector3(0, 0, 0)} 
-                      size={320} 
-                      maxHeight={80}
-                      lacunarity={1.1}
-                      frequency={4}
-                      exponentiation={6}
-                    />
+
+          <Planet
+            position={new THREE.Vector3(0, 0, 0)}
+            size={320}
+            maxHeight={80}
+            lacunarity={1.1}
+            frequency={4}
+            exponentiation={6}
+          />
 
           {/* Players */}
           {players}

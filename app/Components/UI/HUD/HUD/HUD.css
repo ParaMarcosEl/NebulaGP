@@ -11,3 +11,7 @@
   pointer-events: none;
   z-index: 10;
 }
+
+.out {
+  color: red;
+}

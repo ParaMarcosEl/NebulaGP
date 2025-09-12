@@ -18,15 +18,15 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 const Track = forwardRef<
   THREE.Mesh,
   {
-    aircraftRef: React.RefObject<THREE.Object3D>;
+    playerRefs: React.RefObject<THREE.Object3D>[];
     curve: THREE.Curve<THREE.Vector3>;
     onLapComplete?: () => void;
-    spheres?: SphereSpec[]
+    spheres?: SphereSpec[];
   }
 >(
   (
     {
-      aircraftRef,
+      playerRefs,
       curve,
       spheres = [],
       // onLapComplete,
@@ -38,7 +38,7 @@ const Track = forwardRef<
     useLapTimer();
 
     const checkpoint = useCheckpointController({
-      aircraftRef,
+      playerRefs,
       checkpointMeshRef: checkpointMeshRef as React.RefObject<THREE.Mesh>,
     });
 
@@ -48,7 +48,7 @@ const Track = forwardRef<
     const geometry = useMemo(() => {
       const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
 
-      const modifiedGeometry = modifyTubeGeometrySDF(tubeGeometry, curve, spheres, TUBE_RADIUS)
+      const modifiedGeometry = modifyTubeGeometrySDF(tubeGeometry, curve, spheres, TUBE_RADIUS);
 
       modifiedGeometry.computeBoundsTree();
       const shortestFlightPath = getShortestFlightPath(curve, TUBE_RADIUS);

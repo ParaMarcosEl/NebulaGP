@@ -211,7 +211,7 @@ export default function Home() {
             <Skybox stageName="stageI" />
             <Track
               ref={playingFieldRef}
-              aircraftRef={aircraftRef as React.RefObject<THREE.Object3D>}
+              playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
               curve={curve}
             />
 
@@ -254,16 +254,16 @@ export default function Home() {
               }))}
             />
 
-          <Planet 
-            position={new THREE.Vector3(0, -1300, 0)} 
-            size={1200} 
-            maxHeight={1000}
-            lacunarity={1.6}
-            amplitude={0.2}
-            octaves={4}
-            frequency={7}
-            exponentiation={6}
-          />
+            <Planet
+              position={new THREE.Vector3(0, -1300, 0)}
+              size={1200}
+              maxHeight={1000}
+              lacunarity={1.6}
+              amplitude={0.2}
+              octaves={4}
+              frequency={7}
+              exponentiation={6}
+            />
 
             {players}
             {boosters}

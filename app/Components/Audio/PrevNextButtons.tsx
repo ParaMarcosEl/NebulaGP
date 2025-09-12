@@ -7,7 +7,7 @@ import { useAudioStore } from '@/Controllers/Audio/useAudioStore'; // adjust pat
 import './PrevNextButtons.css';
 
 const PrevNextButtons = ({ className = '' }: { className?: string }) => {
-    const { prevTrack, nextTrack } = useAudioStore(s => s);
+  const { prevTrack, nextTrack } = useAudioStore((s) => s);
 
   const playNext = () => {
     nextTrack();
@@ -15,24 +15,20 @@ const PrevNextButtons = ({ className = '' }: { className?: string }) => {
 
   const playPrevious = () => {
     prevTrack();
-  }
+  };
 
   return (
     <div className={cx(className)}>
-        <button
-            className={cx('audio-toggle-button')}
-            onClick={playPrevious}
-            aria-label={'Play Previous'}
-        >
-            {"<"}
-        </button>
-        <button
-            className={cx('audio-toggle-button')}
-            onClick={playNext}
-            aria-label={'Play Next'}
-        >
-            {">"}
-        </button>
+      <button
+        className={cx('audio-toggle-button')}
+        onClick={playPrevious}
+        aria-label={'Play Previous'}
+      >
+        {'<'}
+      </button>
+      <button className={cx('audio-toggle-button')} onClick={playNext} aria-label={'Play Next'}>
+        {'>'}
+      </button>
     </div>
   );
 };

@@ -56,7 +56,7 @@ export function useGhostRecorder({
     if (mode !== 'record' || !targetRef.current) return;
     if (startTime.current === null) startTime.current = state.clock.elapsedTime * 1000;
 
-    const elapsed = state.clock.elapsedTime * 1000 - (startTime?.current) || 0;
+    const elapsed = state.clock.elapsedTime * 1000 - startTime?.current || 0;
     if (elapsed - lastSampleTime.current >= sampleRate) {
       const offset = frameCount.current * 7;
       bufferRef.current[offset] = elapsed;

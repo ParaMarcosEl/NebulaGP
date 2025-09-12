@@ -70,7 +70,7 @@ export default function Stage1() {
   const botRef7 = useRef<THREE.Group | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
   const { loader } = useCanvasLoader();
-  const { setPlanetMeshes } = usePlanetStore(s => s);
+  const { setPlanetMeshes } = usePlanetStore((s) => s);
 
   const InitAudio = () => {
     useAudioListener();
@@ -106,8 +106,6 @@ export default function Stage1() {
     if (explosionPoolRef.current.length === 0) {
       console.error('Explosion pool is empty!');
     }
-
-
   }, []); // Run only once after initial render
 
   const bounds = { x: 500, y: 250, z: 500 };
@@ -254,7 +252,7 @@ export default function Stage1() {
         EXIT RACE
       </Link>
 
-      <HUDUI 
+      <HUDUI
         playerRefs={playerRefs}
         trackId={0}
         positions={positions}
@@ -303,8 +301,8 @@ export default function Stage1() {
           {/* World */}
           <Skybox stageName="stageI" />
           <Track
+            playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
             ref={playingFieldRef}
-            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
             curve={curve}
             spheres={[{ t: 0.4, radius: 100 }]}
           />
@@ -347,9 +345,9 @@ export default function Stage1() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-          <Planet 
-            position={new THREE.Vector3(0, 0, 0)} 
-            size={320} 
+          <Planet
+            position={new THREE.Vector3(0, 0, 0)}
+            size={320}
             maxHeight={80}
             lacunarity={1.1}
             frequency={4}

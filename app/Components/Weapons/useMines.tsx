@@ -65,7 +65,7 @@ export function useMines(
     available.mesh.visible = true;
     available.active = true;
 
-    playSound(buffers['mineDrop'], dropPos, 1);
+    playSound(buffers['mineDrop'], dropPos, 2);
   };
 
   const deactivateMine = (mine: Mine) => {
