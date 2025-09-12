@@ -8,7 +8,7 @@ import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-import HUD from '@/Components/UI/HUD/HUD';
+import HUD from '@/Components/UI/HUD/HUD/HUD';
 import { onShipCollision } from '@/Utils/collisions';
 import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
@@ -255,7 +255,7 @@ export default function Stage1() {
 
           <Track
             ref={playingFieldRef}
-            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
+            playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
             curve={curve}
           />
           <SpeedPadSpawner
