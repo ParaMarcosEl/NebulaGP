@@ -83,7 +83,7 @@ export default function Stage1() {
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
   const { loader, setMaterialLoaded } = useCanvasLoader();
-  const { setPlanetMeshes } = usePlanetStore(s => s);
+  const { setPlanetMeshes } = usePlanetStore((s) => s);
 
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
@@ -250,8 +250,8 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUDUI 
-        playerRefs={playerRefs} 
+      <HUDUI
+        playerRefs={playerRefs}
         trackId={2}
         positions={positions}
         curve={curve}
@@ -289,21 +289,21 @@ export default function Stage1() {
           <Skybox stageName="stageD" />
           <Track
             ref={playingFieldRef}
-            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
+            playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
             curve={curve}
             spheres={[{ t: 0.1, radius: 59 }]}
           />
-          
-          <WorldPlanet 
-            position={new THREE.Vector3(0, -1300, 0)} 
-            size={1200} 
+
+          <WorldPlanet
+            position={new THREE.Vector3(0, -1300, 0)}
+            size={1200}
             maxHeight={100}
-            lacunarity={.6}
+            lacunarity={0.6}
             amplitude={0.2}
             octaves={6}
             frequency={9}
             exponentiation={6}
-            persistence={.6}
+            persistence={0.6}
             cloudRadius={300}
             clouds={false}
           />

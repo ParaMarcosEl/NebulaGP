@@ -33,12 +33,10 @@ export function useRaceProgress({
     // completeLap,
     // setRaceComplete,
     // setPlayerPhase,
-    lastProgresses, // Stores the previous progress values for all racers (used for lap detection).
     playerId, // The ID of the local player.
     setRacePosition, // Action to set a racer's 3D position in the store.
     updateRacePositions, // Action to update positions for multiple racers.
     updateProgresses, // Action to update progress for multiple racers.
-    raceData, // The comprehensive data for all racers (positions, progress, lap count, history).
   } = useGameStore((state) => state); // Subscribes to the entire state of the game store.
 
   // useRef to keep track of elapsed time for the update interval.
@@ -87,31 +85,6 @@ export function useRaceProgress({
 
       // --- Store Sorted Progresses ---
       updateProgresses(playerProgresses); // Dispatch action to update all racers' progresses in the store.
-
-      // --- Lap and Race Completion Detection ---
-      // Iterate through all racers in `raceData` to check for lap completions.
-      Object.entries(raceData).forEach(([id, player]) => {
-        const last = lastProgresses[Number(id)]; // Get the previous progress for this racer.
-
-        // Detect if the racer has crossed the finish line:
-        // This is determined by their last progress being high (e.g., > 0.9)
-        // and their current progress being low (e.g., < 0.1), indicating they wrapped around the track.
-        const crossedFinishLine = last > 0.9 && player.progress < 0.1;
-
-        if (crossedFinishLine) {
-          // completeLap(Number(id)); // Dispatch action to record a completed lap for this racer.
-          // onLapComplete?.(); // Call the optional `onLapComplete` callback.
-
-          // // Check if the current racer is the player AND they have completed more than TOTAL_LAPS.
-          // // Note: The condition `player.lapCount > TOTAL_LAPS` seems to imply laps are counted *after* completion.
-          // // If TOTAL_LAPS is the target, then `player.lapCount === TOTAL_LAPS` might be more accurate for detecting race completion.
-          // if (parseInt(id) === playerId && player.lapCount > TOTAL_LAPS) {
-          //   setRaceComplete(); // Mark the player's race as completed in the store.
-          //   setPlayerPhase('Finished'); // Set the player's phase to 'Finished'.
-          //   onRaceComplete?.(); // Call the optional `onRaceComplete` callback.
-          // }
-        }
-      });
     }
   });
 }

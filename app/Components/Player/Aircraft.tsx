@@ -94,7 +94,7 @@ export default function Aircraft({
         <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
           <primitive object={model} scale={0.5} />
           <object3D ref={trailTarget} position={[0, 0.31, 2]} />
-          <EngineSound volume={5} />
+          <EngineSound volume={1} />
           <group rotateY={Math.PI / 2}></group>
         </group>
       </group>

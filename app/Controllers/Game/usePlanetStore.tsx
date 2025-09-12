@@ -19,7 +19,6 @@ export function ensureBVH(mesh: THREE.Mesh) {
   }
 }
 
-
 interface PlanetState {
   cubeTreeRef: React.RefObject<CubeTree> | null;
   setCubeTreeRef: (cubeTreeRef: React.RefObject<CubeTree>) => void;

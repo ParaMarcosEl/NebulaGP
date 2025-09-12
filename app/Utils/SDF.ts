@@ -1,4 +1,5 @@
-import * as THREE from "three";
+import { RaceDataType } from '@/Controllers/Game/GameController';
+import * as THREE from 'three';
 
 ///////////////////////
 // TYPES
@@ -25,11 +26,7 @@ export function sdfSphere(p: Vec3Like, center: Vec3Like, radius: number): number
   return subVec(p, center).length() - radius;
 }
 
-export function sdfBox(
-  p: Vec3Like,
-  center: Vec3Like,
-  dimensions: Vec3Like
-): number {
+export function sdfBox(p: Vec3Like, center: Vec3Like, dimensions: Vec3Like): number {
   const halfDim = v3(dimensions.x * 0.5, dimensions.y * 0.5, dimensions.z * 0.5);
   const q = subVec(p, center);
   q.set(Math.abs(q.x), Math.abs(q.y), Math.abs(q.z)).sub(halfDim);
@@ -48,12 +45,7 @@ export function sdfPlane(p: Vec3Like, normal: Vec3Like, h: number): number {
   return p.x * n.x + p.y * n.y + p.z * n.z + h;
 }
 
-export function sdfCapsule(
-  p: Vec3Like,
-  a: Vec3Like,
-  b: Vec3Like,
-  r: number
-): number {
+export function sdfCapsule(p: Vec3Like, a: Vec3Like, b: Vec3Like, r: number): number {
   const pa = subVec(p, a);
   const ba = subVec(b, a);
   const h = Math.max(0, Math.min(1, pa.dot(ba) / ba.lengthSq()));
@@ -63,7 +55,7 @@ export function sdfCapsule(
 export function sdfTorus(
   p: Vec3Like,
   center: Vec3Like,
-  t: { major: number; minor: number }
+  t: { major: number; minor: number },
 ): number {
   const q = subVec(p, center);
   const qXZ = Math.sqrt(q.x * q.x + q.z * q.z) - t.major;
@@ -95,7 +87,7 @@ export function smoothMin(a: number, b: number, k: number) {
 }
 
 export function sdfSmoothUnion(a: number, b: number, k: number) {
-  const h = Math.max(0, Math.min(1, 0.5 + 0.5 * (b - a) / k));
+  const h = Math.max(0, Math.min(1, 0.5 + (0.5 * (b - a)) / k));
   return THREE.MathUtils.lerp(b, a, h) - k * h * (1 - h);
 }
 
@@ -125,9 +117,8 @@ export function evaluateSDF(p: THREE.Vector3) {
 // Option 1: Named import (works in most setups)
 // import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-
 export interface SphereSpec {
-  t: number;      // Position along curve (0 to 1)
+  t: number; // Position along curve (0 to 1)
   radius: number; // Radius of the sphere
 }
 
@@ -147,7 +138,7 @@ export function modifyTubeGeometrySDF(
   tubeGeometry: THREE.TubeGeometry,
   curve: THREE.Curve<THREE.Vector3>,
   spheres: SphereSpec[],
-  tubeRadius: number
+  tubeRadius: number,
 ): THREE.BufferGeometry {
   const posAttr = tubeGeometry.attributes.position as THREE.BufferAttribute;
   const vertex = new THREE.Vector3();
@@ -184,3 +175,56 @@ export function modifyTubeGeometrySDF(
   return tubeGeometry;
 }
 
+export function checkOutOfBoundsSDF(
+  ship: THREE.Object3D,
+  curve: THREE.Curve<THREE.Vector3>,
+  tubeRadius: number,
+  spheres: SphereSpec[],
+  playerId: number,
+  delta: number,
+  raceData: RaceDataType,
+  setOutOfBounds: (id: number, state: boolean) => void,
+  addOutOfBoundsTime: (id: number, time: number) => void,
+) {
+  const shipPos = ship.position.clone();
+
+  // 1. Approximate closest curve point
+  const divisions = 200; // tweak: more = accurate, fewer = faster
+  let closestT = 0;
+  let minDist = Infinity;
+  for (let i = 0; i <= divisions; i++) {
+    const t = i / divisions;
+    const pt = curve.getPointAt(t);
+    const dist = shipPos.distanceTo(pt);
+    if (dist < minDist) {
+      minDist = dist;
+      closestT = t;
+    }
+  }
+
+  const curvePoint = curve.getPointAt(closestT);
+
+  // 2. Base tube SDF
+  let sdf = shipPos.distanceTo(curvePoint) - tubeRadius;
+
+  // 3. Apply sphere swells (if any)
+  for (const { t, radius } of spheres) {
+    const swellCenter = curve.getPointAt(t);
+    const sphereSDF = sdfSphere(shipPos, swellCenter, radius);
+    sdf = Math.min(sdf, sphereSDF);
+  }
+
+  // 4. Inside/outside decision
+  const isOut = sdf > 0;
+
+  if (isOut) {
+    addOutOfBoundsTime(playerId, delta);
+    if (!raceData[Number(playerId)].outOfBounds) {
+      setOutOfBounds(playerId, true);
+    }
+  } else {
+    if (raceData[Number(playerId)].outOfBounds) {
+      setOutOfBounds(playerId, false);
+    }
+  }
+}

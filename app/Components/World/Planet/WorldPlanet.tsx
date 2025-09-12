@@ -19,7 +19,6 @@ export default function WorldPlanet({
   lacunarity = 1.1,
   persistence = 0.7,
   exponentiation = 1,
-
 }: {
   ref?: React.RefObject<THREE.Object3D>;
   size?: number;
@@ -85,8 +84,8 @@ export default function WorldPlanet({
         position={position}
         planetSize={size}
         cubeSize={16}
-        lowTextPath="/textures/ruby_ground.png"
-        midTextPath="/textures/gold_ground.png"
+        lowTextPath="/textures/ruby_ground128.png"
+        midTextPath="/textures/gold_ground128.png"
         highTextPath="/textures/molten_rock.png"
         maxHeight={maxHeight}
         frequency={frequency}

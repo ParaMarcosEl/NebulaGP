@@ -194,7 +194,7 @@ export default function Stage1() {
       >
         EXIT RACE
       </Link>
-      <HUDUI 
+      <HUDUI
         trackId={2}
         playerRefs={playerRefs}
         positions={positions}
@@ -233,7 +233,7 @@ export default function Stage1() {
 
           <Track
             ref={playingFieldRef}
-            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
+            playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
             curve={curve}
           />
           <TerrainChunkManager

@@ -250,7 +250,7 @@ export default function TestStage() {
       >
         EXIT RACE
       </Link>
-      <HUDUI 
+      <HUDUI
         playerRefs={playerRefs}
         trackId={0}
         positions={positions}
@@ -300,7 +300,7 @@ export default function TestStage() {
           <Skybox stageName="stageI" />
           <Track
             ref={playingFieldRef}
-            aircraftRef={aircraftRef as React.RefObject<THREE.Group>}
+            playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
             curve={curve}
           />
           <MinePadSpawner
@@ -342,12 +342,7 @@ export default function TestStage() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-          <Planet 
-            position={new THREE.Vector3()} 
-            size={340} 
-            maxHeight={100}
-            exponentiation={3}
-          />
+          <Planet position={new THREE.Vector3()} size={340} maxHeight={100} exponentiation={3} />
           {/* Players */}
           {players}
           {boosters}

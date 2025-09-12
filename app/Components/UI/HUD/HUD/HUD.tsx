@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { TOTAL_LAPS } from '@/Constants';
 import * as THREE from 'three';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
+import cx from 'classnames';
 import './HUD.css';
 
 export default function HUD({
@@ -14,7 +15,7 @@ export default function HUD({
   trackId: number;
   playerRefs: React.RefObject<THREE.Object3D | null>[];
 }) {
-  const { lapTime, raceData, playerId } = useGameStore((state) => {
+  const { raceData, playerId } = useGameStore((state) => {
     return state;
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,12 +27,13 @@ export default function HUD({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bestTime = allGhostsRef?.current?.[`${trackId}`] || 0;
-  const { inProgress, finished, raceOver } = useRaceStandings();
+  const { progressList, finished, raceOver } = useRaceStandings();
   const { user } = useUserStore();
+  const playerData = raceData[playerId];
 
-  const playerHistory = raceData[playerId]?.history || [];
+  const playerHistory = playerData?.history || [];
   const player =
-    inProgress.find(({ id }) => id === playerId) || finished.find(({ id }) => id === playerId);
+    progressList.find(({ id }) => id === playerId) || finished.find(({ id }) => id === playerId);
 
   const history =
     playerHistory.length === 0 ? (
@@ -53,7 +55,7 @@ export default function HUD({
       </>
     );
 
-  const standingsUI = inProgress.length > 0 && (
+  const standingsUI = progressList.length > 0 && (
     <>
       <hr />
       <div>Place:</div>
@@ -65,18 +67,26 @@ export default function HUD({
 
   return (
     <div className="hud">
+      {/* <div>{JSON.stringify(Object.keys(raceData).map((racerId) => {
+        const { lapTime, lapStartTime, totalTime, outOfBounds } = raceData[Number(racerId)];
+        return {
+          racerId,
+          lapTime,
+          lapStartTime,
+          totalTime,
+          outOfBounds,
+        }
+      }))}</div> */}
       {user && <div>Player: {user?.displayName}</div>}
       {raceOver ? (
         <>
           <div>🎉 RACE COMPLETED!</div>
           {bestTime?.time && <div>Best Time: {formatTime(bestTime.time)}</div>}
           <div>
-            Total Time:{' '}
-            {formatTime(
-              raceData[playerId]?.history.reduce(
-                (prev, curr, i) => (i <= TOTAL_LAPS ? prev + curr.time : prev),
-                0,
-              ) + lapTime,
+            {'Total Time: '}
+            {formatTime(raceData[playerId].totalTime)}
+            {!!raceData[playerId].penaltyTime && (
+              <span className="out"> +{formatTime(raceData[playerId].penaltyTime)}</span>
             )}
           </div>
           {history}
@@ -84,7 +94,13 @@ export default function HUD({
       ) : (
         <>
           {bestTime?.time && <div>Best Time: {formatTime(bestTime.time)}</div>}
-          <div>Current Time: {formatTime(lapTime)}</div>
+          <div className={cx(playerData.outOfBounds && 'out')}>
+            Current Time: {formatTime(playerData.totalTime)}
+            {!!raceData[playerId].penaltyTime && (
+              <span className="out"> +{formatTime(raceData[playerId].penaltyTime)}</span>
+            )}
+          </div>
+
           <div>
             Current Lap: {(raceData[playerId]?.history?.length || 0) + 1}/{TOTAL_LAPS}
           </div>

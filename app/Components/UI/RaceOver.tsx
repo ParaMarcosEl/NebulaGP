@@ -67,6 +67,7 @@ export function RaceOver() {
         {player?.place}
       </div>
       <div>Race Time: {formatTime(player?.time || 0)}</div>
+      <div className="out">penalty: +{formatTime(player?.penaltyTime || 0)}</div>
       <hr />
       {history}
       <hr />

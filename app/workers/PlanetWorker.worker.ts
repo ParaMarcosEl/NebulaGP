@@ -3,7 +3,11 @@
 /// <reference lib="webworker" />
 
 // import { Vector3 } from 'three';
-import { terrainElevationRidged, terrainElevationFBM, FBMParams } from '@/Components/LODTerrain/Planet/fbm';
+import {
+  terrainElevationRidged,
+  terrainElevationFBM,
+  FBMParams,
+} from '@/Components/LODTerrain/Planet/fbm';
 
 console.log('PlanetWorker loaded');
 

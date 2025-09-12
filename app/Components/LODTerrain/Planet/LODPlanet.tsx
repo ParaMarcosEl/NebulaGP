@@ -8,7 +8,7 @@ import { useTexture } from '@react-three/drei';
 import { RepeatWrapping, LinearFilter } from 'three';
 import * as THREE from 'three';
 import { computeBoundsTree, disposeBoundsTree, MeshBVH } from 'three-mesh-bvh';
-import { usePlanetStore,  } from '@/Controllers/Game/usePlanetStore';
+import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 
 type PlanetProps = {
   position?: Vector3 | [number, number, number];
@@ -35,7 +35,7 @@ function collectBVHMeshes(obj: THREE.Object3D, out: THREE.Mesh[]) {
     const geom = mesh.geometry as any;
     if (
       geom?.boundsTree instanceof MeshBVH && // BVH check
-      mesh.userData?.isPlanet                 // optional tag check
+      mesh.userData?.isPlanet // optional tag check
     ) {
       out.push(mesh);
     }
@@ -48,37 +48,37 @@ function collectBVHMeshes(obj: THREE.Object3D, out: THREE.Mesh[]) {
 
 export function buildBVHForMeshes(root: THREE.Object3D | THREE.Object3D[]) {
   setTimeout(() => {
-    if(Array.isArray(root)) {
-      root.forEach(obj => {
+    if (Array.isArray(root)) {
+      root.forEach((obj) => {
         if ((obj as THREE.Mesh).isMesh) {
           const mesh = obj as THREE.Mesh;
           const geom = mesh.geometry as THREE.BufferGeometry;
-    
+
           if (!geom.boundsTree) {
             // Attach BVH to this mesh
             geom.computeBoundsTree = computeBoundsTree;
             geom.disposeBoundsTree = disposeBoundsTree;
             geom.computeBoundsTree();
-    
+
             mesh.userData.isPlanet = true;
             mesh.userData.hasBVH = true;
             console.log(`BVH built for ${mesh.name || 'planet mesh'}`);
           }
         }
-      })
+      });
       return;
     }
-    root.traverse(obj => {
+    root.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) {
         const mesh = obj as THREE.Mesh;
         const geom = mesh.geometry as THREE.BufferGeometry;
-  
+
         if (!geom.boundsTree) {
           // Attach BVH to this mesh
           geom.computeBoundsTree = computeBoundsTree;
           geom.disposeBoundsTree = disposeBoundsTree;
           geom.computeBoundsTree();
-  
+
           mesh.userData.isPlanet = true;
           mesh.userData.hasBVH = true;
           console.log(`BVH built for ${mesh.name || 'planet mesh'}`);
@@ -87,7 +87,6 @@ export function buildBVHForMeshes(root: THREE.Object3D | THREE.Object3D[]) {
     });
   }, 0);
 }
-
 
 export function LODPlanet({
   position,
@@ -108,7 +107,7 @@ export function LODPlanet({
   const { camera } = useThree();
   const [planetGroup, setPlanetGroup] = useState<Group | null>(null);
   const groupRef = useRef<THREE.Group>(null);
-  const { setPlanetMeshes, setCubeTreeRef } = usePlanetStore(s => s);
+  const { setPlanetMeshes, setCubeTreeRef } = usePlanetStore((s) => s);
   const cubeTreeRef = useRef<CubeTree>(null);
 
   useEffect(() => {
@@ -118,7 +117,7 @@ export function LODPlanet({
         window.dispatchEvent(new Event('planet-ready'));
         buildBVHForMeshes(meshes);
       })();
-    }
+    };
     window.addEventListener('mesh-ready', handleMeshReady);
     return window.removeEventListener('mesh-ready', handleMeshReady);
   }, []);
@@ -138,8 +137,6 @@ export function LODPlanet({
     window.dispatchEvent(new Event('planet-bvh-ready'));
   }, [planetGroup]);
 
-
-
   const [lowTexture, midTexture, highTexture] = useTexture([
     lowTextPath,
     midTextPath,
@@ -153,26 +150,34 @@ export function LODPlanet({
   });
 
   // Memoize CubeTree
-  const cubeTree = useMemo(
-    () =>
-      {
-
-        const cubeTree = new CubeTree(planetSize, cubeSize, lowTexture, midTexture, highTexture, {
-          uMaxHeight: maxHeight,
-          uFrequency: frequency,
-          uAmplitude: amplitude,
-          uOctaves: octaves,
-          uLacunarity: lacunarity,
-          uPersistence: persistence,
-          uExponentiation: exponentiation,
-          uTime: timeRef.current,
-        })
-        cubeTreeRef.current = cubeTree;
-        setCubeTreeRef(cubeTreeRef as React.RefObject<CubeTree>);
-        return cubeTree;
-      },
-    [planetSize, cubeSize, lowTexture, midTexture, highTexture, maxHeight, frequency, amplitude, octaves, lacunarity, persistence, exponentiation],
-  );
+  const cubeTree = useMemo(() => {
+    const cubeTree = new CubeTree(planetSize, cubeSize, lowTexture, midTexture, highTexture, {
+      uMaxHeight: maxHeight,
+      uFrequency: frequency,
+      uAmplitude: amplitude,
+      uOctaves: octaves,
+      uLacunarity: lacunarity,
+      uPersistence: persistence,
+      uExponentiation: exponentiation,
+      uTime: timeRef.current,
+    });
+    cubeTreeRef.current = cubeTree;
+    setCubeTreeRef(cubeTreeRef as React.RefObject<CubeTree>);
+    return cubeTree;
+  }, [
+    planetSize,
+    cubeSize,
+    lowTexture,
+    midTexture,
+    highTexture,
+    maxHeight,
+    frequency,
+    amplitude,
+    octaves,
+    lacunarity,
+    persistence,
+    exponentiation,
+  ]);
 
   // Async update
   useEffect(() => {
@@ -189,7 +194,11 @@ export function LODPlanet({
     };
   }, [cubeTree, camera]);
 
-  return <group ref={groupRef} position={position}>{planetGroup && <primitive object={planetGroup} />}</group>;
+  return (
+    <group ref={groupRef} position={position}>
+      {planetGroup && <primitive object={planetGroup} />}
+    </group>
+  );
 }
 
 export default memo(LODPlanet);
