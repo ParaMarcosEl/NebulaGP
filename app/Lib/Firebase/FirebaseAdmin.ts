@@ -2,6 +2,8 @@
 import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore'; // If you're using Firestore
+import { getAppCheck } from 'firebase-admin/app-check';
+
 
 // Define a type for your service account object for type safety
 type ServiceAccount = {
@@ -64,7 +66,9 @@ function initializeFirebaseAdmin() {
 }
 
 // Export specific Firebase services for easy access
+
 export const adminApp = initializeFirebaseAdmin();
 export const adminAuth = getAuth(adminApp);
 export const db = getFirestore(adminApp);
+export const adminAppCheck = getAppCheck(adminApp);
 // ... and so on for other admin services

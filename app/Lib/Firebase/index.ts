@@ -1,7 +1,8 @@
 // Lib/Firebase/index.ts
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, User } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { initializeAppCheck, ReCaptchaV3Provider, AppCheck } from 'firebase/app-check';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -16,7 +17,22 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
 export const firestore = getFirestore(app);
-export default app;
 
-// Re-export User type for convenience
-export type { User };
+// ✅ Initialize App Check (client only)
+let appCheck: AppCheck | null = null;
+
+if (typeof window !== 'undefined') {
+  // Enable debug mode in dev
+  if (process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_DEBUG === 'true') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+
+  appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY!),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
+export { appCheck };
+export default app;

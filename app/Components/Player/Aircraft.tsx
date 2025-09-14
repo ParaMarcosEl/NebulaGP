@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
 import { usePlayerController } from '@/Components/Player/PlayerController';
 import * as THREE from 'three';
-import { SHIP_SCALE } from '@/Constants';
+import { SHIPS } from '@/Constants';
 import { Shield } from '../Shield/Shield';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Mine } from '../Weapons/useMines';
@@ -52,7 +52,10 @@ export default function Aircraft({
   botSpeed = 1,
   explosionPoolRef,
 }: AircraftProps) {
-  const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
+  const ship = useMemo(() => {
+    return SHIPS[`ship0${1}`];
+  }, []);
+  const { scene: sceneModel } = useGLTF(ship.path);
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
@@ -91,7 +94,7 @@ export default function Aircraft({
   return (
     <>
       <group ref={aircraftRef}>
-        <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
+        <group scale={ship.scale} rotation={ship.rotation} position={ship.offset}>
           <primitive object={model} scale={0.5} />
           <object3D ref={trailTarget} position={[0, 0.31, 2]} />
           <EngineSound volume={1} />

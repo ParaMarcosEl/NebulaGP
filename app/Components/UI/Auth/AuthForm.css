@@ -25,11 +25,22 @@
 .input {
   display: flex;
   align-items: center;
+  
 }
 
 .input label,
-.input input {
+.input input,
+.input select {
+  padding: 6px 0px;
   width: 50%;
+}
+
+.input option {
+  color: navy;
+}
+.input option,
+.input select {
+  background-color: none;
 }
 
 .input label {
@@ -77,3 +88,49 @@ button {
   background: none;
   color: white;
 }
+
+/* Password strength colors */
+.password-strength {
+  text-align: left;
+  width: calc(50%);
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.password-strength.weak {
+  color: #d33;
+}
+.password-strength.medium {
+  color: #e6a700;
+}
+.password-strength.strong {
+  color: #2a7;
+}
+
+/* Requirement checklist */
+.password-hints {
+  text-wrap-mode: nowrap;
+  text-align: right;
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.password-hints li {
+  list-style: none;
+}
+.password-hints li::after {
+  content: " ❌";
+  color: #d33;
+}
+.password-hints li.valid {
+  color: #2a7;
+}
+.password-hints li.valid::after {
+  content: " ✅";
+}
+
+.password-strengths {
+  display: flex;
+}
+
