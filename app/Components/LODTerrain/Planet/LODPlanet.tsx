@@ -111,18 +111,6 @@ export function LODPlanet({
   const cubeTreeRef = useRef<CubeTree>(null);
 
   useEffect(() => {
-    const handleMeshReady = () => {
-      (async () => {
-        const meshes = await cubeTree.getMeshesForBVH(camera, 1.5);
-        window.dispatchEvent(new Event('planet-ready'));
-        buildBVHForMeshes(meshes);
-      })();
-    };
-    window.addEventListener('mesh-ready', handleMeshReady);
-    return window.removeEventListener('mesh-ready', handleMeshReady);
-  }, []);
-
-  useEffect(() => {
     if (!planetGroup) return;
 
     // Build BVH once planetGroup is ready

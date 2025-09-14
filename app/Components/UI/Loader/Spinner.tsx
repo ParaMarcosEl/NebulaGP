@@ -1,10 +1,10 @@
 'use client';
 
-export const Spinner = () => {
+export const Spinner = ({ size = 1 }: { size?: number }) => {
   return (
     <svg
-      height={50}
-      width={200}
+      height={50 * size}
+      width={200 * size}
       fill="hsl(228, 97%, 42%)"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"

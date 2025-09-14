@@ -3,8 +3,10 @@ import { NextRequest } from 'next/server';
 import { adminAuth, db } from '@/Lib/Firebase/FirebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { User } from '@/Constants/types';
-import { jsonResponse } from '../Utils/user';
+import { jsonResponse, getFirebaseErrorMessage, verifyRequest } from '../Utils/user';
+import { validatePassword } from '@/Components/UI/Auth/AuthHelpers';
 
+// POST /api/users
 // POST /api/users
 export async function POST(req: NextRequest) {
   if (!adminAuth || !db) {
@@ -12,10 +14,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    await verifyRequest(req);
     const { email, password, name, firstName, lastName, ...rest } = await req.json();
 
     if (!email || !password || !firstName || !lastName) {
       return jsonResponse(false, null, 'Email, password and name fields are required', 400);
+    }
+
+    // enforce password rules
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return jsonResponse(false, null, passwordError, 400);
     }
 
     // Create Firebase Auth account
@@ -37,15 +46,16 @@ export async function POST(req: NextRequest) {
       });
 
     return jsonResponse(true, { uid: authUser.uid }, null, 201);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error in POST /api/users:', error);
     if (error.code === 'auth/email-already-exists') {
       return jsonResponse(false, null, 'Email already in use.', 409);
     }
-    return jsonResponse(false, null, error.message || 'Internal server error', 500);
+    return jsonResponse(false, null, getFirebaseErrorMessage(error.message) || 'Internal server error', 500);
   }
 }
+
 
 // GET /api/users?uid=<uid>
 export async function GET(req: NextRequest) {
@@ -54,6 +64,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    await verifyRequest(req);
     const uid = req.nextUrl.searchParams.get('uid');
     if (!uid) {
       return jsonResponse(false, null, 'A user ID (uid) is required', 400);
@@ -68,7 +79,7 @@ export async function GET(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error in GET /api/users:', error);
-    return jsonResponse(false, null, error.message || 'Internal server error', 500);
+    return jsonResponse(false, null, getFirebaseErrorMessage(error.message) || 'Internal server error', 500);
   }
 }
 
@@ -79,6 +90,7 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
+    await verifyRequest(req);
     const uid = req.nextUrl.searchParams.get('uid');
     if (!uid) {
       return jsonResponse(false, null, 'A user ID (uid) is required', 400);
@@ -129,7 +141,7 @@ export async function PUT(req: NextRequest) {
     if (error.code === 'auth/user-not-found') {
       return jsonResponse(false, null, 'User not found', 404);
     }
-    return jsonResponse(false, null, error.message || 'Internal server error', 500);
+    return jsonResponse(false, null, getFirebaseErrorMessage(error.message) || 'Internal server error', 500);
   }
 }
 
@@ -140,6 +152,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
+    await verifyRequest(req);
     const uid = req.nextUrl.searchParams.get('uid');
     if (!uid) {
       return jsonResponse(false, null, 'A user ID (uid) is required', 400);
@@ -155,6 +168,6 @@ export async function DELETE(req: NextRequest) {
     if (error.code === 'auth/user-not-found') {
       return jsonResponse(false, null, 'User not found', 404);
     }
-    return jsonResponse(false, null, error.message || 'Internal server error', 500);
+    return jsonResponse(false, null, getFirebaseErrorMessage(error.message) || 'Internal server error', 500);
   }
 }

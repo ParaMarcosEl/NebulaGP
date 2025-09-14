@@ -1,9 +1,9 @@
 .accountsettings {
   position: relative;
-  max-width: 400px;
+  max-width: 36em;
   margin: 2rem auto;
   padding: 2rem;
-  background: #490000;
+  background: rgba(255, 255, 255, .1);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -43,7 +43,7 @@
 }
 
 .accountsettings__field label {
-  width: calc(50%);
+  width: 50%;
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
   margin-right: 0.25rem;
@@ -52,20 +52,37 @@
   color: #fff;
 }
 
-.accountsettings__field input {
-  border: 1px white solid;
+/* ✅ unify inputs and selects */
+.accountsettings__field input,
+.accountsettings__field select {
+  border: 1px solid white;
   border-radius: 5px;
-  width: calc(50%);
+  width: 50%;
   text-align: left;
   background: transparent;
   padding: 0.5rem;
   font-size: 1rem;
   transition: border-color 0.2s;
+  color: #fff;
 }
 
-.accountsettings__field input:focus {
+.accountsettings__field input:focus,
+.accountsettings__field select:focus {
   outline: none;
   border-bottom: 1px solid #888;
+}
+
+/* consistent select dropdowns */
+.accountsettings__field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2rem;
 }
 
 .accountsettings__update {
@@ -73,7 +90,7 @@
   text-align: right;
 }
 
-.accountsettings__update:disabled {
+.accountsettings__update button:disabled {
   opacity: 0.6;
   cursor: default;
 }

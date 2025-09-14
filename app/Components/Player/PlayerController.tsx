@@ -147,7 +147,7 @@ export function usePlayerController({
 
   useEffect(() => {
     if (playerHistory.length < TOTAL_LAPS) return;
-    stopRecording();
+    // stopRecording();
   }, [playerHistory.length, playerId, stopRecording]);
 
   useEffect(() => {
@@ -329,7 +329,7 @@ export function usePlayerController({
               ship.userData.velocity.multiplyScalar(0.5);
             }
 
-            if (audioEnabled) playSound(buffers['clank04'], ship.position, 0.25, 3);
+            if (audioEnabled) playSound(buffers['clank04'], ship.position, 1, 3);
             if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
           }
         }

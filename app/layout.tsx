@@ -9,6 +9,7 @@ import GlobalAlert from './Components/UI/Alert/GlobalAlert';
 import { AudioUnlocker } from './Components/Audio/AudioUnlocker';
 import AudioInitializer from './Components/UI/Music/AudioInitializer';
 import { InitSW } from './Components/InitServiceWorker';
+// import { InitAppCheck } from '@/Components/UI/Auth/InitAppCheck';
 
 export const metadata = {
   title: 'Nebula GP | Zero-Gravity Racing',
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <OrientationLock />
         <AudioUnlocker />
         <InitSW />
+        {/* <InitAppCheck /> */}
         {/* </TransitionLayout> */}
       </body>
     </html>

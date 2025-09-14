@@ -3,7 +3,7 @@
 import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { SHIP_SCALE } from '@/Constants';
+import { SHIPS } from '@/Constants';
 import { useBotController } from './BotController';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
@@ -43,10 +43,17 @@ export default function Bot({
   botSpeed = 1,
   explosionPoolRef,
 }: AircraftProps) {
-  const { scene: sceneModel } = useGLTF('/models/spaceship.glb');
+  const ship = useMemo(() => {
+    const randomNumber = Math.floor(Math.random() * 5) + 1;
+    return SHIPS[`ship0${randomNumber}`];
+  }, []);
+
+  const { scene: sceneModel } = useGLTF(ship.path);
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
+
+  
 
   useBotController({
     id,
@@ -70,7 +77,7 @@ export default function Bot({
   return (
     <>
       <group ref={aircraftRef}>
-        <group scale={SHIP_SCALE} rotation={[0, Math.PI, 0]}>
+        <group scale={ship.scale} rotation={ship.rotation} position={ship.offset}>
           <primitive object={model} scale={0.5} />
           <object3D ref={trailTarget} position={[0, 0.31, 1.8]} />
           <EngineSound volume={1} />

@@ -5,16 +5,22 @@ import { create } from 'zustand';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/Lib/Firebase';
 import type { User } from '@/Constants/types';
+import { useAlertStore } from '../Alert/useAlertStore';
+import { fetchWithAppCheck } from './useUser';
 
 interface UserState {
   user: User | null;
   loading: boolean;
   error: string | null;
 
+  setError: (error: string | null) => void;
+
   setUser: (user: User | null) => void;
 
   fetchUserFromAPI: (uid: string) => Promise<User>;
-  createUser: (newUser: User & { password?: string }) => Promise<{ message: string; uid: string }>;
+  createUser: (newUser: User & { password?: string }) => Promise<{
+    [x: string]: string; message: string; uid: string 
+}>;
   updateUser: (uid: string, updates: Partial<User>) => Promise<{ message: string }>;
   deleteUser: (uid: string) => Promise<void>;
   signOutUser: () => Promise<void>;
@@ -26,13 +32,14 @@ export const useUserStore = create<UserState>((set, get) => ({
   loading: true,
   error: null,
 
+  setError: (error) => set({ error }),
   setUser: (user) => set({ user }),
 
   // Fetch user from backend
   fetchUserFromAPI: async (uid: string) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/users?uid=${uid}`);
+      const res = await fetchWithAppCheck(`/api/users?uid=${uid}`);
       if (!res.ok) throw new Error('Failed to fetch user');
 
       const json = await res.json();
@@ -57,7 +64,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   createUser: async (newUser) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch('/api/users', {
+      const res = await fetchWithAppCheck('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUser),
@@ -81,7 +88,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   updateUser: async (uid, updates) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/users?uid=${uid}`, {
+      const res = await fetchWithAppCheck(`/api/users?uid=${uid}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -105,7 +112,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   deleteUser: async (uid) => {
     set({ loading: true, error: null });
     try {
-      const res = await fetch(`/api/users?uid=${uid}`, { method: 'DELETE' });
+      const res = await fetchWithAppCheck(`/api/users?uid=${uid}`, { method: 'DELETE' });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || 'Failed to delete user');
@@ -138,6 +145,13 @@ export function initUserStore() {
   const { fetchUserFromAPI, setUser } = useUserStore.getState();
   onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
     if (firebaseUser) {
+      if(!firebaseUser.emailVerified) {
+            useAlertStore.getState().setAlert({
+              type: 'error',
+              message: 'Please verify your email before logging in.',
+            });
+            return;
+      }
       try {
         await fetchUserFromAPI(firebaseUser.uid);
       } catch {

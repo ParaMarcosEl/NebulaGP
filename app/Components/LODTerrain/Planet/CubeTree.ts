@@ -25,7 +25,6 @@ export function prepareMeshBounds(mesh: THREE.Mesh) {
   if (!geometry.boundingBox) geometry.computeBoundingBox();
   if (!geometry.boundingSphere) geometry.computeBoundingSphere();
 
-  // Cache world-space bounds
   geometry.boundingBox!.applyMatrix4(mesh.matrixWorld);
   geometry.boundingSphere!.applyMatrix4(mesh.matrixWorld);
 }
@@ -44,9 +43,35 @@ class QuadTreeNode {
     this.meshCache = meshCache;
   }
 
-  private getCacheKey(): string {
+  private getSegmentsForDistance(projectedSize: number): number {
+    if (projectedSize > 500) return 512;
+    if (projectedSize > 200) return 256;
+    if (projectedSize > 100) return 128;
+    if (projectedSize > 50) return 64;
+    return 32;
+  }
+
+  private getCacheKey(segments: number): string {
     const [bl, , tr] = this.bounds;
-    return `${this.level}_${bl.x}_${bl.y}_${tr.x}_${tr.y}`;
+    return `${this.level}_${bl.x}_${bl.y}_${tr.x}_${tr.y}_s${segments}`;
+  }
+
+  subdivide() {
+    if (this.children.length > 0 || this.isSubdivided) return;
+
+    const [bl, , tr] = this.bounds;
+    const midX = (bl.x + tr.x) / 2;
+    const midY = (bl.y + tr.y) / 2;
+
+    const newBounds = [
+      [new THREE.Vector2(bl.x, midY), new THREE.Vector2(midX, midY), new THREE.Vector2(midX, tr.y), new THREE.Vector2(bl.x, tr.y)],
+      [new THREE.Vector2(midX, midY), new THREE.Vector2(tr.x, midY), new THREE.Vector2(tr.x, tr.y), new THREE.Vector2(midX, tr.y)],
+      [new THREE.Vector2(bl.x, bl.y), new THREE.Vector2(midX, bl.y), new THREE.Vector2(midX, midY), new THREE.Vector2(bl.x, midY)],
+      [new THREE.Vector2(midX, bl.y), new THREE.Vector2(tr.x, bl.y), new THREE.Vector2(tr.x, midY), new THREE.Vector2(midX, midY)],
+    ];
+
+    this.children = newBounds.map((bounds) => new QuadTreeNode(this.level + 1, bounds, this.meshCache));
+    this.isSubdivided = true;
   }
 
   async buildMeshAsync(
@@ -57,9 +82,13 @@ class QuadTreeNode {
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
     uniforms: NoiseUniforms,
+    camera: THREE.Camera,
+    projectedScreenSize: number,
     addMesh?: (mesh: THREE.Mesh) => void,
   ): Promise<THREE.Mesh> {
-    const cacheKey = this.getCacheKey();
+    const segments = this.getSegmentsForDistance(projectedScreenSize);
+    const cacheKey = this.getCacheKey(segments);
+
     if (this.meshCache.has(cacheKey)) {
       this.mesh = this.meshCache.get(cacheKey)!;
       return this.mesh;
@@ -67,151 +96,89 @@ class QuadTreeNode {
     if (this.mesh) return this.mesh;
 
     const [bl, , tr] = this.bounds;
-    const segments = 64;
-
     const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
     material.customUniforms.uPlanetSize.value = planetSize;
     material.setParams(fbmToUniforms(uniforms));
 
-    // Worker builds displaced geometry
-    const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
-      ...uniforms,
-      useRidged: true,
-    });
-
+    const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, { ...uniforms, useRidged: true });
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.userData.isPlanet = true;
 
-    // Orientation
     const up = new THREE.Vector3(0, 0, 1);
     const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
     this.mesh.quaternion.copy(q);
 
-    // Position in cube space
     const quadCenterX = (bl.x + tr.x) / 2;
     const quadCenterY = (bl.y + tr.y) / 2;
     const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
-    translation.applyQuaternion(q);
-    translation.multiplyScalar(cubeSize / 2);
+    translation.applyQuaternion(q).multiplyScalar(cubeSize / 2);
     this.mesh.position.copy(translation);
 
     prepareMeshBounds(this.mesh);
     buildBVHForMeshes(this.mesh);
 
     if (addMesh) addMesh(this.mesh);
-
-    // Store in cache
     this.meshCache.set(cacheKey, this.mesh);
 
     window.dispatchEvent(new Event('mesh-ready'));
     return this.mesh;
   }
 
-  async getMeshesAsync(
-    normal: THREE.Vector3,
-    planetSize: number,
-    cubeSize: number,
-    camera: THREE.Camera,
-    maxDepth: number,
-    meshes: THREE.Mesh[],
-    lowTexture: THREE.Texture,
-    midTexture: THREE.Texture,
-    highTexture: THREE.Texture,
-    uniforms: NoiseUniforms,
-    addMesh?: (mesh: THREE.Mesh) => void,
-  ): Promise<void> {
-    const [bl, , tr] = this.bounds;
-    const center = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
-    const up = new THREE.Vector3(0, 0, 1);
-    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
-    const quadWidth = tr.x - bl.x;
-    const nodeSize = quadWidth * cubeSize;
-    center.applyQuaternion(q);
-    center.multiplyScalar(cubeSize / 2);
-    center.addScaledVector(normal, cubeSize / 2);
+async getMeshesAsync(
+  normal: THREE.Vector3,
+  planetSize: number,
+  cubeSize: number,
+  camera: THREE.Camera,
+  maxDepth: number,
+  meshes: THREE.Mesh[],
+  lowTexture: THREE.Texture,
+  midTexture: THREE.Texture,
+  highTexture: THREE.Texture,
+  uniforms: NoiseUniforms,
+  addMesh?: (mesh: THREE.Mesh) => void,
+): Promise<void> {
+  const [bl, , tr] = this.bounds;
+  const center = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
+  const up = new THREE.Vector3(0, 0, 1);
+  const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
+  const quadWidth = tr.x - bl.x;
+  const nodeSize = quadWidth * cubeSize;
 
-    const dist = camera.position.distanceTo(center);
+  // transform center into world space
+  center.applyQuaternion(q).multiplyScalar(cubeSize / 2).addScaledVector(normal, cubeSize / 2);
 
-    // Replace simple distance threshold with screen-space error check
-    const cameraFov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
-    const viewportHeight = window.innerHeight;
-    const projectedScreenSize =
-      (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
-    const pixelThreshold = 100; // tweak for perf/quality
+  // --- NEW: frustum culling ---
+  const frustum = new THREE.Frustum();
+  const projScreenMatrix = new THREE.Matrix4()
+    .multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  frustum.setFromProjectionMatrix(projScreenMatrix);
 
-    if (this.level < maxDepth && projectedScreenSize > pixelThreshold) {
-      this.subdivide();
-
-      // 🔥 Collect child promises instead of awaiting one by one
-      const promises = this.children.map((child) =>
-        child.getMeshesAsync(
-          normal,
-          planetSize,
-          cubeSize,
-          camera,
-          maxDepth,
-          meshes,
-          lowTexture,
-          midTexture,
-          highTexture,
-          uniforms,
-          addMesh,
-        ),
-      );
-
-      await Promise.all(promises); // All children run in parallel
-    } else {
-      meshes.push(
-        await this.buildMeshAsync(
-          normal,
-          planetSize,
-          cubeSize,
-          lowTexture,
-          midTexture,
-          highTexture,
-          uniforms,
-          addMesh,
-        ),
-      );
-    }
+  const sphere = new THREE.Sphere(center.clone(), nodeSize * 0.75); // approx bound
+  if (!frustum.intersectsSphere(sphere)) {
+    return; // don’t render or subdivide
   }
 
-  subdivide() {
-    if (this.children.length > 0 || this.isSubdivided) return;
-    const [bl, , tr] = this.bounds;
-    const midX = (bl.x + tr.x) / 2;
-    const midY = (bl.y + tr.y) / 2;
+  // distance-based LOD
+  const dist = camera.position.distanceTo(center);
+  const cameraFov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
+  const viewportHeight = window.innerHeight;
+  const projectedScreenSize = (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
+  const pixelThreshold = 100;
 
-    const newBounds = [
-      [
-        new THREE.Vector2(bl.x, midY),
-        new THREE.Vector2(midX, midY),
-        new THREE.Vector2(midX, tr.y),
-        new THREE.Vector2(bl.x, tr.y),
-      ],
-      [
-        new THREE.Vector2(midX, midY),
-        new THREE.Vector2(tr.x, midY),
-        new THREE.Vector2(tr.x, tr.y),
-        new THREE.Vector2(midX, tr.y),
-      ],
-      [
-        new THREE.Vector2(bl.x, bl.y),
-        new THREE.Vector2(midX, bl.y),
-        new THREE.Vector2(midX, midY),
-        new THREE.Vector2(bl.x, midY),
-      ],
-      [
-        new THREE.Vector2(midX, bl.y),
-        new THREE.Vector2(tr.x, bl.y),
-        new THREE.Vector2(tr.x, midY),
-        new THREE.Vector2(midX, midY),
-      ],
-    ];
-    this.children = newBounds.map(
-      (bounds) => new QuadTreeNode(this.level + 1, bounds, this.meshCache),
-    );
+  if (this.level < maxDepth && projectedScreenSize > pixelThreshold) {
+    this.subdivide();
+    await Promise.all(this.children.map((child) =>
+      child.getMeshesAsync(normal, planetSize, cubeSize, camera, maxDepth, meshes,
+        lowTexture, midTexture, highTexture, uniforms, addMesh)
+    ));
+  } else {
+    meshes.push(await this.buildMeshAsync(
+      normal, planetSize, cubeSize, lowTexture, midTexture, highTexture,
+      uniforms, camera, projectedScreenSize, addMesh
+    ));
   }
+}
+
 }
 
 class CubeFace {
@@ -222,12 +189,7 @@ class CubeFace {
     this.normal = normal;
     this.root = new QuadTreeNode(
       0,
-      [
-        new THREE.Vector2(-1, -1),
-        new THREE.Vector2(1, -1),
-        new THREE.Vector2(1, 1),
-        new THREE.Vector2(-1, 1),
-      ],
+      [new THREE.Vector2(-1, -1), new THREE.Vector2(1, -1), new THREE.Vector2(1, 1), new THREE.Vector2(-1, 1)],
       meshCache,
     );
   }
@@ -244,19 +206,7 @@ class CubeFace {
     addMesh?: (mesh: THREE.Mesh) => void,
   ): Promise<THREE.Mesh[]> {
     const meshes: THREE.Mesh[] = [];
-    await this.root.getMeshesAsync(
-      this.normal,
-      planetSize,
-      cubeSize,
-      camera,
-      maxDepth,
-      meshes,
-      lowTexture,
-      midTexture,
-      highTexture,
-      uniforms,
-      addMesh,
-    );
+    await this.root.getMeshesAsync(this.normal, planetSize, cubeSize, camera, maxDepth, meshes, lowTexture, midTexture, highTexture, uniforms, addMesh);
     return meshes;
   }
 }
@@ -292,10 +242,7 @@ export class CubeTree {
 
   updateBoundsCache(meshes: THREE.Mesh[]) {
     this.boundsCache = meshes.map((m) => {
-      const g = m.geometry as THREE.BufferGeometry & {
-        boundingBox: THREE.Box3;
-        boundingSphere: THREE.Sphere;
-      };
+      const g = m.geometry as THREE.BufferGeometry & { boundingBox: THREE.Box3; boundingSphere: THREE.Sphere };
       return { mesh: m, box: g.boundingBox.clone(), sphere: g.boundingSphere.clone() };
     });
   }
@@ -317,47 +264,18 @@ export class CubeTree {
   async getDynamicMeshesAsync(camera: THREE.Camera, maxDepth = 1): Promise<THREE.Group> {
     const results = await Promise.all(
       this.faces.map((face) =>
-        face.getMeshesAsync(
-          this.planetSize,
-          this.cubeSize,
-          camera,
-          maxDepth,
-          this.lowTexture,
-          this.midTexture,
-          this.highTexture,
-          this.uniforms,
-          this.addMesh,
-        ),
+        face.getMeshesAsync(this.planetSize, this.cubeSize, camera, maxDepth, this.lowTexture, this.midTexture, this.highTexture, this.uniforms, this.addMesh)
       ),
     );
 
     const meshes = results.flat();
     this.group.clear();
     meshes.forEach((m) => {
-      ensureBVH(m); // from usePlanetStore
+      ensureBVH(m);
       this.group.add(m);
     });
 
     this.updateBoundsCache(meshes);
     return this.group;
-  }
-
-  async getMeshesForBVH(camera: THREE.Camera, maxDepth = 1): Promise<THREE.Mesh[]> {
-    const meshes: THREE.Mesh[] = [];
-    for (const face of this.faces) {
-      meshes.push(
-        ...(await face.getMeshesAsync(
-          this.planetSize,
-          this.cubeSize,
-          camera,
-          maxDepth,
-          this.lowTexture,
-          this.midTexture,
-          this.highTexture,
-          this.uniforms,
-        )),
-      );
-    }
-    return meshes;
   }
 }

@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { auth } from '@/Lib/Firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { User as AppUser } from '@/Constants/types';
 import cx from 'classnames';
 import './AuthForm.css';
 import { Input } from '../Forms/Input';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
 import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
+import { validatePassword, getPasswordStrength } from './AuthHelpers';
+import { Spinner } from '@/Components/UI/Loader/Spinner';
 
 interface AuthFormProps {
   mode?: 'login' | 'register'; // optional, defaults to login
@@ -16,7 +18,79 @@ interface AuthFormProps {
   className?: string;
 }
 
+export const COUNTRIES = [
+  'Argentina',
+  'Australia',
+  'Antigua and Barbuda',
+  'Bahamas',
+  'Barbados',
+  'Belgium',
+  'Belize',
+  'Bolivia',
+  'Brazil',
+  'Canada',
+  'Chile',
+  'China',
+  'Colombia',
+  'Costa Rica',
+  'Cuba',
+  'Denmark',
+  'Dominica',
+  'Dominican Republic',
+  'Ecuador',
+  'El Salvador',
+  'France',
+  'Germany',
+  'Grenada',
+  'Guyana',
+  'Haiti',
+  'Honduras',
+  'India',
+  'Ireland',
+  'Italy',
+  'Jamaica',
+  'Japan',
+  'Mexico',
+  'Netherlands',
+  'New Zealand',
+  'Nicaragua',
+  'Norway',
+  'Panama',
+  'Paraguay',
+  'Peru',
+  'Poland',
+  'Russia',
+  'Saudi Arabia',
+  'Singapore',
+  'South Africa',
+  'South Korea',
+  'Spain',
+  'Sweden',
+  'Switzerland',
+  'Trinidad and Tobago',
+  'Turkey',
+  'United Arab Emirates',
+  'United Kingdom',
+  'United States',
+  'Uruguay',
+  'Venezuela',
+  'Saint Kitts and Nevis',
+  'Saint Lucia',
+  'Saint Vincent and the Grenadines',
+  'Other'
+];
+
+// Add this array at the top of your file
+export const US_STATES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+];
+
 export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormProps) {
+  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -29,40 +103,84 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
   const [zip, setZip] = useState('');
   const [region, setRegion] = useState('');
 
-  const { error, createUser, fetchUserFromAPI } = useUserStore();
+  const { error, setError, createUser, fetchUserFromAPI } = useUserStore();
   const { setAlert } = useAlertStore();
+  const { score, requirements } = getPasswordStrength(password);
+
+  useEffect(() => {
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    if (!error) return;
+
+    setAlert({ type: "error", message: error })
+  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       if (mode === 'register') {
-        const newUser: AppUser & { password: string } = {
-          email,
-          password,
-          name: displayName,
-          firstName,
-          lastName,
-          address1,
-          address2,
-          city,
-          state,
-          zip,
-          region,
-          role: 'player',
-        };
-        const data = await createUser(newUser);
-        if (data?.uid) await signInWithEmailAndPassword(auth, email, password);
-        setAlert({ type: 'info', message: `${displayName} registered.` });
-        if (setRegisterOpen) setRegisterOpen(false);
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+          setAlert({ type: "error", message: passwordError });
+          return;
+        }
+
+  const newUser: AppUser & { password: string } = {
+    email,
+    password,
+    name: displayName,
+    firstName,
+    lastName,
+    address1,
+    address2,
+    city,
+    state,
+    zip,
+    region,
+    role: 'player',
+  };
+
+  // Save to your backend
+  createUser(newUser).then(async (data) => {
+    if (typeof data?.data === 'object' && 'uid' in data.data) {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+
+      if (cred.user) {
+        await sendEmailVerification(cred.user);
+        console.log('email sent.')
+        setAlert({
+          type: 'info',
+          message: `Verification email sent to ${email}. Please check your inbox.`,
+        });
+      }
+    }
+  });
+
+  if (setRegisterOpen) setRegisterOpen(false);
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, password);
-        if (cred.user.uid) {
+        if (cred.user) {
+          if (!cred.user.emailVerified) {
+            setAlert({
+              type: 'error',
+              message: 'Please verify your email before logging in.',
+            });
+            return;
+          }
+
           await fetchUserFromAPI(cred.user.uid);
           setAlert({ type: 'info', message: `Logged in as ${cred.user.displayName}` });
         }
+
       }
     } catch (err) {
       console.error('Auth error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,6 +200,39 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
         required
         className="auth-input"
       />
+      {mode === 'register' ? 
+      
+<>
+<div className="input">
+  <label htmlFor="password">Password</label>
+  <input
+    id="password"
+    type="password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    className="auth-input"
+    required
+  />
+
+
+</div> 
+  {/* Strength meter */}
+  <div className={'password-strengths'}>
+    {/* Requirement checklist */}
+    <ul className="password-hints">
+      <li className={requirements.length ? 'valid' : ''}>8+ characters</li>
+      <li className={requirements.uppercase ? 'valid' : ''}>At least one uppercase letter</li>
+      <li className={requirements.number ? 'valid' : ''}>At least one number</li>
+      <li className={requirements.symbol ? 'valid' : ''}>At least one symbol</li>
+    </ul>
+    <span className={`password-strength ${score}`}>
+      {score === 'weak' && '🔴 Weak'}
+      {score === 'medium' && '🟡 Medium'}
+      {score === 'strong' && '🟢 Strong'}
+    </span>
+  </div>
+</>:
+
       <Input
         rootClass="input"
         label="Password"
@@ -92,6 +243,7 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
         required
         className="auth-input"
       />
+}
       {mode === 'register' && (
         <>
           <Input
@@ -153,15 +305,22 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
               setValue={(e) => setCity(e)}
               className="auth-input"
             />
-            <Input
-              rootClass="input"
-              type="text"
-              placeholder="State"
-              label="State"
-              value={state}
-              setValue={(e) => setState(e)}
-              className="auth-input"
-            />
+            <div className="input">
+              <label htmlFor="state">State: </label>
+              <select
+                id="state"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                className="auth-input"
+              >
+                <option value="">Select State</option>
+                {US_STATES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
             <Input
               rootClass="input"
               label="Zip"
@@ -171,23 +330,36 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
               setValue={(e) => setZip(e)}
               className="auth-input"
             />
-            <Input
-              rootClass="input"
-              label="Country/Region"
-              type="text"
-              placeholder="Country/Region"
-              value={region}
-              setValue={(e) => setRegion(e)}
-              className="auth-input"
-            />
+
+  <div className="input">
+    <label htmlFor="region">Country/Region:</label>
+    <select
+      id="region"
+      value={region}
+      onChange={(e) => setRegion(e.target.value)}
+      className="auth-input"
+    >
+      <option value="">Select Region</option>
+      {COUNTRIES.map((c) => (
+        <option key={c} value={c}>
+          {c}
+        </option>
+      ))}
+    </select>
+  </div>
           </div>
         </>
       )}
-      {error && <p className="auth-error">{error}</p>}
-
-      <button type="submit" className="auth-button">
-        {mode === 'register' ? 'Register' : 'Login'}
-      </button>
+      {mode === 'register' &&
+        <button type="submit" className="auth-button">
+          {loading ? <Spinner size={.3} /> : "Register"}
+        </button>
+      }
+      {mode === 'login' &&
+        <button type="submit" className="auth-button">
+          {loading ? <Spinner size={.3} /> : "Login"}
+        </button>
+      }
 
       {mode === 'login' ? (
         <span className="auth-switch">

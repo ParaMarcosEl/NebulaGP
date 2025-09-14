@@ -80,8 +80,8 @@ export function useShipCollisions({
               setShieldValue(tempDataB.shieldValue - 0.2, obbB.ref.userData.id);
             }
             onCollide(obbA.ref, obbB.ref);
-            playSound(buffers['clank04'], obbA.ref.position, 0.5);
-            playSound(buffers['clank07'], obbB.ref.position, 0.5);
+            playSound(buffers['clank04'], obbA.ref.position, 1);
+            playSound(buffers['clank07'], obbB.ref.position, 1);
           }
         }
       }
