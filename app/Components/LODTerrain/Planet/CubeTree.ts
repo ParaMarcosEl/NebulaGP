@@ -7,6 +7,7 @@ import { planetWorkerPool } from './PlanetWorkerPool';
 import { FBMParams } from './fbm';
 import { ensureBVH, prepareAndStoreMesh } from '@/Controllers/Game/usePlanetStore';
 import { buildBVHForMeshes } from './LODPlanet';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 type NoiseUniforms = FBMParams;
 
@@ -48,11 +49,12 @@ class QuadTreeNode {
   private meshCache: Map<string, THREE.Mesh>;
 
   private getSegmentsForDistance(projectedSize: number): number {
+    console.log({projectedSize})
     // Tune these numbers for quality/performance
-    if (projectedSize > 500) return 128;   // very close → detailed
-    if (projectedSize > 200) return 64;   // mid-range
-    if (projectedSize > 50)  return 32;   // far
-    return 16;                             // very far → coarse
+    if (projectedSize > 700) return 512;
+    if (projectedSize > 500) return 256;   // very close → detailed
+    if (projectedSize > 300) return 128;   // mid-range
+    return 64;                             // very far → coarse
   }
 
 
@@ -128,85 +130,127 @@ class QuadTreeNode {
   }
 
   async getMeshesAsync(
-    normal: THREE.Vector3,
-    planetSize: number,
-    cubeSize: number,
-    camera: THREE.Camera,
-    maxDepth: number,
-    meshes: THREE.Mesh[],
-    lowTexture: THREE.Texture,
-    midTexture: THREE.Texture,
-    highTexture: THREE.Texture,
-    uniforms: NoiseUniforms,
-    frustum: THREE.Frustum,
-    addMesh?: (mesh: THREE.Mesh) => void,
-  ): Promise<void> {
-    const [bl, , tr] = this.bounds;
-    const center = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
-    const up = new THREE.Vector3(0, 0, 1);
-    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
-    const quadWidth = tr.x - bl.x;
-    const nodeSize = quadWidth * cubeSize;
-    center.applyQuaternion(q);
-    center.multiplyScalar(cubeSize / 2);
-    center.addScaledVector(normal, cubeSize / 2);
+  normal: THREE.Vector3,
+  planetSize: number,
+  cubeSize: number,
+  camera: THREE.Camera,
+  maxDepth: number,
+  meshes: THREE.Mesh[],
+  lowTexture: THREE.Texture,
+  midTexture: THREE.Texture,
+  highTexture: THREE.Texture,
+  uniforms: NoiseUniforms,
+  frustum: THREE.Frustum,
+  addMesh?: (mesh: THREE.Mesh) => void,
+): Promise<void> {
+  const [bl, , tr] = this.bounds;
+  const center = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
+  const up = new THREE.Vector3(0, 0, 1);
+  const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
+  const quadWidth = tr.x - bl.x;
+  const nodeSize = quadWidth * cubeSize;
+  center.applyQuaternion(q);
+  center.multiplyScalar(cubeSize / 2);
+  center.addScaledVector(normal, cubeSize / 2);
 
-  // --- compute bounding sphere for this node ---
   const sphere = new THREE.Sphere(center, nodeSize * 0.75);
 
-  // --- FRUSTUM CULL ---
-  if (frustum && !frustum.intersectsSphere(sphere)) {
-    return; // skip completely
-  }
+  if (frustum && !frustum.intersectsSphere(sphere)) return;
 
+  const dist = camera.position.distanceTo(center);
+  const cameraFov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
+  const viewportHeight = window.innerHeight;
+  const projectedScreenSize =
+    (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
+  const pixelThreshold = 512;
 
-    const dist = camera.position.distanceTo(center);
+  if (this.level < maxDepth && projectedScreenSize > pixelThreshold) {
+    this.subdivide();
 
-    // Replace simple distance threshold with screen-space error check
-    const cameraFov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
-    const viewportHeight = window.innerHeight;
-    const projectedScreenSize =
-      (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
-    const pixelThreshold = 512; // tweak for perf/quality
-
-    if (this.level < maxDepth && projectedScreenSize > pixelThreshold) {
-      this.subdivide();
-
-      const promises = this.children.map((child) =>
-        child.getMeshesAsync(
+    const childMeshes: THREE.Mesh[][] = await Promise.all(
+      this.children.map(async (child) => {
+        const meshesForChild: THREE.Mesh[] = [];
+        await child.getMeshesAsync(
           normal,
           planetSize,
           cubeSize,
           camera,
           maxDepth,
-          meshes,
+          meshesForChild,
           lowTexture,
           midTexture,
           highTexture,
           uniforms,
           frustum,
           addMesh,
-        ),
+        );
+        return meshesForChild;
+      }),
+    );
+
+    // Flatten all children meshes
+    const allChildMeshes = childMeshes.flat();
+
+    if (allChildMeshes.length > 1) {
+      // Merge geometries into a single mesh
+      const mergedGeometry = BufferGeometryUtils.mergeGeometries(
+        allChildMeshes.map((m) => m.geometry as THREE.BufferGeometry),
+        true,
       );
 
-      await Promise.all(promises); // All children run in parallel
-    } else {
-      meshes.push(
-        await this.buildMeshAsync(
-          normal,
-          planetSize,
-          cubeSize,
-          lowTexture,
-          midTexture,
-          highTexture,
-          uniforms,
-          camera,
-          projectedScreenSize,
-          addMesh,
-        ),
-      );
+      const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
+      material.customUniforms.uPlanetSize.value = planetSize;
+      material.setParams(fbmToUniforms(uniforms));
+
+      this.mesh = new THREE.Mesh(mergedGeometry, material);
+      this.mesh.userData.isPlanet = true;
+
+      // Orientation & position
+      const up = new THREE.Vector3(0, 0, 1);
+      const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
+      this.mesh.quaternion.copy(q);
+
+      const quadCenterX = (bl.x + tr.x) / 2;
+      const quadCenterY = (bl.y + tr.y) / 2;
+      const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
+      translation.applyQuaternion(q);
+      translation.multiplyScalar(cubeSize / 2);
+      this.mesh.position.copy(translation);
+
+      prepareMeshBounds(this.mesh);
+      buildBVHForMeshes(this.mesh);
+
+      if (addMesh) addMesh(this.mesh);
+
+      // Remove child meshes from the scene if they were already added
+      allChildMeshes.forEach((m) => {
+        if (m.parent) m.parent.remove(m);
+      });
+
+      // Add merged mesh to output
+      meshes.push(this.mesh);
+    } else if (allChildMeshes.length === 1) {
+      meshes.push(allChildMeshes[0]);
     }
+
+  } else {
+    meshes.push(
+      await this.buildMeshAsync(
+        normal,
+        planetSize,
+        cubeSize,
+        lowTexture,
+        midTexture,
+        highTexture,
+        uniforms,
+        camera,
+        projectedScreenSize,
+        addMesh,
+      ),
+    );
   }
+}
+
 
   subdivide() {
     if (this.children.length > 0 || this.isSubdivided) return;

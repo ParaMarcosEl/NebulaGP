@@ -5,7 +5,6 @@ import { CubeTree } from './CubeTree';
 import { Vector3, Group } from 'three';
 import { useMemo, memo, useRef, useState, useEffect } from 'react';
 import { useTexture } from '@react-three/drei';
-import { RepeatWrapping, LinearFilter } from 'three';
 import * as THREE from 'three';
 import { computeBoundsTree, disposeBoundsTree, MeshBVH } from 'three-mesh-bvh';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
@@ -132,9 +131,10 @@ export function LODPlanet({
   ]);
 
   [lowTexture, midTexture, highTexture].forEach((tex) => {
-    tex.wrapS = RepeatWrapping;
-    tex.wrapT = RepeatWrapping;
-    tex.minFilter = LinearFilter;
+    tex.minFilter = THREE.LinearMipMapLinearFilter; // enable mipmaps
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = true;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   });
 
   // Memoize CubeTree
