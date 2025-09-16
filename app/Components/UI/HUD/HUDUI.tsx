@@ -9,6 +9,7 @@ import { RaceOver } from '../RaceOver';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import './HUDUI.css';
 import PrevNextButtons from '@/Components/Audio/PrevNextButtons';
+import { ControlButtons } from '../TouchControls/ControlButtons';
 
 export const HUDUI = ({
   speed,
@@ -34,6 +35,7 @@ export const HUDUI = ({
       <WeaponStatus />
       <RaceOver />
       <StartCountdown />
+      <ControlButtons />
       <Speedometer speed={speed} />
       <MiniMap positions={positions} curve={curve} styles={styles} />
     </>
