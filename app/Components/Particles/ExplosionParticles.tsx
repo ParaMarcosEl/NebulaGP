@@ -1,4 +1,4 @@
-// MineExplosionParticles.tsx
+// MineExplosionParticles.tsx (Optimized)
 import * as THREE from 'three';
 import { useMemo, useRef, useImperativeHandle, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
@@ -17,7 +17,6 @@ const MineExplosionParticles = forwardRef<
     particleSize?: number;
     speed?: number;
     lifetime?: number;
-    duration?: number;
   }
 >(
   (
@@ -28,23 +27,12 @@ const MineExplosionParticles = forwardRef<
       particleSize = 2,
       speed = 1,
       lifetime = 3,
-      duration = 0.1,
     },
     ref,
   ) => {
     const pointsRef = useRef<THREE.Points>(null);
-    const startTime = useRef<number | null>(null);
+    const startTime = useRef<number>(-9999);
     const isPlaying = useRef(false);
-
-    useImperativeHandle(ref, () => ({
-      play: (pos: THREE.Vector3) => {
-        if (!pointsRef.current) return;
-        pointsRef.current.position.copy(pos);
-        startTime.current = null;
-        isPlaying.current = true;
-      },
-      isPlaying: () => isPlaying.current,
-    }));
 
     const { geometry, material } = useMemo(() => {
       const positions = new Float32Array(maxParticles * 3);
@@ -52,7 +40,6 @@ const MineExplosionParticles = forwardRef<
       const sizes = new Float32Array(maxParticles);
       const initialOffsets = new Float32Array(maxParticles * 3);
       const speedFactors = new Float32Array(maxParticles);
-      const spawnTimes = new Float32Array(maxParticles);
       const rotationAxes = new Float32Array(maxParticles * 3);
       const rotationSpeeds = new Float32Array(maxParticles);
 
@@ -89,8 +76,6 @@ const MineExplosionParticles = forwardRef<
         const distFromCenter = Math.sqrt(x * x + y * y + z * z);
         speedFactors[i] = 1.0 - distFromCenter / minorRadius;
 
-        spawnTimes[i] = -9999;
-
         rotationAxes[i * 3 + 0] = Math.random() - 0.5;
         rotationAxes[i * 3 + 1] = Math.random() - 0.5;
         rotationAxes[i * 3 + 2] = Math.random() - 0.5;
@@ -103,7 +88,6 @@ const MineExplosionParticles = forwardRef<
       geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
       geo.setAttribute('initialOffset', new THREE.BufferAttribute(initialOffsets, 3));
       geo.setAttribute('speedFactor', new THREE.BufferAttribute(speedFactors, 1));
-      geo.setAttribute('spawnTime', new THREE.BufferAttribute(spawnTimes, 1));
       geo.setAttribute('rotationAxis', new THREE.BufferAttribute(rotationAxes, 3));
       geo.setAttribute('rotationSpeed', new THREE.BufferAttribute(rotationSpeeds, 1));
 
@@ -112,6 +96,7 @@ const MineExplosionParticles = forwardRef<
           time: { value: 0.0 },
           baseSpeed: { value: speed },
           lifetime: { value: lifetime },
+          explosionStartTime: { value: -9999.0 },
         },
         vertexShader: `
           precision mediump float;
@@ -119,7 +104,6 @@ const MineExplosionParticles = forwardRef<
           attribute vec3 color;
           attribute vec3 initialOffset;
           attribute float speedFactor;
-          attribute float spawnTime;
           attribute vec3 rotationAxis;
           attribute float rotationSpeed;
 
@@ -129,6 +113,7 @@ const MineExplosionParticles = forwardRef<
           uniform float time;
           uniform float baseSpeed;
           uniform float lifetime;
+          uniform float explosionStartTime;
 
           mat4 rotationMatrix(vec3 axis, float angle) {
             axis = normalize(axis);
@@ -139,28 +124,27 @@ const MineExplosionParticles = forwardRef<
               oc * axis.x * axis.x + c,      oc * axis.x * axis.y - axis.z * s,   oc * axis.z * axis.x + axis.y * s,   0.0,
               oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c,      oc * axis.y * axis.z - axis.x * s,   0.0,
               oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s,   oc * axis.z * axis.z + c,      0.0,
-              0.0,                  0.0,                  0.0,                  1.0
+              0.0,                   0.0,                     0.0,                     1.0
             );
           }
 
           void main() {
             vColor = color;
-
-            float age = (time - spawnTime) / lifetime;
+            float age = (time - explosionStartTime) / lifetime;
             vAge = clamp(1.0 - age, 0.0, 1.0);
             
             vec3 majorAxis = normalize(position);
-
-            vec3 expandedPosition = majorAxis * age * baseSpeed * 10.0; // Scaled for a bigger explosion
-
+            vec3 expandedPosition = majorAxis * age * baseSpeed * 10.0;
             mat4 rotation = rotationMatrix(rotationAxis, age * rotationSpeed);
-            
             vec3 rotatedMinorOffset = (rotation * vec4(initialOffset, 1.0)).xyz;
-
             vec3 finalPosition = expandedPosition + rotatedMinorOffset;
-
             vec4 mvPosition = modelViewMatrix * vec4(finalPosition, 1.0);
             gl_PointSize = size * (1800.0 / (-mvPosition.z + 1e-6)) * vAge;
+
+            if (age < 0.0 || age > 1.0) {
+              gl_PointSize = 0.0;
+            }
+
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -182,34 +166,34 @@ const MineExplosionParticles = forwardRef<
       return { geometry: geo, material: mat };
     }, [majorRadius, minorRadius, maxParticles, particleSize, speed, lifetime]);
 
+    useImperativeHandle(ref, () => ({
+      play: (pos: THREE.Vector3) => {
+        if (!pointsRef.current || isPlaying.current) return;
+        pointsRef.current.position.copy(pos);
+        startTime.current = -9999;
+        isPlaying.current = true;
+      },
+      isPlaying: () => isPlaying.current,
+    }));
+
     useFrame(({ clock }) => {
       if (!isPlaying.current || !pointsRef.current) return;
 
       const t = clock.getElapsedTime();
-      if (startTime.current === null) {
+      if (startTime.current === -9999) {
         startTime.current = t;
+        material.uniforms.explosionStartTime.value = t;
       }
+      
       material.uniforms.time.value = t;
 
-      const systemAge = t - startTime.current;
-
-      if (systemAge > lifetime) {
+      if (t - startTime.current > lifetime) {
         isPlaying.current = false;
         pointsRef.current.position.set(10000, 10000, 10000);
-        return;
       }
-
-      const spawnAttr = geometry.getAttribute('spawnTime') as THREE.BufferAttribute;
-      for (let i = 0; i < maxParticles; i++) {
-        const age = (t - spawnAttr.getX(i)) / lifetime;
-        if (age > 1.0 && systemAge < duration) {
-          spawnAttr.setX(i, t);
-        }
-      }
-      spawnAttr.needsUpdate = true;
     });
 
-    return <points ref={pointsRef} geometry={geometry} material={material} frustumCulled={true} />;
+    return <points ref={pointsRef} geometry={geometry} material={material} frustumCulled={false} />;
   },
 );
 
