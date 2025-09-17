@@ -1,11 +1,17 @@
 .auth-form {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
   margin: 0 auto;
+  background-color: rgba(0,0,100,0.7);
+  border-radius: 1em;
+  padding: 1em;
+  width: 36em;
 }
+
+.required { color: #7ff; }
 
 .register-form,
 .address {
@@ -25,14 +31,18 @@
 .input {
   display: flex;
   align-items: center;
-  
+  width: 50%;
 }
 
 .input label,
 .input input,
 .input select {
-  padding: 6px 0px;
+  padding: 6px 5px;
   width: 50%;
+}
+
+.input select {
+  margin-left: -5px;
 }
 
 .input option {
@@ -41,6 +51,7 @@
 .input option,
 .input select {
   background-color: none;
+  /* padding: 6px 0; */
 }
 
 .input label {
@@ -132,5 +143,9 @@ button {
 
 .password-strengths {
   display: flex;
+}
+
+.forgot-btn, .register-btn {
+  color: white;
 }
 
