@@ -1,3 +1,5 @@
+'use client';
+
 type InputType = {
   id?: string;
   name?: string;
@@ -30,7 +32,7 @@ export const Input = ({
       {label && (
         <label>
           {required && <span style={{ color: '#7ff' }}>* </span>}
-          {label}:
+          {label}
         </label>
       )}
       <input

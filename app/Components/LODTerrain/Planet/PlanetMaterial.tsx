@@ -33,7 +33,7 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
     highMap: THREE.Texture,
     params?: Partial<PlanetUniforms>,
   ) {
-    super({ side: THREE.DoubleSide });
+    super({ side: THREE.BackSide });
 
     const placeholder = new THREE.Texture();
     placeholder.needsUpdate = true;

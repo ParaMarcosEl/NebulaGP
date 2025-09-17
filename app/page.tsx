@@ -35,6 +35,9 @@ import MineExplosionParticles, {
 
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
+import AuthForm from './Components/UI/Auth/AuthForm';
+import AuthGuard from './Components/UI/Auth/AuthGaurd';
+import { useUserStore } from './Controllers/Users/useUserStore';
 
 const InitAudio = () => {
   useAudioListener();
@@ -85,6 +88,8 @@ export default function Home() {
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
+
+  const { user } = useUserStore(s => s);
 
   const { reset, track: curve, setTrack } = useGameStore((state) => state);
   const [, setSpeed] = useState(0);
@@ -283,6 +288,11 @@ export default function Home() {
           <Link className="link" href="/stage-select">
             Play Game
           </Link>
+
+          <AuthGuard fallback={<AuthForm mode='login'/>} >
+            {user?.email && <span className='welcome'>{`Welcome ${user?.displayName}`}</span>}
+          </AuthGuard>
+          
 
           <section className="controls-section">
             <div className="subheading">🕹️ Keyboard Controls</div>
