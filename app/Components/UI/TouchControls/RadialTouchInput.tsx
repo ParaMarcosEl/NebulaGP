@@ -6,7 +6,7 @@ import { playerInputAxis } from '@/Components/Player/PlayerController';
 import './RadialTouchInput.css';
 
 interface Props {
-  radius?: number; // max radius for input clamp
+  radius?: number;
 }
 
 export default function RadialTouchInput({ radius = 120 }: Props) {
@@ -15,31 +15,44 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
   const [stick, setStick] = useState<{ x: number; y: number } | null>(null);
 
   const active = useRef(false);
+  const touchId = useRef<number | null>(null);
 
   useEffect(() => {
     if (isMobileDevice()) setShow(true);
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    const screenMid = window.innerWidth / 2;
+    // if already tracking a finger, ignore new ones
+    if (active.current) return;
 
-    // Only allow touches starting on the left half
-    if (touch.clientX > screenMid) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const screenMid = window.innerWidth / 2;
 
-    const pos = { x: touch.clientX, y: touch.clientY };
-    setCenter(pos);
-    setStick(pos);
-    active.current = true;
+      // Only allow touches starting on the left half
+      if (touch.clientX > screenMid) continue;
+
+      const pos = { x: touch.clientX, y: touch.clientY };
+      setCenter(pos);
+      setStick(pos);
+
+      active.current = true;
+      touchId.current = touch.identifier; // save which finger we track
+      break;
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!active.current || !center) return;
+    if (!active.current || !center || touchId.current === null) return;
 
-    const touch = e.touches[0];
+    // find our tracked touch
+    const touch = Array.from(e.touches).find(
+      (t) => t.identifier === touchId.current
+    );
+    if (!touch) return;
+
     const screenMid = window.innerWidth * 0.7;
 
-    // If the finger moves past the middle, you can either stop tracking or clamp it
     if (touch.clientX > screenMid) return;
 
     const dx = touch.clientX - center.x;
@@ -47,7 +60,6 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
 
     const dist = Math.sqrt(dx * dx + dy * dy);
     const clampedDist = Math.min(dist, radius);
-
     const angle = Math.atan2(dy, dx);
 
     const stickX = center.x + Math.cos(angle) * clampedDist;
@@ -55,18 +67,27 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
 
     setStick({ x: stickX, y: stickY });
 
-    // normalize to -1–1 scale
     const normX = (clampedDist / radius) * Math.cos(angle);
     const normY = (clampedDist / radius) * Math.sin(angle);
 
     playerInputAxis.set({ x: normX, y: normY });
   };
 
-  const handleTouchEnd = () => {
-    active.current = false;
-    setCenter(null);
-    setStick(null);
-    playerInputAxis.set({ x: 0, y: 0 });
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchId.current === null) return;
+
+    // did our tracked finger end?
+    const ended = Array.from(e.changedTouches).some(
+      (t) => t.identifier === touchId.current
+    );
+
+    if (ended) {
+      active.current = false;
+      touchId.current = null;
+      setCenter(null);
+      setStick(null);
+      playerInputAxis.set({ x: 0, y: 0 });
+    }
   };
 
   if (!show) return null;
@@ -77,6 +98,7 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
       {center && (
         <>
