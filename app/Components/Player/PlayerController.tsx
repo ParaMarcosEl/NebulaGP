@@ -2,11 +2,10 @@
 
 import * as THREE from 'three';
 import { useEffect, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
 import { MeshBVH } from 'three-mesh-bvh';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { getNearestCurveT, isMobileDevice } from '@/Utils';
-import { useBotController } from '@/Components/Player/BotController';
+// import { useBotController } from '@/Components/Player/BotController';
 import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { onBulletCollision } from '@/Utils/collisions';
@@ -19,6 +18,7 @@ import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { checkOutOfBoundsSDF } from '@/Utils/SDF';
+import { useFixedFrame } from '@/Controllers/Game/useFixedFrame';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
@@ -47,6 +47,8 @@ type PlayerSystemOptions = {
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
   playingFieldRef?: React.RefObject<THREE.Mesh | null>;
+  pitchVelocity?: number;
+  rollVelocity?: number;
   acceleration?: number;
   damping?: number;
   noiseAmplitude?: number;
@@ -67,9 +69,11 @@ export function usePlayerController({
   aircraftRef,
   playerRefs,
   playingFieldRef,
-  acceleration = 0.1,
+  acceleration = 0.001,
+  pitchVelocity = 0.01,
+  rollVelocity = 0.005,
   damping = 0.5,
-  botSpeed,
+  // botSpeed,
   curve,
   enabled,
   onSpeedChange,
@@ -97,16 +101,6 @@ export function usePlayerController({
   const { planetMeshes } = usePlanetStore((s) => s);
 
   const controlsEnabled = raceStatus === 'racing';
-  useBotController({
-    id: playerId,
-    playerRefs,
-    minePoolRef,
-    enabled: !controlsEnabled || raceData[playerId]?.history?.length >= TOTAL_LAPS || !enabled,
-    botRef: aircraftRef,
-    curve,
-    speed: botSpeed,
-    explosionPoolRef,
-  });
 
   const { stopRecording } = useGhostRecorder({
     trackId,
@@ -181,7 +175,7 @@ export function usePlayerController({
     return () => window.removeEventListener('gamepadconnected', handler);
   }, [enabled]);
 
-  useFrame((_, delta) => {
+  useFixedFrame((_, delta) => {
     if (!enabled) return;
     const ship = aircraftRef.current;
     if (!controlsEnabled || !ship || !ship.userData.velocity) return;
@@ -202,20 +196,20 @@ export function usePlayerController({
     const { x: touchX, y: touchY } = inputAxisRef.current;
 
     if (Math.abs(touchX) > 0.01 || Math.abs(touchY) > 0.01) {
-      angularVelocity.current.z += touchX * -0.03;
-      angularVelocity.current.x += touchY * 0.01;
+      angularVelocity.current.z += touchX * -pitchVelocity;
+      angularVelocity.current.x += touchY * rollVelocity;
     } else {
       if (gp && gp.connected) {
         lx = Math.abs(gp.axes[0]) > DEAD_ZONE ? gp.axes[0] : 0;
         ly = Math.abs(gp.axes[1]) > DEAD_ZONE ? gp.axes[1] : 0;
       }
-      angularVelocity.current.z += lx * -0.03;
-      angularVelocity.current.x += ly * 0.01;
+      angularVelocity.current.z += lx * -pitchVelocity;
+      angularVelocity.current.x += ly * rollVelocity;
 
-      if (keys.current['a']) angularVelocity.current.z += 0.03;
-      if (keys.current['d']) angularVelocity.current.z -= 0.03;
-      if (keys.current['w']) angularVelocity.current.x -= 0.01;
-      if (keys.current['s']) angularVelocity.current.x += 0.01;
+      if (keys.current['a']) angularVelocity.current.z += pitchVelocity;
+      if (keys.current['d']) angularVelocity.current.z -= pitchVelocity;
+      if (keys.current['w']) angularVelocity.current.x -= rollVelocity;
+      if (keys.current['s']) angularVelocity.current.x += rollVelocity;
     }
 
     const accelerating = !!(keys.current['i'] || gp?.buttons?.[0]?.pressed || throttle > 0);
@@ -246,10 +240,10 @@ export function usePlayerController({
 
     if (braking || throttle < 0) {
       speedRef.current = Math.max(
-        -1,
+        -playerSpeed,
         isMobileDevice()
-          ? speedRef.current - acceleration * 2 * Math.abs(throttle)
-          : speedRef.current - acceleration * 2,
+          ? speedRef.current - acceleration * Math.abs(throttle)
+          : speedRef.current - acceleration,
       );
     }
 
@@ -361,5 +355,7 @@ export function usePlayerController({
       drop();
       setUseMine(playerId, false);
     }
+
+    if (ship.userData.recordSimulationState) ship.userData.recordSimulationState();
   });
 }

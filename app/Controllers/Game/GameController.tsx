@@ -131,6 +131,7 @@ type PlayerPhaseType = 'Idle' | 'Race' | 'Finished';
  * Defines the entire state structure of the game store.
  */
 type GameState = {
+  worldOrigin: THREE.Vector3;
   showNav: boolean;
   baseSpeed: number;
   playerSpeed: number;
@@ -195,6 +196,9 @@ export type RaceProgressesType = { id: number; progress: number };
 
  */
 type GameActions = {
+  setWorldOrigin: (origin: THREE.Vector3) => void;
+  getWorldOrigin: () => THREE.Vector3;
+  shiftWorldOrigin: (shift: THREE.Vector3) => void;
   setTouchEnabled: (enabled: boolean) => void;
   setUseMine: (id: number, useMine: boolean) => void;
   setShieldValue: (value: number, id: number) => void;
@@ -249,9 +253,9 @@ export const useGameStore = create(
   devtools<GameStore>((set, get) => ({
     // --- Initial State ---
     showNav: true,
-    baseSpeed: 2,
+    baseSpeed: .5,
     GhostLoaded: false,
-    playerSpeed: 2,
+    playerSpeed: .5,
     lapTime: 0, // Current lap time, initialized to 0.
     totalTime: 0, // Total race time, initialized to 0.
     raceCompleted: false, // Race not completed initially.
@@ -293,7 +297,34 @@ export const useGameStore = create(
     loadedTerrainChunks: 0,
     MaterialLoaded: false,
     touchEnabled: false,
+    worldOrigin: new THREE.Vector3(),
     // --- Actions (Functions to modify state) ---
+    setWorldOrigin: (origin) => set({ worldOrigin: origin }),
+
+    getWorldOrigin: () => get().worldOrigin,
+
+    shiftWorldOrigin: (shift) =>
+      set((state) => {
+        const newOrigin = state.worldOrigin.clone().add(shift);
+
+        // Apply the shift to all positions in raceData
+        const updatedRaceData: GameState['raceData'] = {};
+        for (const [id, racer] of Object.entries(state.raceData)) {
+          updatedRaceData[+id] = {
+            ...racer,
+            position: racer.position.clone().sub(shift),
+          };
+        }
+
+        // Apply the shift to global position too
+        const newPlayerPos = state.position.clone().sub(shift);
+
+        return {
+          worldOrigin: newOrigin,
+          position: newPlayerPos,
+          raceData: updatedRaceData,
+        };
+      }),
     setOutOfBounds: (id: number, outOfBounds: boolean) =>
       set((state) => ({
         raceData: {

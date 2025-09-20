@@ -21,7 +21,6 @@ export function ensureBVH(mesh: THREE.Mesh) {
 
 interface PlanetState {
   cubeTreeRef: React.RefObject<CubeTree> | null;
-  setCubeTreeRef: (cubeTreeRef: React.RefObject<CubeTree>) => void;
   planetMeshes: THREE.Mesh[];
   setPlanetMeshes: (meshes: THREE.Mesh[]) => void;
   addMesh: (mesh: THREE.Mesh) => void;
@@ -30,7 +29,6 @@ interface PlanetState {
 
 export const usePlanetStore = create<PlanetState>((set) => ({
   cubeTreeRef: null,
-  setCubeTreeRef: (cubeTreeRef: React.RefObject<CubeTree>) => set({ cubeTreeRef }),
   planetMeshes: [],
   setPlanetMeshes: (meshes) => set({ planetMeshes: meshes }),
   addMesh: (mesh) => set((state) => ({ planetMeshes: [...state.planetMeshes, mesh] })),

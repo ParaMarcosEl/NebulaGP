@@ -215,7 +215,7 @@ export default function Stage1() {
     <ParticleSystem
       lifetime={0.2}
       maxDistance={1}
-      texturePath="/textures/exploded.jpg"
+      texturePath="/textures/exploded128.png"
       key={id + 'booster'}
       speed={10}
       startSize={30}
@@ -297,11 +297,11 @@ export default function Stage1() {
           <WorldPlanet
             position={new THREE.Vector3(0, -1300, 0)}
             size={1200}
-            maxHeight={100}
+            maxHeight={300}
             lacunarity={0.6}
             amplitude={0.2}
             octaves={6}
-            frequency={9}
+            frequency={50}
             exponentiation={6}
             persistence={0.6}
             cloudRadius={300}

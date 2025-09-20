@@ -215,7 +215,7 @@ export default function TestStage() {
     <ParticleSystem
       lifetime={0.2}
       maxDistance={1}
-      texturePath="/textures/exploded.jpg"
+      texturePath="/textures/exploded128.png"
       key={id + 'booster'}
       speed={10}
       startSize={20}
@@ -342,7 +342,12 @@ export default function TestStage() {
               ref: ref as React.RefObject<THREE.Group>,
             }))}
           />
-          <Planet position={new THREE.Vector3()} size={340} maxHeight={100} exponentiation={3} />
+          <Planet 
+            position={new THREE.Vector3()} 
+            size={340} 
+            maxHeight={40} 
+            exponentiation={3} 
+          />
           {/* Players */}
           {players}
           {boosters}
