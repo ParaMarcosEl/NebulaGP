@@ -32,7 +32,7 @@ export default function StageSelect() {
     return () => {
       setMaterialLoaded(false);
     };
-  }, [setMaterialLoaded]);
+  }, []);
 
   return (
     <>

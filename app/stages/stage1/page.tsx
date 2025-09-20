@@ -160,7 +160,6 @@ export default function Stage1() {
   );
 
   useEffect(() => {
-    setMaterialLoaded(true);
     setTrack(tracks[0]);
     reset();
     return () => {
@@ -186,7 +185,7 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         startPosition={startPositions[id].position}
         startQuaternion={startPositions[id].quaternion}
-        acceleration={0.01}
+        acceleration={0.001}
         damping={0.99}
         onSpeedChange={setSpeed}
         botSpeed={2.2}
@@ -216,7 +215,7 @@ export default function Stage1() {
     <ParticleSystem
       lifetime={0.2}
       maxDistance={1}
-      texturePath="/textures/exploded.jpg"
+      texturePath="/textures/exploded128.png"
       key={id + 'booster'}
       speed={10}
       startSize={20}
@@ -352,6 +351,9 @@ export default function Stage1() {
             lacunarity={1.1}
             frequency={4}
             exponentiation={6}
+            lowTextPath='/textures/granite_ground128.png'
+            midTextPath='/textures/gold_ground128.png'
+            highTextPath='/textures/ruby_ground.png'
           />
           {/* Players */}
           {players}

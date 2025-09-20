@@ -159,7 +159,7 @@ export default function Stage1() {
     <ParticleSystem
       lifetime={0.2}
       maxDistance={1}
-      texturePath="/textures/exploded.jpg"
+      texturePath="/textures/exploded128.png"
       key={id + 'booster'}
       speed={10}
       startSize={30}

@@ -83,7 +83,7 @@ export default function Home() {
 
   useFullscreen();
 
-  const { loader, setMaterialLoaded } = useCanvasLoader();
+  const { loader } = useCanvasLoader();
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
@@ -116,11 +116,7 @@ export default function Home() {
 
   useEffect(() => {
     setTrack(tracks[0]);
-    setMaterialLoaded(true);
     reset();
-    return () => {
-      setMaterialLoaded(false);
-    };
   }, []);
 
   const players = playerRefs.map((player, id) =>
@@ -167,7 +163,7 @@ export default function Home() {
     <ParticleSystem
       lifetime={0.2}
       maxDistance={1}
-      texturePath="/textures/exploded.jpg"
+      texturePath="/textures/exploded128.png"
       key={id + 'booster'}
       speed={10}
       startSize={30}
@@ -262,7 +258,7 @@ export default function Home() {
             <Planet
               position={new THREE.Vector3(0, -1300, 0)}
               size={1200}
-              maxHeight={1000}
+              maxHeight={400}
               lacunarity={1.6}
               amplitude={0.2}
               octaves={4}

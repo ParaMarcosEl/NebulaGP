@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 export default function Planet({
   ref,
@@ -53,6 +54,11 @@ export default function Planet({
     cloudTexture.anisotropy = 16;
     cloudTexture.needsUpdate = true;
   }, [cloudTexture, clouds]);
+
+  useEffect(() => {
+    useGameStore.getState().setMaterialLoaded(true);
+    return () => useGameStore.getState().setMaterialLoaded(false);
+  }, []);
 
   // Animate slow rotation
   useFrame(() => {

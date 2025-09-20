@@ -42,7 +42,7 @@ const Track = forwardRef<
       checkpointMeshRef: checkpointMeshRef as React.RefObject<THREE.Mesh>,
     });
 
-    const particleTexture = useTexture('/textures/particleDot.png');
+    const particleTexture = useTexture('/textures/particleDot512.png');
 
     // Create tube geometry with BVH acceleration
     const geometry = useMemo(() => {
@@ -76,7 +76,7 @@ const Track = forwardRef<
     }, [curve]);
 
     // Load and configure repeating texture for the playing field
-    const texture = useTexture('/textures/stage_texture.png');
+    const texture = useTexture('/textures/bio_mech128.png');
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(10, 1);

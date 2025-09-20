@@ -59,7 +59,7 @@ export const MAX_DEPTH = 4;
 export const SPLIT_THRESHOLD = 1.5;
 
 // SHIP
-export const MAX_SPEED = 2.5;
+export const MAX_SPEED = 1;
 export const SHIP_SCALE = 1;
 
 // AI
@@ -79,9 +79,9 @@ export const TERRAIN_PROPS = {
   lacunarity: 5.0,
   persistence: 0.5,
   exponentiation: 1.0,
-  midMapPath: '/textures/planet_texture01.png',
-  lowMapPath: '/textures/planet_texture01.png', // Example low elevation texture
-  highMapPath: '/textures/planet_texture02.png', // Example high elevation texture
+  midMapPath: '/textures/icy_ground128.png',
+  lowMapPath: '/textures/rocky_ground128.png', // Example low elevation texture
+  highMapPath: '/textures/molten_rock128.png', // Example high elevation texture
   textureBlend: 0.2, // Controls blend sharpness (smaller = sharper, 0 to 1)
 };
 export const Y_OFFSET = -175;
@@ -213,9 +213,9 @@ export const DEFAULT_CHUNK_PROPS_BUILDER: Omit<
   persistence: 0.2,
   exponentiation: 3.0,
   textureBlend: 0.2,
-  highMapPath: '/textures/planet_texture01.png',
-  lowMapPath: '/textures/planet_texture02.png',
-  midMapPath: '/textures/planet_texture03.png',
+  highMapPath: '/textures/icy_ground128.png',
+  lowMapPath: '/textures/rocky_ground128.png',
+  midMapPath: '/textures/molten_rock128.png',
   overrideGeometry: null,
 };
 

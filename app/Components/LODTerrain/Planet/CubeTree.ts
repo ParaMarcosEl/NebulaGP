@@ -49,7 +49,6 @@ class QuadTreeNode {
   private meshCache: Map<string, THREE.Mesh>;
 
   private getSegmentsForDistance(projectedSize: number): number {
-    console.log({projectedSize})
     // Tune these numbers for quality/performance
     if (projectedSize > 700) return 512;
     if (projectedSize > 500) return 256;   // very close → detailed

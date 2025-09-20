@@ -8,6 +8,9 @@ export default function WorldPlanet({
   ref,
   size = 350,
   position = new THREE.Vector3(0, 0, 0),
+  lowTextPath = '/textures/icy_ground128.png',
+  midTextPath = '/textures/rocky_ground128.png',
+  highTextPath = '/textures/molten_rock128.png',
   texturePath = 'planet_texture01',
   cloudsPath = 'clouds',
   cloudRadius = 150,
@@ -25,6 +28,9 @@ export default function WorldPlanet({
   color?: string;
   position?: THREE.Vector3;
   emissiveIntensity?: number;
+  lowTextPath?: string;
+  midTextPath?: string;
+  highTextPath?: string;
   texturePath?: string;
   cloudsPath?: string;
   cloudRadius?: number;
@@ -84,9 +90,9 @@ export default function WorldPlanet({
         position={position}
         planetSize={size}
         cubeSize={16}
-        lowTextPath="/textures/ruby_ground128.png"
-        midTextPath="/textures/gold_ground128.png"
-        highTextPath="/textures/molten_rock.png"
+        lowTextPath={lowTextPath}
+        midTextPath={midTextPath}
+        highTextPath={highTextPath}
         maxHeight={maxHeight}
         frequency={frequency}
         amplitude={amplitude}
