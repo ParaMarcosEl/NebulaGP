@@ -9,6 +9,8 @@ import GlobalAlert from './Components/UI/Alert/GlobalAlert';
 import { AudioUnlocker } from './Components/Audio/AudioUnlocker';
 import AudioInitializer from './Components/UI/Music/AudioInitializer';
 import { InitSW } from './Components/InitServiceWorker';
+import CookieConsent from './Components/UI/CookieConsent/CookieConsent';
+import IOSBanner from './Components/UI/IOSBanner/IOSBanner';
 // import { InitAppCheck } from '@/Components/UI/Auth/InitAppCheck';
 
 export const metadata = {
@@ -74,6 +76,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta property="og:url" content="https://nebulagp.vercel.app" />
         <meta property="og:type" content="website" />
         <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+        <meta name="apple-mobile-web-app-title" content="NebulaGP" />
+
+        <link rel="apple-touch-icon" href="/icons/nebula_logo192.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/icons/nebula_logo512.png" />
+
       </Head>
       <body>
         {/* <TransitionLayout > */}
@@ -95,9 +106,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SettingsInitializer />
           <GlobalAlert />
         </UserProvider>
+        <IOSBanner />
         <OrientationLock />
         <AudioUnlocker />
         <InitSW />
+        <CookieConsent />
         {/* <InitAppCheck /> */}
         {/* </TransitionLayout> */}
       </body>
