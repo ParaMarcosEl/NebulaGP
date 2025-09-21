@@ -14,8 +14,8 @@ import { onBulletCollision } from '@/Utils/collisions';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { Mine, useMines } from '../Weapons/useMines';
-import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { useProjectiles } from '../Weapons/useProjectiles';
+import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
 
 interface UseBotControllerProps {
   id: number;
@@ -29,7 +29,7 @@ interface UseBotControllerProps {
   enabled?: boolean;
   onSpeedChange?: (speed: number) => void;
 
-  explosionPoolRef?: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
+  explosionsRef?: React.RefObject<ExplosionHandle>;
 }
 
 const ROLL_TORQUE = 7;
@@ -46,7 +46,7 @@ export function useBotController({
   acceleration = 0.2,
   enabled = true,
   onSpeedChange,
-  explosionPoolRef,
+  explosionsRef,
 }: UseBotControllerProps) {
   const currentTRef = useRef(0);
   const [waypoints, setWaypoints] = useState<THREE.Vector3[]>([]);
@@ -62,7 +62,7 @@ export function useBotController({
 
   const { fire, poolRef } = useProjectiles(
     botRef as React.RefObject<THREE.Object3D>,
-    explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+    explosionsRef as React.RefObject<ExplosionHandle>,
     {
       fireRate: 5,
       maxProjectiles: 20,
@@ -73,7 +73,7 @@ export function useBotController({
   const { drop } = useMines(
     botRef as React.RefObject<THREE.Object3D>,
     minePoolRef,
-    explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+    explosionsRef as React.RefObject<ExplosionHandle>,
   );
 
   useProjectileCollisions({
@@ -81,7 +81,7 @@ export function useBotController({
     playerRefs,
     onCollide: onBulletCollision,
     owner: botRef,
-    explosionPoolRef: explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+    explosionsRef: explosionsRef as React.RefObject<ExplosionHandle>,
   });
 
   useEffect(() => {

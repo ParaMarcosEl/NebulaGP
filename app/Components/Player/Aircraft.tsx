@@ -8,8 +8,8 @@ import { SHIPS } from '@/Constants';
 import { Shield } from '../Shield/Shield';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Mine } from '../Weapons/useMines';
-import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { EngineSound } from '../Audio/EngineSound';
+import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
 
 type AircraftProps = {
   id: number;
@@ -29,7 +29,7 @@ type AircraftProps = {
   curve: THREE.Curve<THREE.Vector3>;
   isBot?: boolean;
   botSpeed?: number;
-  explosionPoolRef?: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
+  explosionsRef?: React.RefObject<ExplosionHandle>;
 };
 
 export default function Aircraft({
@@ -50,7 +50,7 @@ export default function Aircraft({
   curve,
   isBot,
   botSpeed = 1,
-  explosionPoolRef,
+  explosionsRef,
 }: AircraftProps) {
   const ship = useMemo(() => {
     return SHIPS[`ship0${1}`];
@@ -61,8 +61,8 @@ export default function Aircraft({
   const { raceData } = useGameStore((s) => s);
 
   useEffect(() => {
-    console.log({ explosionPoolRef });
-  }, [explosionPoolRef]);
+    console.log({ explosionsRef });
+  }, [explosionsRef]);
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
@@ -76,7 +76,7 @@ export default function Aircraft({
     id,
     trackId,
     minePoolRef,
-    explosionPoolRef,
+    explosionsRef,
     aircraftRef,
     playerRefs,
     obstacleRefs,

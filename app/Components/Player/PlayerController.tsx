@@ -12,13 +12,13 @@ import { onBulletCollision } from '@/Utils/collisions';
 import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
 import { TOTAL_LAPS, TUBE_RADIUS } from '@/Constants';
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
-import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { checkOutOfBoundsSDF } from '@/Utils/SDF';
 import { useFixedFrame } from '@/Controllers/Game/useFixedFrame';
+import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
@@ -42,7 +42,7 @@ type PlayerSystemOptions = {
   id: number;
   trackId: number;
   minePoolRef: React.RefObject<Mine[]>;
-  explosionPoolRef?: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
+  explosionsRef?: React.RefObject<ExplosionHandle>;
   aircraftRef: React.RefObject<THREE.Group | null>;
   playerRefs: React.RefObject<THREE.Group | null>[];
   obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
@@ -65,7 +65,7 @@ export function usePlayerController({
   id: playerId,
   trackId,
   minePoolRef,
-  explosionPoolRef,
+  explosionsRef,
   aircraftRef,
   playerRefs,
   playingFieldRef,
@@ -111,7 +111,7 @@ export function usePlayerController({
 
   const { fire, poolRef } = useProjectiles(
     aircraftRef as React.RefObject<THREE.Object3D>,
-    explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+    explosionsRef as React.RefObject<ExplosionHandle>,
     {
       fireRate: 5,
       maxProjectiles: 20,
@@ -123,7 +123,7 @@ export function usePlayerController({
     aircraftRef as React.RefObject<THREE.Object3D>,
     minePoolRef,
     // Pass the ref directly, without .current, as useMines expects a RefObject
-    explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+    explosionsRef as React.RefObject<ExplosionHandle>,
     {
       maxMines: 16,
       dropOffset: 6,
@@ -133,7 +133,7 @@ export function usePlayerController({
   useProjectileCollisions({
     projectiles: poolRef.current,
     playerRefs,
-    explosionPoolRef: explosionPoolRef as React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+    explosionsRef: explosionsRef as React.RefObject<ExplosionHandle>,
     onCollide: onBulletCollision,
     owner: aircraftRef,
   });

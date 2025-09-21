@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore } from '@/Controllers/Game/GameController';
-import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
+import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
 
 export type Projectile = {
   mesh: THREE.Mesh;
@@ -17,7 +17,7 @@ export type Projectile = {
 
 export function useProjectiles(
   shipRef: React.RefObject<THREE.Object3D>,
-  explosionPoolRef: React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+  explosionsRef: React.RefObject<ExplosionHandle>,
   { fireRate = 2, maxProjectiles = 20, velocity = 200 },
 ) {
   const { scene } = useThree();
@@ -119,10 +119,8 @@ export function useProjectiles(
 
       // Deactivate if expired
       if (proj.age > lifetime) {
-        const explosions = explosionPoolRef.current;
-        if (explosions?.length) {
-          const exp = explosions.find((ref) => ref.current && !ref.current.isPlaying());
-          exp?.current?.play(proj.mesh.position);
+        if (explosionsRef.current) {
+          explosionsRef.current.play(proj.mesh.position);
         }
         proj.active = false;
         proj.mesh.visible = false;

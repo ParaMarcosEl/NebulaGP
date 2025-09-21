@@ -2,12 +2,12 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OBB } from 'three/addons/math/OBB.js';
 import { useGameStore } from '../Game/GameController';
-import { MineExplosionHandle } from '@/Components/Particles/ExplosionParticles';
 import { usePlaySound } from '../Audio/usePlaySounds';
 import { useAudioStore } from '../Audio/useAudioStore';
+import { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
 
 type Projectile = {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   direction: THREE.Vector3;
   velocity: number;
   age: number;
@@ -22,11 +22,11 @@ export function useProjectileCollisions({
   playerRefs,
   onCollide,
   owner,
-  explosionPoolRef,
+  explosionsRef,
 }: {
   projectiles: Projectile[];
   playerRefs: React.RefObject<THREE.Object3D | null>[];
-  explosionPoolRef: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
+  explosionsRef: React.RefObject<ExplosionHandle>;
   onCollide: CollisionCallback;
   owner: React.RefObject<THREE.Object3D | null>;
 }) {
@@ -63,13 +63,17 @@ export function useProjectileCollisions({
           } else {
             setShieldValue(shieldValue - 0.2, id);
           }
-          // Trigger explosion if available
-          if (explosionPoolRef.current && explosionPoolRef.current.length > 0) {
-            const availableExplosion = explosionPoolRef.current.find(
-              (ref) => ref.current && !ref.current.isPlaying(),
-            );
-            availableExplosion?.current?.play(proj.mesh.position);
+    
+          if (explosionsRef.current) {
+            explosionsRef.current.play(proj.mesh.position);
           }
+          // // Trigger explosion if available
+          // if (explosionsRef.current && explosionsRef.current.length > 0) {
+          //   const availableExplosion = explosionsRef.current.find(
+          //     (ref) => ref.current && !ref.current.isPlaying(),
+          //   );
+          //   availableExplosion?.current?.play(proj.mesh.position);
+          // }
           // play explosion sound
           playSound(buffers['explosion'], proj.mesh.position, 0.5);
           proj.active = false;

@@ -1,10 +1,9 @@
-import { useEffect, useState, CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { formatTime } from '@/Utils';
 import { useRaceStandings } from '@/Controllers/Game/useRaceStandings';
-
-type stylesType = Record<string, CSSProperties>;
+import './RaceOver.css';
 
 export function RaceOver() {
   const { finished, raceOver } = useRaceStandings();
@@ -15,10 +14,15 @@ export function RaceOver() {
   const player = finished.find(({ id }) => id === playerId);
 
   const [visible, setVisible] = useState(false);
+  const [docked, setDocked] = useState(false);
 
   useEffect(() => {
     if (raceOver) {
       setTimeout(() => setVisible(true), 100);
+
+      // After 5 seconds, move to side
+      const timer = setTimeout(() => setDocked(true), 5100);
+      return () => clearTimeout(timer);
     }
   }, [raceOver]);
 
@@ -26,8 +30,6 @@ export function RaceOver() {
 
   const handleTryAgain = () => {
     reset();
-
-    // Reposition player to start
     const startingPosition = curve.getPointAt(0);
     setRacePosition(playerId, startingPosition);
   };
@@ -40,34 +42,16 @@ export function RaceOver() {
       </div>
     ));
 
-  const styles: stylesType = {
-    raceOver: {
-      zIndex: 1,
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      background: '#000a',
-      padding: '20px',
-      color: 'white',
-      fontFamily: 'monospace',
-      textAlign: 'center',
-      borderRadius: '8px',
-      opacity: visible ? 1 : 0,
-      transition: 'opacity 1s ease-in-out',
-    },
-  };
-
   return (
-    <div style={styles.raceOver}>
+    <div className={`race-over ${visible ? 'visible' : ''} ${docked ? 'docked' : ''}`}>
       <h4>🏁 Race Over!</h4>
       <div>You placed: </div>
-      <div style={{ fontSize: '4em' }}>
-        <span style={{ fontSize: '.5em' }}>#</span>
+      <div className="placement">
+        <span className="hash">#</span>
         {player?.place}
       </div>
       <div>Race Time: {formatTime(player?.time || 0)}</div>
-      <div className="out">penalty: +{formatTime(player?.penaltyTime || 0)}</div>
+      <div className="penalty">penalty: +{formatTime(player?.penaltyTime || 0)}</div>
       <hr />
       {history}
       <hr />

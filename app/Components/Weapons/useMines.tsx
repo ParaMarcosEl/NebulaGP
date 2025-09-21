@@ -3,9 +3,9 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRef } from 'react';
 import { onBulletCollision } from '@/Utils/collisions';
 import { useGameStore } from '@/Controllers/Game/GameController';
-import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
+import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
 
 export type Mine = {
   mesh: THREE.Mesh;
@@ -16,7 +16,7 @@ export type Mine = {
 export function useMines(
   shipRef: React.RefObject<THREE.Object3D>,
   poolRef: React.RefObject<Mine[]>,
-  explosionPoolRefs: React.RefObject<React.RefObject<MineExplosionHandle>[]>,
+  explosionsRef: React.RefObject<ExplosionHandle>,
   { maxMines = 10, dropOffset = 5 } = {},
 ) {
   const { scene } = useThree();
@@ -72,18 +72,23 @@ export function useMines(
     mine.active = false;
     mine.mesh.visible = false;
 
-    // Defensive check to ensure the explosion pool and its contents exist
-    if (explosionPoolRefs.current && explosionPoolRefs.current.length > 0) {
-      // Find the first inactive explosion in the pool
-      const availableExplosion = explosionPoolRefs.current.find(
-        (ref) => ref.current && !ref.current.isPlaying(),
-      );
-
-      // If an available explosion is found, play it at the mine's position
-      if (availableExplosion?.current) {
-        availableExplosion.current.play(mine.mesh.position);
-      }
+    
+    if (explosionsRef.current) {
+      explosionsRef.current.play(mine.mesh.position);
     }
+
+    // // Defensive check to ensure the explosion pool and its contents exist
+    // if (explosionsRef.current && explosionsRef.current.length > 0) {
+    //   // Find the first inactive explosion in the pool
+    //   const availableExplosion = explosionsRef.current.find(
+    //     (ref) => ref.current && !ref.current.isPlaying(),
+    //   );
+
+    //   // If an available explosion is found, play it at the mine's position
+    //   if (availableExplosion?.current) {
+    //     availableExplosion.current.play(mine.mesh.position);
+    //   }
+    // }
   };
 
   useFrame(() => {
