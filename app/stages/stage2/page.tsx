@@ -32,6 +32,7 @@ import MineExplosionParticles, {
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
+import { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
 
 function RaceProgressTracker({
   playerRefs,
@@ -80,6 +81,7 @@ export default function Stage1() {
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
   const { loader, setMaterialLoaded } = useCanvasLoader();
+    const explosionsRef = useRef<ExplosionHandle>(null);
 
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
@@ -162,47 +164,48 @@ export default function Stage1() {
       setRaceComplete(false);
     };
   }, [reset, setMaterialLoaded, setRaceComplete, setTrack]);
-
-  const players = playerRefs.map((player, id) =>
-    id === 0 ? (
-      <Aircraft
-        key={id}
-        trackId={1}
-        id={id}
-        minePoolRef={minePoolRef}
-        explosionPoolRef={explosionPoolRef}
-        aircraftRef={player}
-        playerRefs={playerRefs}
-        curve={curve}
-        obstacleRefs={obstacleRefs.current}
-        playingFieldRef={playingFieldRef}
-        startPosition={startPositions[id].position}
-        startQuaternion={startPositions[id].quaternion}
-        acceleration={0.001}
-        damping={0.99}
-        onSpeedChange={setSpeed}
-        botSpeed={1.6}
-      />
-    ) : (
-      <Bot
-        key={id}
-        minePoolRef={minePoolRef}
-        explosionPoolRef={explosionPoolRef}
-        id={id}
-        aircraftRef={player}
-        playerRefs={playerRefs}
-        startPosition={startPositions[id].position}
-        startQuaternion={startPositions[id].quaternion}
-        curve={curve}
-        isBot
-        obstacleRefs={obstacleRefs.current}
-        playingFieldRef={playingFieldRef}
-        acceleration={0.01}
-        damping={0.99}
-        botSpeed={1.2 + id * 0.1}
-      />
-    ),
-  );
+  
+    const players = playerRefs.map((player, id) =>
+      id === 0 ? (
+        <Aircraft
+          key={id}
+          id={id}
+          trackId={0}
+          aircraftRef={player}
+          playerRefs={playerRefs}
+          minePoolRef={minePoolRef}
+          // Correctly pass the typed ref object
+          explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
+          curve={curve}
+          obstacleRefs={obstacleRefs.current}
+          playingFieldRef={playingFieldRef}
+          startPosition={startPositions[id].position}
+          startQuaternion={startPositions[id].quaternion}
+          acceleration={0.001}
+          damping={0.99}
+          onSpeedChange={setSpeed}
+          botSpeed={2.2}
+        />
+      ) : (
+        <Bot
+          key={id}
+          minePoolRef={minePoolRef}
+          explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
+          id={id}
+          aircraftRef={player}
+          playerRefs={playerRefs}
+          startPosition={startPositions[id].position}
+          startQuaternion={startPositions[id].quaternion}
+          curve={curve}
+          isBot
+          obstacleRefs={obstacleRefs.current}
+          playingFieldRef={playingFieldRef}
+          acceleration={0.01}
+          damping={0.99}
+          botSpeed={1.4 + id * 0.1}
+        />
+      ),
+    );
 
   const boosters = playerRefs.map((player, id) => (
     <ParticleSystem
