@@ -18,7 +18,7 @@ import MiniMap from '@/Components/UI/MiniMap/MiniMap';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import { StandingsUI } from '@/Components/UI/Standings/StandingsUI';
-import { RaceOver } from '@/Components/UI/RaceOver';
+import { RaceOver } from '@/Components/UI/RaceOver/RaceOver';
 import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
 import { StartCountdown } from '@/Controllers/Game/StartTimer';

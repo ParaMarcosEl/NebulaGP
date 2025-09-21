@@ -31,6 +31,7 @@ import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
+import ExplosionParticles, { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
 
 function RaceProgressTracker({
   playerRefs,
@@ -86,6 +87,7 @@ export default function Stage1() {
 
   // Correctly type the explosion pool ref as an array of RefObjects
   const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
+  const explosionsRef = useRef<ExplosionHandle>(null);
 
   // Use useMemo to create the components and their refs only once.
   // This ensures the refs are created before the components are rendered.
@@ -98,9 +100,7 @@ export default function Stage1() {
     }
     return exps;
   }, []);
-
-  // Use useEffect to check that the refs are populated after the initial render.
-  // This is a good way to debug timing issues.
+  
   useEffect(() => {
     console.log('Explosion Pool Refs populated:', explosionPoolRef.current);
     if (explosionPoolRef.current.length === 0) {
@@ -179,7 +179,7 @@ export default function Stage1() {
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}
         // Correctly pass the typed ref object
-        explosionPoolRef={explosionPoolRef}
+        explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
         curve={curve}
         obstacleRefs={obstacleRefs.current}
         playingFieldRef={playingFieldRef}
@@ -194,7 +194,7 @@ export default function Stage1() {
       <Bot
         key={id}
         minePoolRef={minePoolRef}
-        explosionPoolRef={explosionPoolRef}
+        explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
         id={id}
         aircraftRef={player}
         playerRefs={playerRefs}
@@ -360,6 +360,7 @@ export default function Stage1() {
           {boosters}
           {/* Explosions */}
           {explosions}
+          <ExplosionParticles ref={explosionsRef}/>
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>

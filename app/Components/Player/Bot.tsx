@@ -8,8 +8,8 @@ import { useBotController } from './BotController';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
 import { Mine } from '../Weapons/useMines';
-import { MineExplosionHandle } from '../Particles/ExplosionParticles';
 import { EngineSound } from '../Audio/EngineSound';
+import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
 
 type AircraftProps = {
   id: number;
@@ -28,7 +28,7 @@ type AircraftProps = {
   curve: THREE.Curve<THREE.Vector3>;
   isBot?: boolean;
   botSpeed?: number;
-  explosionPoolRef?: React.RefObject<React.RefObject<MineExplosionHandle>[]>;
+  explosionsRef?: React.RefObject<ExplosionHandle>;
 };
 
 export default function Bot({
@@ -41,7 +41,7 @@ export default function Bot({
   curve,
   isBot,
   botSpeed = 1,
-  explosionPoolRef,
+  explosionsRef,
 }: AircraftProps) {
   const ship = useMemo(() => {
     const randomNumber = Math.floor(Math.random() * 5) + 1;
@@ -63,7 +63,7 @@ export default function Bot({
     curve,
     enabled: !!isBot,
     speed: botSpeed,
-    explosionPoolRef,
+    explosionsRef,
   });
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import { create } from 'zustand'; // Import `create` function from Zustand for s
 import { devtools } from 'zustand/middleware'; // Import `devtools` middleware for Redux DevTools integration.
 import * as THREE from 'three'; // Import the Three.js library for 3D vector operations.
 import { RacerProgressType, TOTAL_LAPS } from '@/Constants'; // Import constants like total laps from a relative path.
-import { RaceOver } from '@/Components/UI/RaceOver';
+import { RaceOver } from '@/Components/UI/RaceOver/RaceOver';
 
 // --- Helpers ---
 /**
@@ -340,11 +340,10 @@ export const useGameStore = create(
       set((state) => {
         const racer = state.raceData[id];
 
-        if (!racer || !racer.outOfBounds) return state;
+        if (!racer || !racer.outOfBounds || racer.history.length >= TOTAL_LAPS) return state;
 
         const timeSpent = racer.outOfBoundsTime + delta;
 
-        // Penalty scales with distance from track
         const penaltyRate = 2.5;
         const penalty = delta * penaltyRate * 1000;
 
