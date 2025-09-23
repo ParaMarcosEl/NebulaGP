@@ -6,6 +6,7 @@ import { FBMParams } from './fbm';
 import { PlanetMaterial } from './PlanetMaterial';
 import { buildBVHForMeshes } from './LODPlanet';
 import { prepareMeshBounds } from './CubeTree';
+import { getPlanetCache, setPlanetCache } from './planetCache';
 
 type Task = {
   posBuffer: SharedArrayBuffer;
@@ -16,6 +17,7 @@ type Task = {
   params: FBMParams;
   segments: number;
   resolve: (geometry: THREE.BufferGeometry) => void;
+  targetMesh?: THREE.Mesh;
 };
 
 class PlanetWorkerPool {
@@ -26,7 +28,7 @@ class PlanetWorkerPool {
   private indexCache = new Map<number, Uint32Array>();
   private material: PlanetMaterial;
 
-  // New: buffer pools
+  // Buffer pools
   private posPool = new Map<number, SharedArrayBuffer[]>();
   private normalPool = new Map<number, SharedArrayBuffer[]>();
   private elevationPool = new Map<number, SharedArrayBuffer[]>();
@@ -61,7 +63,7 @@ class PlanetWorkerPool {
     });
   }
 
-  // Get buffer from pool or allocate new
+  // --- Buffer pooling helpers ---
   private getBuffer(
     pool: Map<number, SharedArrayBuffer[]>,
     vertexCount: number,
@@ -74,7 +76,6 @@ class PlanetWorkerPool {
     return new SharedArrayBuffer(vertexCount * bytesPerElement);
   }
 
-  // Return buffer to pool
   private returnBuffer(
     pool: Map<number, SharedArrayBuffer[]>,
     vertexCount: number,
@@ -84,6 +85,7 @@ class PlanetWorkerPool {
     pool.get(vertexCount)!.push(buffer);
   }
 
+  // --- Main API ---
   enqueue(
     segments: number,
     planetSize: number,
@@ -91,25 +93,34 @@ class PlanetWorkerPool {
     params: FBMParams,
     targetMesh?: THREE.Mesh,
   ): Promise<THREE.BufferGeometry> {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+      const cacheKey = JSON.stringify({ segments, planetSize, params });
+
+      // 🔹 Step 1: Try cache
+      const cached = await getPlanetCache(cacheKey);
+      if (cached) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(cached.positions), 3));
+        geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(cached.normals), 3));
+        geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(cached.uvs), 2));
+        geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(cached.elevations), 1));
+        geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(cached.indices), 1));
+
+        geometry.computeBoundingBox?.();
+        geometry.computeBoundingSphere?.();
+
+        const mesh = new THREE.Mesh(geometry, this.material);
+        buildBVHForMeshes(mesh);
+
+        return resolve(geometry);
+      }
+
+      // 🔹 Step 2: Otherwise queue worker task
       const vertexCount = (segments + 1) * (segments + 1);
 
-      // Use buffer pool
-      const posBuffer = this.getBuffer(
-        this.posPool,
-        vertexCount,
-        3 * Float32Array.BYTES_PER_ELEMENT,
-      );
-      const normalBuffer = this.getBuffer(
-        this.normalPool,
-        vertexCount,
-        3 * Float32Array.BYTES_PER_ELEMENT,
-      );
-      const elevationBuffer = this.getBuffer(
-        this.elevationPool,
-        vertexCount,
-        Float32Array.BYTES_PER_ELEMENT,
-      );
+      const posBuffer = this.getBuffer(this.posPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT);
+      const normalBuffer = this.getBuffer(this.normalPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT);
+      const elevationBuffer = this.getBuffer(this.elevationPool, vertexCount, Float32Array.BYTES_PER_ELEMENT);
       const uvBuffer = this.getBuffer(this.uvPool, vertexCount, 2 * Float32Array.BYTES_PER_ELEMENT);
 
       const task: Task = {
@@ -120,7 +131,17 @@ class PlanetWorkerPool {
         planetSize,
         params,
         segments,
-        resolve,
+        resolve: async (geometry: THREE.BufferGeometry) => {
+          // 🔹 Step 3: Save generated chunk to cache
+          await setPlanetCache(cacheKey, {
+            positions: geometry.attributes.position.array,
+            normals: geometry.attributes.normal.array,
+            uvs: geometry.attributes.uv.array,
+            elevations: geometry.attributes.elevation.array,
+            indices: geometry.index?.array,
+          });
+          resolve(geometry);
+        },
         ...(targetMesh ? { targetMesh } : {}),
       };
 
@@ -136,73 +157,58 @@ class PlanetWorkerPool {
 
     const vertexCount = (task.segments + 1) * (task.segments + 1);
 
-    // Create typed views of worker buffers
+    // Rehydrate views
     const positions = new Float32Array(task.posBuffer);
     const normals = new Float32Array(task.normalBuffer);
     const elevations = new Float32Array(task.elevationBuffer);
     const uvs = new Float32Array(task.uvBuffer);
 
     let geometry: THREE.BufferGeometry;
-    let mesh: THREE.Mesh | undefined;
 
-    if ('targetMesh' in task && task.targetMesh) {
-      mesh = task.targetMesh as THREE.Mesh;
-      geometry = mesh.geometry as THREE.BufferGeometry;
-
-      // COPY data into new Float32Arrays to avoid overwriting active geometry
+    if (task.targetMesh) {
+      // Update existing mesh
+      geometry = task.targetMesh.geometry as THREE.BufferGeometry;
       geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
       geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
-      geometry.setAttribute(
-        'elevation',
-        new THREE.BufferAttribute(new Float32Array(elevations), 1),
-      );
+      geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(elevations), 1));
 
-      // Recompute bounds
       geometry.computeBoundingBox?.();
       geometry.computeBoundingSphere?.();
 
-      // Refit BVH after attribute updates
       if ((geometry as any).boundsTree) {
         (geometry as any).boundsTree.refit();
       } else {
         geometry.computeBoundsTree();
       }
 
-      prepareMeshBounds(mesh);
+      prepareMeshBounds(task.targetMesh);
       task.resolve(geometry);
       window.dispatchEvent(new Event('mesh-geometry-updated'));
     } else {
-      // NEW geometry path
+      // New geometry
       geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
       geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
       geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
-      geometry.setAttribute(
-        'elevation',
-        new THREE.BufferAttribute(new Float32Array(elevations), 1),
-      );
+      geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(elevations), 1));
 
-      // index creation (cached)
+      // Index caching
       let index = this.indexCache.get(task.segments);
       if (!index) {
-        const segments = task.segments;
-        const rows = segments + 1;
+        const seg = task.segments;
+        const rows = seg + 1;
         const cols = rows;
-        const quadCount = segments * segments;
+        const quadCount = seg * seg;
         const idxArr = new Uint32Array(quadCount * 6);
         let ptr = 0;
-        for (let y = 0; y < segments; y++) {
-          for (let x = 0; x < segments; x++) {
+        for (let y = 0; y < seg; y++) {
+          for (let x = 0; x < seg; x++) {
             const a = y * cols + x;
             const b = y * cols + (x + 1);
             const c = (y + 1) * cols + x;
             const d = (y + 1) * cols + (x + 1);
-            idxArr[ptr++] = a;
-            idxArr[ptr++] = c;
-            idxArr[ptr++] = b;
-            idxArr[ptr++] = b;
-            idxArr[ptr++] = c;
-            idxArr[ptr++] = d;
+            idxArr[ptr++] = a; idxArr[ptr++] = c; idxArr[ptr++] = b;
+            idxArr[ptr++] = b; idxArr[ptr++] = c; idxArr[ptr++] = d;
           }
         }
         index = idxArr;
@@ -215,10 +221,10 @@ class PlanetWorkerPool {
 
       const newMesh = new THREE.Mesh(geometry, this.material);
       newMesh.userData.isPlanet = true;
-
       buildBVHForMeshes(newMesh);
 
       task.resolve(geometry);
+
       geometry.attributes.position.needsUpdate = true;
       geometry.attributes.normal.needsUpdate = true;
       geometry.attributes.uv.needsUpdate = true;
@@ -227,7 +233,7 @@ class PlanetWorkerPool {
       window.dispatchEvent(new Event('mesh-ready'));
     }
 
-    // **Return buffers to pool AFTER copying**
+    // Return buffers to pool
     this.returnBuffer(this.posPool, vertexCount, task.posBuffer);
     this.returnBuffer(this.normalPool, vertexCount, task.normalBuffer);
     this.returnBuffer(this.elevationPool, vertexCount, task.elevationBuffer);

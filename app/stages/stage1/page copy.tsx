@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect, Suspense, ReactElement } from 'react';
+import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
@@ -23,9 +23,6 @@ import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
-import MineExplosionParticles, {
-  MineExplosionHandle,
-} from '@/Components/Particles/ExplosionParticles';
 import Planet from '@/Components/World/Planet/WorldPlanet';
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
@@ -57,7 +54,6 @@ function ShipCollisionTracker({
   return null;
 }
 
-const EXPLOSION_POOL_SIZE = 100;
 
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
@@ -84,29 +80,7 @@ export default function Stage1() {
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
-
-  // Correctly type the explosion pool ref as an array of RefObjects
-  const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
   const explosionsRef = useRef<ExplosionHandle>(null);
-
-  // Use useMemo to create the components and their refs only once.
-  // This ensures the refs are created before the components are rendered.
-  const explosions = useMemo(() => {
-    const exps: ReactElement[] = [];
-    for (let i = 0; i < EXPLOSION_POOL_SIZE; i++) {
-      const handle = createRef<MineExplosionHandle>();
-      exps.push(<MineExplosionParticles key={i} ref={handle} />);
-      explosionPoolRef.current.push(handle as React.RefObject<MineExplosionHandle>);
-    }
-    return exps;
-  }, []);
-  
-  useEffect(() => {
-    console.log('Explosion Pool Refs populated:', explosionPoolRef.current);
-    if (explosionPoolRef.current.length === 0) {
-      console.error('Explosion pool is empty!');
-    }
-  }, []); // Run only once after initial render
 
   const bounds = { x: 500, y: 250, z: 500 };
   const {
@@ -351,12 +325,14 @@ export default function Stage1() {
             lacunarity={1.1}
             frequency={4}
             exponentiation={6}
+            lowTextPath='/textures/granite_ground128.png'
+            midTextPath='/textures/gold_ground128.png'
+            highTextPath='/textures/ruby_ground.png'
           />
           {/* Players */}
           {players}
           {boosters}
           {/* Explosions */}
-          {explosions}
           <ExplosionParticles ref={explosionsRef}/>
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
