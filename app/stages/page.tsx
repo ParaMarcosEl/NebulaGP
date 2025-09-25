@@ -348,6 +348,9 @@ export default function TestStage() {
             size={340} 
             maxHeight={40} 
             exponentiation={3} 
+            lowTextPath='/textures/grassy_ground128.png'
+            midTextPath='/textures/rocky_ground128.png'
+            highTextPath='/textures/icy_ground128.png'
           />
           {/* Players */}
           {players}

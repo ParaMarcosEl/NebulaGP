@@ -302,6 +302,9 @@ export default function Stage1() {
             persistence={0.6}
             cloudRadius={300}
             clouds={false}
+            lowTextPath='/textures/granite_ground128.png'
+            midTextPath='/textures/gold_ground128.png'
+            highTextPath='/textures/ruby_ground128.png'
           />
 
           <MinePadSpawner

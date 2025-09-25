@@ -366,6 +366,9 @@ export default function Stage1() {
             lacunarity={1.1}
             frequency={4}
             exponentiation={6}
+            lowTextPath='/textures/granite_ground128.png'
+            midTextPath='/textures/gold_ground128.png'
+            highTextPath='/textures/ruby_ground128.png'
           />
           {/* Players */}
           {players}

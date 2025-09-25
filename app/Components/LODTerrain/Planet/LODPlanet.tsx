@@ -14,9 +14,9 @@ type PlanetProps = {
   position?: Vector3 | [number, number, number];
   planetSize?: number;
   cubeSize?: number;
-  lowTextPath?: string;
-  midTextPath?: string;
-  highTextPath?: string;
+  lowTextPath: string;
+  midTextPath: string;
+  highTextPath: string;
   maxHeight?: number;
   frequency?: number;
   amplitude?: number;
@@ -90,9 +90,9 @@ export function LODPlanet({
   position,
   planetSize = 5,
   cubeSize = 16,
-  lowTextPath = '/textures/icy_ground128.png',
-  midTextPath = '/textures/rocky_ground128.png',
-  highTextPath = '/textures/molten_rock128.png',
+  lowTextPath,
+  midTextPath,
+  highTextPath,
   maxHeight = 300,
   frequency = 20,
   amplitude = 0.5,

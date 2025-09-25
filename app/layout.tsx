@@ -98,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             '/textures/crystal_ground.png',
             '/textures/explode128.png',
             '/textures/exploded128.png',
-            '/textures/granit_ground128.png',
+            '/textures/granite_ground128.png',
             '/textures/grass_ground128.png',
             '/textures/gold_ground128.png',
             '/textures/icy_ground128.png',
