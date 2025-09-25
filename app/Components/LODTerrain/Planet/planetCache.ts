@@ -42,6 +42,6 @@ export async function getPlanetCache(key: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function setPlanetCache(key: string, value: any) {
+export async function setPlanetCache(key: string, value: Record<string, any>) {
   return setDB('planetGeometry', key, value);
 }

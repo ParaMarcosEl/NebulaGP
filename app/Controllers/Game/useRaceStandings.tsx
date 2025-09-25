@@ -55,7 +55,7 @@ export function useRaceStandings() {
     // 2. Calculate the list of in-progress racers
     const progressList = Object.entries(raceData) // Get all racer entries.
       // Filter for racers who have NOT completed all laps and have a valid ID.
-      .filter(([id]) => parseInt(id) >= 0)
+      .filter(([id, player]) => parseInt(id) >= 0 && player.lapCount < TOTAL_LAPS)
       // Sort in-progress racers based on a hierarchy:
       // 1. By lap count (descending: more laps means higher rank).
       // 2. If lap counts are equal, by progress along the current lap (descending: further along means higher rank).

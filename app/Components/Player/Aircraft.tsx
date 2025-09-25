@@ -61,10 +61,6 @@ export default function Aircraft({
   const { raceData } = useGameStore((s) => s);
 
   useEffect(() => {
-    console.log({ explosionsRef });
-  }, [explosionsRef]);
-
-  useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
       aircraftRef.current.position.set(...startPosition);
       aircraftRef.current.quaternion.copy(startQuaternion);

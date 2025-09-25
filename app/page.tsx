@@ -266,6 +266,9 @@ export default function Home() {
               octaves={4}
               frequency={7}
               exponentiation={6}
+              lowTextPath='/textures/icy_ground128.png'
+              midTextPath='/textures/rocky_ground128.png'
+              highTextPath='/textures/molten_rock128.png'
             />
 
             {players}

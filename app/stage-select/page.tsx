@@ -14,6 +14,7 @@ import Modal from '@/Components/UI/Modal/Modal';
 import Leaderboard from '@/Components/UI/Leaderboard/Leaderboard';
 import NavBar from '@/Components/UI/Navigation/NavBar';
 import './StageSelect.css';
+import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 
 export default function StageSelect() {
   const [leaderboard1, setLeaderboard1] = useState(false);
@@ -29,7 +30,10 @@ export default function StageSelect() {
 
   useEffect(() => {
     setMaterialLoaded(true);
+    usePlanetStore.getState().setPlanetReady(true);
+    
     return () => {
+      usePlanetStore.getState().setPlanetReady(false);
       setMaterialLoaded(false);
     };
   }, []);

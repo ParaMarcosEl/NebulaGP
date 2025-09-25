@@ -6,8 +6,7 @@ import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 export function StartCountdown() {
   const [timeLeft, setTimeLeft] = useState(3); // Show 3 → 2 → 1 → GO!
   const [showGo, setShowGo] = useState(false);
-  const raceStatus = useGameStore((s) => s.raceStatus);
-  const setRaceStatus = useGameStore((s) => s.setRaceStatus);
+  const { raceStatus, setRaceStatus, setLapStartTime }  = useGameStore((s) => s);
   const didStart = useRef(false);
   const { isLoaderActive } = useCanvasLoader();
 
@@ -25,8 +24,24 @@ export function StartCountdown() {
 
           setTimeout(() => {
             setShowGo(false);
+
+            const startTime = performance.now();
             setRaceStatus('racing');
-          }, 1000); // Show GO for 1s
+            setLapStartTime(startTime);
+
+            // also sync lapStartTime for all racers
+            useGameStore.setState((state) => {
+              const updatedRaceData = { ...state.raceData };
+              Object.keys(updatedRaceData).forEach((id) => {
+                updatedRaceData[+id] = {
+                  ...updatedRaceData[+id],
+                  lapStartTime: startTime,
+                };
+              });
+              return { raceData: updatedRaceData };
+            });
+          }, 1000);
+
 
           return 0;
         }
@@ -42,6 +57,7 @@ export function StartCountdown() {
     if (raceStatus === 'idle' && !didStart.current) {
       didStart.current = true;
       setRaceStatus('countdown');
+      
     }
   }, [raceStatus, setRaceStatus]);
 

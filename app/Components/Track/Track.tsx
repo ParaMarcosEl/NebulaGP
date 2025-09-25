@@ -20,8 +20,9 @@ const Track = forwardRef<
   {
     playerRefs: React.RefObject<THREE.Object3D>[];
     curve: THREE.Curve<THREE.Vector3>;
-    onLapComplete?: () => void;
     spheres?: SphereSpec[];
+    onRaceComplete?: () => void;
+    onLapComplete?: () => void;
   }
 >(
   (
@@ -29,7 +30,8 @@ const Track = forwardRef<
       playerRefs,
       curve,
       spheres = [],
-      // onLapComplete,
+      onRaceComplete,
+      onLapComplete,
     },
     ref,
   ) => {
@@ -40,6 +42,8 @@ const Track = forwardRef<
     const checkpoint = useCheckpointController({
       playerRefs,
       checkpointMeshRef: checkpointMeshRef as React.RefObject<THREE.Mesh>,
+      onRaceComplete,
+      onLapComplete
     });
 
     const particleTexture = useTexture('/textures/particleDot512.png');

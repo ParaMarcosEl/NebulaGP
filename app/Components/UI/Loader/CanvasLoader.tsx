@@ -28,7 +28,7 @@ export const useCanvasLoader = () => {
       <div className={`loader-overlay ${!isLoaderActive ? 'hidden' : ''}`}>
         {active && <p>Loading Scene Assets: {Math.floor(dreiProgress)}%</p>}
         <Spinner />
-        {!MaterialLoaded && <p>Compiling Terrain Shaders...</p>}
+        {!MaterialLoaded && <p>Compiling Terrain...</p>}
         {!isLoaderActive && <p>Loading Complete!</p>}
       </div>
     ),

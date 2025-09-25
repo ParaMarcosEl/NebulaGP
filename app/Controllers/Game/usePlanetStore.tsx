@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import * as THREE from 'three';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { CubeTree } from '@/Components/LODTerrain/Planet/CubeTree';
+import { useGameStore } from './GameController';
 
 // Extend geometry with BVH properties
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -20,6 +21,12 @@ export function ensureBVH(mesh: THREE.Mesh) {
 }
 
 interface PlanetState {
+  
+  pendingBuilds: number;
+  planetReady: boolean;
+  incrementBuilds: () => void;
+  decrementBuilds: () => void;
+  setPlanetReady: (ready: boolean) => void;
   cubeTreeRef: React.RefObject<CubeTree> | null;
   planetMeshes: THREE.Mesh[];
   setPlanetMeshes: (meshes: THREE.Mesh[]) => void;
@@ -27,7 +34,23 @@ interface PlanetState {
   removeMesh: (mesh: THREE.Mesh) => void;
 }
 
-export const usePlanetStore = create<PlanetState>((set) => ({
+export const usePlanetStore = create<PlanetState>((set, get) => ({
+  
+  pendingBuilds: 0,
+  planetReady: false,
+
+  incrementBuilds: () => set((s) => ({ pendingBuilds: s.pendingBuilds + 1 })),
+  decrementBuilds: () => {
+    const next = get().pendingBuilds - 1;
+    set({ pendingBuilds: Math.max(0, next) });
+
+    // ✅ Only mark ready once
+    if (next <= 0 && !get().planetReady) {
+      set({ planetReady: true });
+      useGameStore.getState().setMaterialLoaded(true);
+    }
+  },
+  setPlanetReady: (ready) => set({ planetReady: ready }),
   cubeTreeRef: null,
   planetMeshes: [],
   setPlanetMeshes: (meshes) => set({ planetMeshes: meshes }),

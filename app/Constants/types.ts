@@ -26,6 +26,7 @@ export interface Record {
   userId: string;
   trackId: string;
   totalTime: number;
+  penalty: number;
   lapTimes: number[];
   createdAt: string;
   ghostFrames?: number[]; // converted Float32Array
