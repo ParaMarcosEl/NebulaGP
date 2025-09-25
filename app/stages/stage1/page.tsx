@@ -71,10 +71,10 @@ export default function Stage1() {
   const { setPlanetMeshes } = usePlanetStore((s) => s);
   const { user } = useUserStore(s => s);
   const { fetchRecords, updateRecord, createRecord, records } = useRecords();
-  const stageId = window.location.pathname;
-
-
+  
+  
   useEffect(() => {
+    const stageId = window.location.pathname;
     console.debug({records});
     if (records) return;
     fetchRecords(user?.id, stageId);
