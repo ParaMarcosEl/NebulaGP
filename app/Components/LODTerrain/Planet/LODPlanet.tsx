@@ -62,7 +62,6 @@ export function buildBVHForMeshes(root: THREE.Object3D | THREE.Object3D[]) {
 
             mesh.userData.isPlanet = true;
             mesh.userData.hasBVH = true;
-            console.log(`BVH built for ${mesh.name || 'planet mesh'}`);
           }
         }
       });
@@ -81,7 +80,6 @@ export function buildBVHForMeshes(root: THREE.Object3D | THREE.Object3D[]) {
 
           mesh.userData.isPlanet = true;
           mesh.userData.hasBVH = true;
-          console.log(`BVH built for ${mesh.name || 'planet mesh'}`);
         }
       }
     });
@@ -123,7 +121,6 @@ export function LODPlanet({
 
     // Fire event now that BVH is ready
     window.dispatchEvent(new Event('planet-bvh-ready'));
-    useGameStore.getState().setMaterialLoaded(true);
 
     return () => useGameStore.getState().setMaterialLoaded(false);
   }, [planetGroup]);
@@ -172,6 +169,7 @@ export function LODPlanet({
 
   // Async update
   useEffect(() => {
+    if (!lowTexture || !midTexture || !highTexture) return;
     let mounted = true;
     (async () => {
       const group = await cubeTree.getDynamicMeshesAsync(camera, 1.5);
@@ -183,7 +181,7 @@ export function LODPlanet({
     return () => {
       mounted = false;
     };
-  }, [cubeTree, camera]);
+  }, [cubeTree, camera, lowTexture, midTexture, highTexture]);
 
   return (
     <group ref={groupRef} position={position}>

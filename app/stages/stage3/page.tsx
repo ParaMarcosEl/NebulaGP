@@ -163,10 +163,8 @@ export default function Stage1() {
 
   useEffect(() => {
     setTrack(tracks[2]);
-    setMaterialLoaded(true);
     reset();
     return () => {
-      setMaterialLoaded(false);
       setRaceComplete(false);
       setPlanetMeshes([]);
     };

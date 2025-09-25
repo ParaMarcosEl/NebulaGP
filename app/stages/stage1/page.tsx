@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect, Suspense, ReactElement } from 'react';
+import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
 import Bot from '@/Components/Player/Bot';
@@ -23,15 +23,13 @@ import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
-import MineExplosionParticles, {
-  MineExplosionHandle,
-} from '@/Components/Particles/ExplosionParticles';
 import Planet from '@/Components/World/Planet/WorldPlanet';
-import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
-import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import ExplosionParticles, { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
+import { InitAudio } from '@/Components/Audio/InitAudio';
+import { useUserStore } from '@/Controllers/Users/useUserStore';
+import { useRecords } from '@/Controllers/Records/useRecords';
 
 function RaceProgressTracker({
   playerRefs,
@@ -57,7 +55,6 @@ function ShipCollisionTracker({
   return null;
 }
 
-const EXPLOSION_POOL_SIZE = 100;
 
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
@@ -72,41 +69,25 @@ export default function Stage1() {
   const minePoolRef = useRef<Mine[]>([]);
   const { loader } = useCanvasLoader();
   const { setPlanetMeshes } = usePlanetStore((s) => s);
+  const { user } = useUserStore(s => s);
+  const { fetchRecords, updateRecord, createRecord, records } = useRecords();
+  const stageId = window.location.pathname;
 
-  const InitAudio = () => {
-    useAudioListener();
-    useAudioBuffers();
 
-    return null;
-  };
+  useEffect(() => {
+    console.debug({records});
+    if (records) return;
+    fetchRecords(user?.id, stageId);
+  }, [records])
+
+
 
   const playerRefs = useMemo(
     () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
 
-  // Correctly type the explosion pool ref as an array of RefObjects
-  const explosionPoolRef = useRef<React.RefObject<MineExplosionHandle>[]>([]);
   const explosionsRef = useRef<ExplosionHandle>(null);
-
-  // Use useMemo to create the components and their refs only once.
-  // This ensures the refs are created before the components are rendered.
-  const explosions = useMemo(() => {
-    const exps: ReactElement[] = [];
-    for (let i = 0; i < EXPLOSION_POOL_SIZE; i++) {
-      const handle = createRef<MineExplosionHandle>();
-      exps.push(<MineExplosionParticles key={i} ref={handle} />);
-      explosionPoolRef.current.push(handle as React.RefObject<MineExplosionHandle>);
-    }
-    return exps;
-  }, []);
-  
-  useEffect(() => {
-    console.log('Explosion Pool Refs populated:', explosionPoolRef.current);
-    if (explosionPoolRef.current.length === 0) {
-      console.error('Explosion pool is empty!');
-    }
-  }, []); // Run only once after initial render
 
   const bounds = { x: 500, y: 250, z: 500 };
   const {
@@ -304,6 +285,40 @@ export default function Stage1() {
             ref={playingFieldRef}
             curve={curve}
             spheres={[{ t: 0.4, radius: 100 }]}
+            onRaceComplete={() => {
+              console.log('onRaceComplete(): ', {user, records})
+              if (!user || !records) return;
+              // if user data found
+              const userData = records.find((record) => record.userId === user?.id);
+              if (userData) {
+                if (! records) return;
+                console.debug('userData found', {userData});
+                const newBestTime = userData.totalTime < records[0].totalTime && userData.totalTime;
+                if (newBestTime) {
+                  console.debug('updating record for ', userData.name);
+                  updateRecord(userData.id, {
+                    ...userData,
+                    totalTime: newBestTime,
+                  })
+                }
+              } else {
+                const playerData = raceData[0];
+                console.debug('userData not found. Creating entry.')
+                createRecord({
+                  name: user.name || '', 
+                  totalTime: 0, 
+                  userId: '', 
+                  trackId: '',
+                  penalty: 0,
+                  lapTimes: []
+                })
+                const playerTime = playerData.totalTime + playerData.penaltyTime;
+                const newBestTime = playerTime < records[0].totalTime + records[0].penalty && playerTime;
+                if (newBestTime) {
+                  console.debug('New Best Time set!');
+                }
+              }
+            }}
           />
           <MinePadSpawner
             curve={curve}
@@ -355,8 +370,6 @@ export default function Stage1() {
           {/* Players */}
           {players}
           {boosters}
-          {/* Explosions */}
-          {explosions}
           <ExplosionParticles ref={explosionsRef}/>
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />

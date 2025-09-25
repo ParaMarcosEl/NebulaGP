@@ -66,7 +66,7 @@ export const SHIP_SCALE = 1;
 export const BOT_SPEED = 0.0008;
 
 //
-export const TOTAL_LAPS = 3;
+export const TOTAL_LAPS = 1;
 
 //Terrain
 export const TERRAIN_PROPS = {

@@ -649,7 +649,7 @@ export const useGameStore = create(
         totalTime: 0,
         raceCompleted: false,
         lapHistory: [],
-        lapStartTime: performance.now(),
+        lapStartTime: 0,
         finishedCrafts: [],
         raceData: initialRaceData,
         lastProgresses: {},
@@ -660,7 +660,13 @@ export const useGameStore = create(
      * Sets the timestamp for when the current lap started.
      * @param time - The timestamp (e.g., from `performance.now()`).
      */
-    setLapStartTime: (time) => set({ lapStartTime: time }),
+    setLapStartTime: (time: number) => set({ lapStartTime: time }),
+
+    getCurrentLapTime: () => {
+      const { lapStartTime } = get();
+      if (!lapStartTime) return 0;
+      return performance.now() - lapStartTime;
+    },
 
     /**
      * Updates the 3D position of a specific racer.

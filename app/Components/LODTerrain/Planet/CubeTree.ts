@@ -8,6 +8,7 @@ import { FBMParams } from './fbm';
 import { ensureBVH, prepareAndStoreMesh } from '@/Controllers/Game/usePlanetStore';
 import { buildBVHForMeshes } from './LODPlanet';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 type NoiseUniforms = FBMParams;
 
@@ -381,6 +382,7 @@ export class CubeTree {
     });
 
     this.updateBoundsCache(meshes);
+    useGameStore.getState().setMaterialLoaded(true);
     return this.group;
   }
 

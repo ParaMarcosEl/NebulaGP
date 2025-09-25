@@ -14,10 +14,14 @@ export function useCheckpointController({
   playerRefs,
   checkpointMeshRef,
   cooldownTime = 2,
+  onRaceComplete,
+  onLapComplete,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
   checkpointMeshRef: React.RefObject<THREE.Mesh>;
+  onRaceComplete?: () => void;
   cooldownTime?: number;
+  onLapComplete?: () => void;
 }) {
   const checkpoint = useRef<Checkpoint>({
     mesh: checkpointMeshRef.current as THREE.Mesh,
@@ -52,11 +56,13 @@ export function useCheckpointController({
         cooldown.current[i] <= 0
       ) {
         completeLap(players[i].id, performance.now());
+        if (onLapComplete) onLapComplete();
 
         // Check if the current racer is the player AND they have completed more than TOTAL_LAPS.
         // Note: The condition `player.lapCount > TOTAL_LAPS` seems to imply laps are counted *after* completion.
         // If TOTAL_LAPS is the target, then `player.lapCount === TOTAL_LAPS` might be more accurate for detecting race completion.
         if (players[i].id === playerId && players[i].lapCount > TOTAL_LAPS) {
+          if (onRaceComplete) onRaceComplete();
           setRaceComplete(); // Mark the player's race as completed in the store.
           setPlayerPhase('Finished'); // Set the player's phase to 'Finished'.
         }

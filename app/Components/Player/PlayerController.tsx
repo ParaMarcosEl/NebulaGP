@@ -9,8 +9,8 @@ import { getNearestCurveT, isMobileDevice } from '@/Utils';
 import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { onBulletCollision } from '@/Utils/collisions';
-import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
-import { TOTAL_LAPS, TUBE_RADIUS } from '@/Constants';
+// import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
+import { TUBE_RADIUS } from '@/Constants';
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
@@ -63,7 +63,7 @@ type PlayerSystemOptions = {
 
 export function usePlayerController({
   id: playerId,
-  trackId,
+  // trackId,
   minePoolRef,
   explosionsRef,
   aircraftRef,
@@ -102,12 +102,12 @@ export function usePlayerController({
 
   const controlsEnabled = raceStatus === 'racing';
 
-  const { stopRecording } = useGhostRecorder({
-    trackId,
-    mode: 'record',
-    targetRef: aircraftRef as React.RefObject<THREE.Object3D>,
-    onRecordingComplete: () => {},
-  });
+  // const { stopRecording } = useGhostRecorder({
+  //   trackId,
+  //   mode: 'record',
+  //   targetRef: aircraftRef as React.RefObject<THREE.Object3D>,
+  //   onRecordingComplete: () => {},
+  // });
 
   const { fire, poolRef } = useProjectiles(
     aircraftRef as React.RefObject<THREE.Object3D>,
@@ -137,12 +137,12 @@ export function usePlayerController({
     onCollide: onBulletCollision,
     owner: aircraftRef,
   });
-  const playerHistory = raceData[0].history;
+  // const playerHistory = raceData[0].history;
 
-  useEffect(() => {
-    if (playerHistory.length < TOTAL_LAPS) return;
-    // stopRecording();
-  }, [playerHistory.length, playerId, stopRecording]);
+  // useEffect(() => {
+  //   if (playerHistory.length < TOTAL_LAPS) return;
+  //   // stopRecording();
+  // }, [playerHistory.length, playerId, stopRecording]);
 
   useEffect(() => {
     const ship = aircraftRef.current;

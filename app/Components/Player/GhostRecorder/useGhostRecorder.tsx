@@ -123,7 +123,7 @@ export function useGhostRecorder({
       const lapTimes = history.map(({ time }) => time);
       const totalTime = history.reduce((prev, curr) => prev + curr.time, 0);
       console.log({ totalTime, bestTime, user, records });
-      const userRecord = records.find((record) => record.userId === user?.id);
+      const userRecord = records?.find((record) => record.userId === user?.id);
 
       if (totalTime > (userRecord?.totalTime || Infinity)) return;
 
@@ -133,6 +133,7 @@ export function useGhostRecorder({
         trackId: trackId.toString(),
         totalTime,
         lapTimes,
+        penalty: 0,
         ghostFrames: Array.from(recorded),
       };
 
