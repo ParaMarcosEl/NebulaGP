@@ -122,7 +122,11 @@ export function LODPlanet({
     // Fire event now that BVH is ready
     window.dispatchEvent(new Event('planet-bvh-ready'));
 
-    return () => useGameStore.getState().setMaterialLoaded(false);
+    return () => {
+      usePlanetStore.getState().setPlanetReady(false);
+      usePlanetStore.getState().setPlanetMeshes([]);
+      useGameStore.getState().setMaterialLoaded(false);
+    }
   }, [planetGroup]);
 
   const [lowTexture, midTexture, highTexture] = useTexture([

@@ -15,7 +15,6 @@ import { Skybox } from '@/Components/Skybox/Skybox';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import Link from 'next/link';
-import Planet from '@/Components/World/Planet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
@@ -35,7 +34,6 @@ import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 // import LODPlanet from '@/Components/LODTerrain/Planet/Worker/Planet';
 import WorldPlanet from '@/Components/World/Planet/WorldPlanet';
-import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
 
 const InitAudio = () => {
@@ -75,7 +73,6 @@ export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
-  const planetRef = useRef<THREE.Mesh>(null);
   const botRef1 = useRef<THREE.Group | null>(null);
   const botRef2 = useRef<THREE.Group | null>(null);
   const botRef3 = useRef<THREE.Group | null>(null);
@@ -83,8 +80,7 @@ export default function Stage1() {
   const botRef5 = useRef<THREE.Group | null>(null);
   const botRef6 = useRef<THREE.Group | null>(null);
   const botRef7 = useRef<THREE.Group | null>(null);
-  const { loader, setMaterialLoaded } = useCanvasLoader();
-  const { setPlanetMeshes } = usePlanetStore((s) => s);
+  const { loader } = useCanvasLoader();
     const explosionsRef = useRef<ExplosionHandle>(null);
 
   const playerRefs = useMemo(
@@ -166,9 +162,8 @@ export default function Stage1() {
     reset();
     return () => {
       setRaceComplete(false);
-      setPlanetMeshes([]);
     };
-  }, [reset, setMaterialLoaded, setRaceComplete, setTrack]);
+  }, [reset, setRaceComplete, setTrack]);
   
     const players = playerRefs.map((player, id) =>
       id === 0 ? (
@@ -307,27 +302,6 @@ export default function Stage1() {
             persistence={0.6}
             cloudRadius={300}
             clouds={false}
-          />
-          <Planet
-            position={new THREE.Vector3(900, 0, 0)}
-            texturePath="/stage_texture"
-            size={50}
-            ref={planetRef as React.RefObject<THREE.Mesh>}
-            clouds={false}
-            emissive
-            emissiveColor="lightblue"
-            emissiveIntensity={1}
-          />
-          <Planet
-            position={new THREE.Vector3(400, 150, 800)}
-            texturePath="/planet_texture01"
-            size={50}
-            color="purple"
-            ref={planetRef as React.RefObject<THREE.Mesh>}
-            clouds={false}
-            emissive
-            emissiveColor="lightblue"
-            emissiveIntensity={1}
           />
 
           <MinePadSpawner

@@ -5,10 +5,9 @@ import * as THREE from 'three';
 import { PlanetMaterial } from '../Planet/PlanetMaterial';
 import { planetWorkerPool } from '../Planet/PlanetWorkerPool';
 import { FBMParams } from './fbm';
-import { ensureBVH, prepareAndStoreMesh } from '@/Controllers/Game/usePlanetStore';
+import { ensureBVH, prepareAndStoreMesh, usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { buildBVHForMeshes } from './LODPlanet';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { useGameStore } from '@/Controllers/Game/GameController';
 
 type NoiseUniforms = FBMParams;
 
@@ -87,42 +86,49 @@ class QuadTreeNode {
       this.mesh = this.meshCache.get(cacheKey)!;
       return this.mesh;
     }
+
     if (this.mesh) return this.mesh;
+    // Count a new build
+    usePlanetStore.getState().incrementBuilds();
+    try {
 
-    const [bl, , tr] = this.bounds;
-    const segments = this.getSegmentsForDistance(projectedScreenSize);
-
-    const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
-    material.customUniforms.uPlanetSize.value = planetSize;
-    material.setParams(fbmToUniforms(uniforms));
-
-    const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
-      ...uniforms,
-      useRidged: true,
-    });
-
-    this.mesh = new THREE.Mesh(geometry, material);
-    this.mesh.userData.isPlanet = true;
-
-    const up = new THREE.Vector3(0, 0, 1);
-    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
-    this.mesh.quaternion.copy(q);
-
-    const quadCenterX = (bl.x + tr.x) / 2;
-    const quadCenterY = (bl.y + tr.y) / 2;
-    const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
-    translation.applyQuaternion(q);
-    translation.multiplyScalar(cubeSize / 2);
-    this.mesh.position.copy(translation);
-
-    prepareMeshBounds(this.mesh);
-    buildBVHForMeshes(this.mesh);
-
-    if (addMesh) addMesh(this.mesh);
-
-    this.meshCache.set(cacheKey, this.mesh);
-    window.dispatchEvent(new Event('mesh-ready'));
-    return this.mesh;
+      const [bl, , tr] = this.bounds;
+      const segments = this.getSegmentsForDistance(projectedScreenSize);
+  
+      const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
+      material.customUniforms.uPlanetSize.value = planetSize;
+      material.setParams(fbmToUniforms(uniforms));
+  
+      const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
+        ...uniforms,
+        useRidged: true,
+      });
+  
+      this.mesh = new THREE.Mesh(geometry, material);
+      this.mesh.userData.isPlanet = true;
+  
+      const up = new THREE.Vector3(0, 0, 1);
+      const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
+      this.mesh.quaternion.copy(q);
+  
+      const quadCenterX = (bl.x + tr.x) / 2;
+      const quadCenterY = (bl.y + tr.y) / 2;
+      const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
+      translation.applyQuaternion(q);
+      translation.multiplyScalar(cubeSize / 2);
+      this.mesh.position.copy(translation);
+  
+      prepareMeshBounds(this.mesh);
+      buildBVHForMeshes(this.mesh);
+  
+      if (addMesh) addMesh(this.mesh);
+  
+      this.meshCache.set(cacheKey, this.mesh);
+      window.dispatchEvent(new Event('mesh-ready'));
+      return this.mesh;
+    } finally {
+      usePlanetStore.getState().decrementBuilds();
+    }
   }
 
   async getMeshesAsync(
@@ -382,7 +388,7 @@ export class CubeTree {
     });
 
     this.updateBoundsCache(meshes);
-    useGameStore.getState().setMaterialLoaded(true);
+
     return this.group;
   }
 
