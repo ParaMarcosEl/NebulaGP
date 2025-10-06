@@ -21,7 +21,7 @@ export function RaceOver() {
       setTimeout(() => setVisible(true), 100);
 
       // After 5 seconds, move to side
-      const timer = setTimeout(() => setDocked(true), 5100);
+      const timer = setTimeout(() => setDocked(true), 10100);
       return () => clearTimeout(timer);
     }
   }, [raceOver]);

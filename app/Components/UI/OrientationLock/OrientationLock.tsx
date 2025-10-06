@@ -1,21 +1,6 @@
 'use client';
-import { useEffect, useState, CSSProperties } from 'react';
-
-const overlayStyles: CSSProperties = {
-  position: 'fixed',
-  top: 0,
-  right: 0,
-  bottom: 0,
-  left: 0,
-  zIndex: 50,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: 'black',
-  color: 'white',
-  textAlign: 'center',
-  padding: '1rem',
-};
+import { useEffect, useState } from 'react';
+import './OrientationLock.css';
 
 export default function OrientationLock() {
   const [isLandscape, setIsLandscape] = useState<boolean | null>(null); // null means "not determined yet"
@@ -34,7 +19,7 @@ export default function OrientationLock() {
   if (isLandscape === null) return null;
 
   return !isLandscape ? (
-    <div style={overlayStyles}>
+    <div className='overlay'>
       <p>Please rotate your device to landscape mode.</p>
     </div>
   ) : null;

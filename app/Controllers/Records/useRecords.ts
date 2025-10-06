@@ -58,12 +58,14 @@ export function useRecords() {
       });
       if (!res.ok) {
         const err = await res.json();
+        console.error({err});
         setAlert({ type: 'error', message: 'Failed to save record.'})
         throw new Error(err.error || 'Failed to create record');
       }
       const data: { message: string; recordId: string } = await res.json();
       // Optionally refetch records to update the list
       // await fetchRecords(newRecord.userId, newRecord.trackId);
+      setAlert({ type: 'info', message: 'Record saved.'})
       return data;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

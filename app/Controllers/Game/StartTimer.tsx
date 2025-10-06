@@ -17,29 +17,36 @@ export function StartCountdown() {
     if (raceStatus !== 'countdown' || isLoaderActive) return;
 
     const interval = setInterval(() => {
+
+      
       setTimeLeft((prev) => {
+        
+
+          if (prev <= 2) {
+            setTimeout(() => {
+              const startTime = performance.now();
+              setRaceStatus('racing');
+              setLapStartTime(startTime);
+
+              // also sync lapStartTime for all racers
+              useGameStore.setState((state) => {
+                const updatedRaceData = { ...state.raceData };
+                Object.keys(updatedRaceData).forEach((id) => {
+                  updatedRaceData[+id] = {
+                    ...updatedRaceData[+id],
+                    lapStartTime: startTime,
+                  };
+                });
+                return { raceData: updatedRaceData };
+              });
+            }, 1000);
+          }
         if (prev <= 1) {
           clearInterval(interval);
           setShowGo(true);
 
           setTimeout(() => {
             setShowGo(false);
-
-            const startTime = performance.now();
-            setRaceStatus('racing');
-            setLapStartTime(startTime);
-
-            // also sync lapStartTime for all racers
-            useGameStore.setState((state) => {
-              const updatedRaceData = { ...state.raceData };
-              Object.keys(updatedRaceData).forEach((id) => {
-                updatedRaceData[+id] = {
-                  ...updatedRaceData[+id],
-                  lapStartTime: startTime,
-                };
-              });
-              return { raceData: updatedRaceData };
-            });
           }, 1000);
 
 

@@ -23,6 +23,7 @@ export function useCheckpointController({
   cooldownTime?: number;
   onLapComplete?: () => void;
 }) {
+  const recordSaved = useRef(false);
   const checkpoint = useRef<Checkpoint>({
     mesh: checkpointMeshRef.current as THREE.Mesh,
     didPass: [false, false, false, false, false, false, false, false],
@@ -30,7 +31,7 @@ export function useCheckpointController({
   const aircraftBox = new THREE.Box3();
   const checkpointBox = new THREE.Box3();
   const cooldown = useRef([0, 0, 0, 0, 0, 0, 0, 0]);
-  const { completeLap, raceData, playerId, setRaceComplete, setPlayerPhase } = useGameStore(
+  const { completeLap, raceData, setRaceComplete, setPlayerPhase } = useGameStore(
     (s) => s,
   );
   const players = playerRefs?.map((ref, id) => {
@@ -61,10 +62,14 @@ export function useCheckpointController({
         // Check if the current racer is the player AND they have completed more than TOTAL_LAPS.
         // Note: The condition `player.lapCount > TOTAL_LAPS` seems to imply laps are counted *after* completion.
         // If TOTAL_LAPS is the target, then `player.lapCount === TOTAL_LAPS` might be more accurate for detecting race completion.
-        if (players[i].id === playerId && players[i].lapCount > TOTAL_LAPS) {
-          if (onRaceComplete) onRaceComplete();
-          setRaceComplete(); // Mark the player's race as completed in the store.
-          setPlayerPhase('Finished'); // Set the player's phase to 'Finished'.
+        if (players[i].id === 0 && players[i].lapCount === TOTAL_LAPS - 1) {
+          if (onRaceComplete && !recordSaved.current) {
+            console.debug({onRaceComplete})
+            recordSaved.current = true;
+            onRaceComplete();
+            setRaceComplete(); // Mark the player's race as completed in the store.
+            setPlayerPhase('Finished'); // Set the player's phase to 'Finished'.
+          }
         }
         checkpoint.current.didPass[i] = true;
         cooldown.current[i] = cooldownTime;

@@ -30,6 +30,8 @@ import ExplosionParticles, { ExplosionHandle } from '@/Components/Particles/Expl
 import { InitAudio } from '@/Components/Audio/InitAudio';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
 import { useRecords } from '@/Controllers/Records/useRecords';
+import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
+import { MemoryDebugHUD } from '@/Components/UI/HUD/Debug/Debug';
 
 function RaceProgressTracker({
   playerRefs,
@@ -71,6 +73,7 @@ export default function Stage1() {
   const { setPlanetMeshes } = usePlanetStore((s) => s);
   const { user } = useUserStore(s => s);
   const { fetchRecords, updateRecord, createRecord, records } = useRecords();
+  const { setAlert } = useAlertStore(s => s);
   
   
   useEffect(() => {
@@ -83,7 +86,9 @@ export default function Stage1() {
 
 
   const playerRefs = useMemo(
-    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
+    () => [aircraftRef, botRef1, botRef2, 
+      botRef3, botRef4, botRef5, botRef6, botRef7
+    ],
     [],
   );
 
@@ -187,7 +192,7 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         acceleration={0.01}
         damping={0.99}
-        botSpeed={1.4 + id * 0.1}
+        botSpeed={2 + id * 0.1}
       />
     ),
   );
@@ -285,37 +290,43 @@ export default function Stage1() {
             ref={playingFieldRef}
             curve={curve}
             spheres={[{ t: 0.4, radius: 100 }]}
-            onRaceComplete={() => {
-              console.log('onRaceComplete(): ', {user, records})
+            onRaceComplete={async () => {
               if (!user || !records) return;
               // if user data found
-              const userData = records.find((record) => record.userId === user?.id);
-              if (userData) {
-                if (! records) return;
-                console.debug('userData found', {userData});
-                const newBestTime = userData.totalTime < records[0].totalTime && userData.totalTime;
+              const userRecord = records.find((record) => record.userId === user?.uid);
+              const playerRaceData = raceData[0];
+              const totalTime = playerRaceData.raceTime + playerRaceData.penaltyTime;
+
+              if (userRecord) {
+                const newBestTime = totalTime < userRecord.raceTime + userRecord.penalty;
+
                 if (newBestTime) {
-                  console.debug('updating record for ', userData.name);
-                  updateRecord(userData.id, {
-                    ...userData,
-                    totalTime: newBestTime,
+                  setAlert({ type: 'info', message: `New best time recorded for ${userRecord.name}!` })
+                  updateRecord(userRecord.id, {
+                    ...userRecord,
+                    raceTime: userRecord.raceTime,
+                    penalty: userRecord.penalty,
+                    totalTime,
                   })
+                } else { 
+                  setAlert({ type: 'info', message: `Try Again.`})
                 }
               } else {
-                const playerData = raceData[0];
-                console.debug('userData not found. Creating entry.')
-                createRecord({
-                  name: user.name || '', 
-                  totalTime: 0, 
-                  userId: '', 
-                  trackId: '',
-                  penalty: 0,
-                  lapTimes: []
-                })
-                const playerTime = playerData.totalTime + playerData.penaltyTime;
-                const newBestTime = playerTime < records[0].totalTime + records[0].penalty && playerTime;
+                
+                const recordData = {
+                  userId: user?.uid || '-undefined-',
+                  name: user?.displayName || '-undefined-',
+                  trackId: window.location.pathname,
+                  totalTime,
+                  raceTime: playerRaceData.raceTime,
+                  lapTimes: [playerRaceData.history[0].time, playerRaceData.lapTime],
+                  penalty: playerRaceData.penaltyTime,
+                };
+                createRecord(recordData);
+                
+                const newBestTime = !records[0].totalTime || totalTime < records[0].totalTime;
                 if (newBestTime) {
-                  console.debug('New Best Time set!');
+                  setAlert({ type: 'success', message: `New Best Time!`})
                 }
               }
             }}
@@ -377,6 +388,7 @@ export default function Stage1() {
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>
+        <MemoryDebugHUD />
       </Canvas>
     </main>
   );
