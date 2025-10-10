@@ -7,7 +7,6 @@ import { planetWorkerPool } from '../Planet/PlanetWorkerPool';
 import { FBMParams } from './fbm';
 import { ensureBVH, prepareAndStoreMesh, usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { buildBVHForMeshes } from './LODPlanet';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { clearGroup, disposeMesh } from './helper';
 
 type NoiseUniforms = FBMParams;
@@ -50,16 +49,17 @@ class QuadTreeNode {
   children: QuadTreeNode[] = [];
   mesh: THREE.Mesh | null = null;
   private isSubdivided = false;
-  private meshCache: Map<string, THREE.Mesh>;
+  // meshCache now stores lastUsed metadata for LRU eviction
+  private meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>;
 
   private getSegmentsForDistance(projectedSize: number): number {
     if (projectedSize > 700) return 512;
-    if (projectedSize > 500) return 256;   
+    if (projectedSize > 500) return 256;
     if (projectedSize > 300) return 128;
     return 64;
   }
 
-  constructor(level: number, bounds: THREE.Vector2[], meshCache: Map<string, THREE.Mesh>) {
+  constructor(level: number, bounds: THREE.Vector2[], meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>) {
     this.level = level;
     this.bounds = bounds;
     this.meshCache = meshCache;
@@ -68,6 +68,22 @@ class QuadTreeNode {
   private getCacheKey(): string {
     const [bl, , tr] = this.bounds;
     return `${this.level}_${bl.x}_${bl.y}_${tr.x}_${tr.y}`;
+  }
+
+  // Dispose the current node's mesh (and remove from cache) if present.
+  private disposeOwnMesh() {
+    if (!this.mesh) return;
+    // find the cacheKey and remove it
+    const key = this.getCacheKey();
+    if (this.meshCache.has(key)) {
+      // dispose geometry/material and helpers
+      const entry = this.meshCache.get(key)!;
+      disposeMesh(entry.mesh);
+      this.meshCache.delete(key);
+    } else {
+      disposeMesh(this.mesh);
+    }
+    this.mesh = null;
   }
 
   async buildMeshAsync(
@@ -84,41 +100,43 @@ class QuadTreeNode {
   ): Promise<THREE.Mesh> {
     const cacheKey = this.getCacheKey();
     if (this.meshCache.has(cacheKey)) {
-      this.mesh = this.meshCache.get(cacheKey)!;
+      const entry = this.meshCache.get(cacheKey)!;
+      // update last used
+      entry.lastUsed = Date.now();
+      this.mesh = entry.mesh;
       return this.mesh;
     }
 
     if (this.mesh) return this.mesh;
-    // Count a new build
     usePlanetStore.getState().incrementBuilds();
-    try {
 
+    try {
       const [bl, , tr] = this.bounds;
       const segments = this.getSegmentsForDistance(projectedScreenSize);
-  
+
       const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
       material.customUniforms.uPlanetSize.value = planetSize;
       material.setParams(fbmToUniforms(uniforms));
-  
+
       const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
         ...uniforms,
         useRidged: true,
       });
-  
+
       this.mesh = new THREE.Mesh(geometry, material);
       this.mesh.userData.isPlanet = true;
-  
+
       const up = new THREE.Vector3(0, 0, 1);
       const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
       this.mesh.quaternion.copy(q);
-  
+
       const quadCenterX = (bl.x + tr.x) / 2;
       const quadCenterY = (bl.y + tr.y) / 2;
       const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
       translation.applyQuaternion(q);
       translation.multiplyScalar(cubeSize / 2);
       this.mesh.position.copy(translation);
-  
+
       prepareMeshBounds(this.mesh);
       if (!this.mesh.userData.bvhBuilt) {
         buildBVHForMeshes(this.mesh);
@@ -126,71 +144,72 @@ class QuadTreeNode {
       }
 
       if (addMesh) addMesh(this.mesh);
-  
-      this.meshCache.set(cacheKey, this.mesh);
+      this.meshCache.set(cacheKey, { mesh: this.mesh, lastUsed: Date.now() });
+
       window.dispatchEvent(new Event('mesh-ready'));
       return this.mesh;
     } finally {
       usePlanetStore.getState().decrementBuilds();
     }
   }
-  
+
   async getMeshesAsync(
-  normal: THREE.Vector3,
-  planetSize: number,
-  cubeSize: number,
-  camera: THREE.Camera,
-  maxDepth: number,
-  meshes: THREE.Mesh[],
-  lowTexture: THREE.Texture,
-  midTexture: THREE.Texture,
-  highTexture: THREE.Texture,
-  uniforms: NoiseUniforms,
-  frustum: THREE.Frustum,
-  addMesh?: (mesh: THREE.Mesh) => void,
-): Promise<void> {
-  const [bl, , tr] = this.bounds;
+    normal: THREE.Vector3,
+    planetSize: number,
+    cubeSize: number,
+    camera: THREE.Camera,
+    maxDepth: number,
+    meshes: THREE.Mesh[],
+    lowTexture: THREE.Texture,
+    midTexture: THREE.Texture,
+    highTexture: THREE.Texture,
+    uniforms: NoiseUniforms,
+    frustum: THREE.Frustum,
+    addMesh?: (mesh: THREE.Mesh) => void,
+  ): Promise<void> {
+    const [bl, , tr] = this.bounds;
 
-  // --- Preallocate scratch vectors (avoid repeated new)
-  const tmpCenter = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
-  const up = new THREE.Vector3(0, 0, 1);
-  const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
+    const tmpCenter = new THREE.Vector3((bl.x + tr.x) / 2, (bl.y + tr.y) / 2, 1);
+    const up = new THREE.Vector3(0, 0, 1);
+    const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
 
-  const quadWidth = tr.x - bl.x;
-  const nodeSize = quadWidth * cubeSize;
+    const quadWidth = tr.x - bl.x;
+    const nodeSize = quadWidth * cubeSize;
 
-  tmpCenter.applyQuaternion(q);
-  tmpCenter.multiplyScalar(cubeSize / 2);
-  tmpCenter.addScaledVector(normal, cubeSize / 2);
+    tmpCenter.applyQuaternion(q);
+    tmpCenter.multiplyScalar(cubeSize / 2);
+    tmpCenter.addScaledVector(normal, cubeSize / 2);
 
-  // --- Quick frustum check
-  const sphere = new THREE.Sphere(tmpCenter, nodeSize * 0.75);
-  if (!frustum.intersectsSphere(sphere)) return;
+    const sphere = new THREE.Sphere(tmpCenter, nodeSize * 0.75);
+    if (!frustum.intersectsSphere(sphere)) return;
 
-  // --- Projected size check
-  const dist = camera.position.distanceTo(tmpCenter);
-  const cameraFov = THREE.MathUtils.degToRad(
-    (camera as THREE.PerspectiveCamera).fov
-  );
-  const viewportHeight = window.innerHeight;
-  const projectedScreenSize =
-    (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
+    const dist = camera.position.distanceTo(tmpCenter);
+    const cameraFov = THREE.MathUtils.degToRad(
+      (camera as THREE.PerspectiveCamera).fov
+    );
+    const viewportHeight = window.innerHeight;
+    const projectedScreenSize =
+      (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
 
-  const pixelThreshold = 512;
+    const pixelThreshold = 512;
 
-  if (this.level < maxDepth && projectedScreenSize > pixelThreshold) {
-    this.subdivide();
+    if (this.level < maxDepth && projectedScreenSize > pixelThreshold) {
+      // subdividing — free parent's mesh immediately to reduce memory use
+      if (!this.isSubdivided) {
+        this.subdivide();
+        // dispose parent's mesh if it exists. This ensures children take over detail.
+        this.disposeOwnMesh();
+        this.isSubdivided = true;
+      }
 
-    const childMeshes: THREE.Mesh[][] = await Promise.all(
-      this.children.map(async (child) => {
-        const meshesForChild: THREE.Mesh[] = [];
+      for (const child of this.children) {
         await child.getMeshesAsync(
           normal,
           planetSize,
           cubeSize,
           camera,
           maxDepth,
-          meshesForChild,
+          meshes,
           lowTexture,
           midTexture,
           highTexture,
@@ -198,60 +217,9 @@ class QuadTreeNode {
           frustum,
           addMesh,
         );
-        return meshesForChild;
-      }),
-    );
-
-    const allChildMeshes = childMeshes.flat();
-
-    if (allChildMeshes.length > 1) {
-      // --- Merge geometries
-      const mergedGeometry = BufferGeometryUtils.mergeGeometries(
-        allChildMeshes.map((m) => m.geometry as THREE.BufferGeometry),
-        true,
-      );
-
-      // --- Create a shared material (reuse if possible)
-      const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
-      material.customUniforms.uPlanetSize.value = planetSize;
-      material.setParams(fbmToUniforms(uniforms));
-
-      this.mesh = new THREE.Mesh(mergedGeometry, material);
-      this.mesh.userData.isPlanet = true;
-
-      this.mesh.quaternion.copy(q);
-
-      const quadCenterX = (bl.x + tr.x) / 2;
-      const quadCenterY = (bl.y + tr.y) / 2;
-      const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
-      translation.applyQuaternion(q);
-      translation.multiplyScalar(cubeSize / 2);
-      this.mesh.position.copy(translation);
-
-      prepareMeshBounds(this.mesh);
-
-      // --- Memoized BVH build
-      if (!this.mesh.userData.bvhBuilt) {
-        buildBVHForMeshes(this.mesh);
-        this.mesh.userData.bvhBuilt = true;
       }
-
-      if (addMesh) addMesh(this.mesh);
-
-      // --- Dispose merged children after merging
-      allChildMeshes.forEach((m) => {
-        if (m.parent) m.parent.remove(m);
-        disposeMesh(m);
-      });
-
-      meshes.push(this.mesh);
-    } else if (allChildMeshes.length === 1) {
-      meshes.push(allChildMeshes[0]);
-    }
-  } else {
-    // --- Leaf node: build async mesh
-    meshes.push(
-      await this.buildMeshAsync(
+    } else {
+      const mesh = await this.buildMeshAsync(
         normal,
         planetSize,
         cubeSize,
@@ -262,14 +230,18 @@ class QuadTreeNode {
         camera,
         projectedScreenSize,
         addMesh,
-      ),
-    );
+      );
+      // mark used in cache if present
+      const cacheKey = this.getCacheKey();
+      if (this.meshCache.has(cacheKey)) {
+        this.meshCache.get(cacheKey)!.lastUsed = Date.now();
+      }
+      meshes.push(mesh);
+    }
   }
-}
-
 
   subdivide() {
-    if (this.children.length > 0 || this.isSubdivided) return;
+    if (this.children.length > 0) return;
     const [bl, , tr] = this.bounds;
     const midX = (bl.x + tr.x) / 2;
     const midY = (bl.y + tr.y) / 2;
@@ -288,7 +260,7 @@ class CubeFace {
   normal: THREE.Vector3;
   root: QuadTreeNode;
 
-  constructor(normal: THREE.Vector3, meshCache: Map<string, THREE.Mesh>) {
+  constructor(normal: THREE.Vector3, meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>) {
     this.normal = normal;
     this.root = new QuadTreeNode(0, [
       new THREE.Vector2(-1, -1),
@@ -307,7 +279,7 @@ class CubeFace {
     midTexture: THREE.Texture,
     highTexture: THREE.Texture,
     uniforms: NoiseUniforms,
-    frustum: THREE.Frustum, 
+    frustum: THREE.Frustum,
     addMesh?: (mesh: THREE.Mesh) => void,
   ): Promise<THREE.Mesh[]> {
     const meshes: THREE.Mesh[] = [];
@@ -331,18 +303,9 @@ class CubeFace {
 
 export class CubeTree {
   private boundsCache: { mesh: THREE.Mesh; box: THREE.Box3; sphere: THREE.Sphere }[] = [];
-  private meshCache: Map<string, THREE.Mesh> = new Map();
+  // meshCache holds metadata now for LRU eviction
+  private meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }> = new Map();
   private maxCacheSize = 500;
-
-  // private cacheMesh(key: string, mesh: THREE.Mesh) {
-  //   if (this.meshCache.size > this.maxCacheSize) {
-  //     const oldestKey = this.meshCache.keys().next().value;
-  //     const oldest = this.meshCache.get(oldestKey);
-  //     if (oldest) disposeMesh(oldest);
-  //     this.meshCache.delete(oldestKey);
-  //   }
-  //   this.meshCache.set(key, mesh);
-  // }
 
   private group: THREE.Group;
   private addMesh?: (mesh: THREE.Mesh) => void;
@@ -399,8 +362,33 @@ export class CubeTree {
     return closest;
   }
 
-  async getDynamicMeshesAsync(camera: THREE.Camera, maxDepth = 1): Promise<THREE.Group> {
+  private evictIfNeeded() {
+    if (this.meshCache.size <= this.maxCacheSize) return;
 
+    // sort entries by lastUsed ascending (oldest first)
+    const entries = Array.from(this.meshCache.entries());
+    entries.sort((a, b) => a[1].lastUsed - b[1].lastUsed);
+
+    const toRemoveCount = this.meshCache.size - this.maxCacheSize;
+    for (let i = 0; i < toRemoveCount; i++) {
+      const [key, entry] = entries[i];
+      // remove from scene/group if present
+      try {
+        // If this mesh is in the group, remove it
+        if (this.group.children.includes(entry.mesh)) {
+          this.group.remove(entry.mesh);
+        }
+        disposeMesh(entry.mesh);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        // best-effort dispose
+        try { disposeMesh(entry.mesh); } catch {}
+      }
+      this.meshCache.delete(key);
+    }
+  }
+
+  async getDynamicMeshesAsync(camera: THREE.Camera, maxDepth = 1): Promise<THREE.Group> {
     const frustum = getCameraFrustum(camera);
     const results = await Promise.all(
       this.faces.map((face) =>
@@ -419,13 +407,26 @@ export class CubeTree {
       ),
     );
     const meshes = results.flat();
-    clearGroup(this.group)
+    clearGroup(this.group);
     meshes.forEach((m) => {
       ensureBVH(m);
       this.group.add(m);
+
+      // mark mesh as recently used if cached
+      // find its cache key by checking user data or using bounding boxes - we try to update cache by reference
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for (const [key, entry] of this.meshCache.entries()) {
+        if (entry.mesh === m) {
+          entry.lastUsed = Date.now();
+          break;
+        }
+      }
     });
 
     this.updateBoundsCache(meshes);
+
+    // Evict least-recently-used if over budget
+    this.evictIfNeeded();
 
     return this.group;
   }
@@ -446,21 +447,21 @@ export class CubeTree {
           this.uniforms,
           frustum,
           this.addMesh,
-        )),
+        )) as THREE.Mesh[],
       );
     }
     return meshes;
   }
 
   dispose(): void {
-    this.markDead(); // mark CubeTree dead before cleaning up
-    this.meshCache.forEach((mesh) => {
-      if (mesh.geometry) mesh.geometry.dispose();
-      if (Array.isArray(mesh.material)) mesh.material.forEach((m) => m.dispose());
-      else (mesh.material as THREE.Material)?.dispose();
+    this.markDead();
+    // dispose cache entries
+    this.meshCache.forEach((entry) => {
+      if (entry.mesh.geometry) entry.mesh.geometry.dispose();
+      if (Array.isArray(entry.mesh.material)) entry.mesh.material.forEach((m) => m.dispose());
+      else (entry.mesh.material as THREE.Material)?.dispose();
+      try { disposeMesh(entry.mesh); } catch {}
     });
-
-    this.meshCache.forEach((mesh) => disposeMesh(mesh));
 
     this.meshCache.clear();
     this.boundsCache = [];

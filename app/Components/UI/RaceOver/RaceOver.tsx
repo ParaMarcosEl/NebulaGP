@@ -57,7 +57,7 @@ export function RaceOver() {
       <hr />
       <br />
       <div>
-        <Link href={'/stage-select'} onClick={handleTryAgain}>
+        <Link href={'/'} onClick={handleTryAgain}>
           Stage Select
         </Link>
       </div>

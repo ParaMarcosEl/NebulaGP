@@ -4,12 +4,13 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   z-index: -1;
 }
 
 .welcome {
-  margin-right: 1em;
+  margin: 1em;
+
 }
 
 .main-content::-webkit-scrollbar {
@@ -18,6 +19,7 @@
 
 /* Main content */
 .main-content {
+  background-color: black;
   position: absolute;
   width: calc(100vw);
   height: 100vh;
@@ -32,14 +34,35 @@
 
 /* UI container */
 .ui-container {
-  position: absolute;
+  position:absolute;
+  padding-top: 20px;
   width: calc(100% - 40px);
-  top: 40px;
+  top: 60px;
   left: 20px;
   background: rgba(0, 0, 0, 0);
   z-index: 100;
-  overflow: hidden;
+  overflow-y: auto; /* Essential for scrolling */
+  overflow-x: hidden;
+  height: calc(100vh - 80px);
   overscroll-behavior: scroll;
+
+  -ms-overflow-style: none;
+
+  /* 2. Firefox */
+  scrollbar-width: none; 
+
+  /* Create a fade-out mask at the top */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40px);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 40px);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* 3. Chrome, Safari, and other Webkit browsers */
+.ui-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* Headings and text */
@@ -59,6 +82,7 @@
   display: inline-block;
   padding: 0.75rem 1.5rem;
   background-color: #0af;
+  width: max-content;
   color: #000;
   text-decoration: none;
   font-weight: bold;
@@ -70,12 +94,18 @@
   background-color: #08c;
 }
 
+.play {
+  align-self: center;
+  display: block;
+}
+
 /* Controls */
-.controls-section {
-  margin-top: 60px;
+.section {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  min-height: calc(100vh - 80px);
+  gap: 1em;
 }
 
 .subheading {
@@ -132,3 +162,35 @@ kbd {
   font-family: monospace;
   font-size: 0.9rem;
 }
+
+
+
+.stage-select-heading {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  color: #0af; /* use CSS variable if you have one */
+}
+
+.stage-select-link {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--blue);
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid white;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  margin: 0.5rem;
+  min-width: 100px;
+}
+
+.stage-select-link:hover {
+  opacity: 0.85;
+}
+
+.spacer {
+  height: 100vh;
+}
+

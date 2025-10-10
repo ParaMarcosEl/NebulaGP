@@ -247,7 +247,7 @@ export default function TestStage() {
           top: 0,
           left: 0,
         }}
-        href={'/stage-select'}
+        href={'/'}
       >
         EXIT RACE
       </Link>
