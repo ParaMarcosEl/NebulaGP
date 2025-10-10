@@ -19,8 +19,8 @@ export default function Stars({
   count = 2000,
   radius = 800,
   size = 1.5,
-  rotationSpeed = 0.000,
-  texturePath = '/textures/particleDot512.png', 
+  rotationSpeed = 0.0,
+  texturePath = '/textures/particleDot512.png',
   color = '#ffffff',
   opacity = 0.9,
 }: StarsProps) {

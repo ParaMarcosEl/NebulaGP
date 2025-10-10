@@ -79,7 +79,7 @@ export default function Home() {
             shadow-camera-far={500}
           />
           <pointLight position={[-10, 5, -10]} intensity={0.3} />
-        <Stars texturePath='/textures/particleDot512.png' />
+          <Stars texturePath="/textures/particleDot512.png" />
           <Planet
             clouds={false}
             texturePath="molten_rock128"
@@ -118,7 +118,7 @@ export default function Home() {
             orbitSpeed={0.287}
             tilt={1}
           >
-            <Planet texturePath='granite_ground128' size={1} clouds={false} />
+            <Planet texturePath="granite_ground128" size={1} clouds={false} />
           </Satellite>
 
           <Satellite
@@ -127,7 +127,7 @@ export default function Home() {
             orbitSpeed={0.431}
             tilt={5}
           >
-            <Planet texturePath='granite_ground128' size={1} clouds={false} />
+            <Planet texturePath="granite_ground128" size={1} clouds={false} />
           </Satellite>
           <Planet
             clouds={false}

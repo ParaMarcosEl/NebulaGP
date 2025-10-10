@@ -23,9 +23,7 @@ export default function Achievements() {
           >
             <h3>{ach.title}</h3>
             <p>{ach.desc}</p>
-            <div className="achievement-status">
-              {ach.unlocked ? '✓ Unlocked' : '🔒 Locked'}
-            </div>
+            <div className="achievement-status">{ach.unlocked ? '✓ Unlocked' : '🔒 Locked'}</div>
           </div>
         ))}
       </div>

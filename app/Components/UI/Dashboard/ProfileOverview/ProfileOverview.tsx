@@ -1,7 +1,7 @@
-import { useUserStore } from "@/Controllers/Users/useUserStore";
+import { useUserStore } from '@/Controllers/Users/useUserStore';
 
 export default function ProfileOverview() {
-    const { user } = useUserStore(s => s );
+  const { user } = useUserStore((s) => s);
   return (
     <div>
       <h2>Commander Profile</h2>
