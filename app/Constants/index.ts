@@ -18,41 +18,44 @@ export const keyboardControlsMap = [
 ];
 
 type shipType = {
-  scale: number,
+  scale: number;
   offset?: [number, number, number] | THREE.Vector3;
-  rotation: number | THREE.Euler | [x: number, y: number, z: number, order?: THREE.EulerOrder | undefined],
-  path: string
-}
+  rotation:
+    | number
+    | THREE.Euler
+    | [x: number, y: number, z: number, order?: THREE.EulerOrder | undefined];
+  path: string;
+};
 
 export const SHIPS: Record<string, shipType> = {
   ship01: {
     scale: 1,
     rotation: [0, Math.PI, 0],
-    path: '/models/spaceship.glb'
+    path: '/models/spaceship.glb',
   },
   ship02: {
     scale: 4,
     rotation: [0, -Math.PI, 0],
-    path: '/models/spaceship02.glb'
+    path: '/models/spaceship02.glb',
   },
   ship03: {
     scale: 4,
-    offset: [0, .5, 0],
+    offset: [0, 0.5, 0],
     rotation: [0, 0, 0],
-    path: '/models/spaceship03.glb'
+    path: '/models/spaceship03.glb',
   },
   ship04: {
     scale: 3,
-    rotation: [0, Math.PI/2, 0],
-    path: '/models/spaceship04.glb'
+    rotation: [0, Math.PI / 2, 0],
+    path: '/models/spaceship04.glb',
   },
   ship05: {
     scale: 4,
-    offset: [0, .5, 0],
+    offset: [0, 0.5, 0],
     rotation: [0, Math.PI, 0],
-    path: '/models/spaceship05.glb'
+    path: '/models/spaceship05.glb',
   },
-}
+};
 
 export const CHUNK_SIZE = 128;
 export const MAX_DEPTH = 4;

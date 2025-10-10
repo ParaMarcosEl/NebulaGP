@@ -22,7 +22,7 @@ export default function NavBar() {
   const [aboutOpen, setAboutOpen] = useState(false);
 
   return (
-    <div className='navbar-container'>
+    <div className="navbar-container">
       <div className={cx('navbar')}>
         {/* Logo */}
         <Link href="/" className="navbar-logo">
@@ -46,11 +46,11 @@ export default function NavBar() {
         <Modal isOpen={accountOpen} onClose={() => setAccountOpen(false)}>
           <AccountSettings />
         </Modal>
-            <Modal isOpen={aboutOpen} onClose={() => setAboutOpen(false)}>
-              <About />
-            </Modal>
+        <Modal isOpen={aboutOpen} onClose={() => setAboutOpen(false)}>
+          <About />
+        </Modal>
       </div>
-      <div className='account-navbar'>
+      <div className="account-navbar">
         <AccountLinks user={user} setAccountOpen={setAccountOpen} />
       </div>
     </div>
@@ -79,12 +79,11 @@ function NavLinks({
   );
 }
 
-
 // 🔗 Shared Nav Links Component
 function AccountLinks({
   user,
   setAccountOpen,
-}: {  
+}: {
   user: User | null;
   setAccountOpen: (v: boolean) => void;
 }) {
@@ -95,9 +94,9 @@ function AccountLinks({
           Account
         </button>
         <LogoutButton className={'nav-btn'} />
-          <span className="user">
-            <span className="name">Pilot: {user?.displayName} </span>
-          </span>
+        <span className="user">
+          <span className="name">Pilot: {user?.displayName} </span>
+        </span>
       </AuthGuard>
     </>
   );

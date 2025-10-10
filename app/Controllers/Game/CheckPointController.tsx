@@ -31,9 +31,7 @@ export function useCheckpointController({
   const aircraftBox = new THREE.Box3();
   const checkpointBox = new THREE.Box3();
   const cooldown = useRef([0, 0, 0, 0, 0, 0, 0, 0]);
-  const { completeLap, raceData, setRaceComplete, setPlayerPhase } = useGameStore(
-    (s) => s,
-  );
+  const { completeLap, raceData, setRaceComplete, setPlayerPhase } = useGameStore((s) => s);
   const players = playerRefs?.map((ref, id) => {
     return raceData[id];
   });
@@ -64,7 +62,7 @@ export function useCheckpointController({
         // If TOTAL_LAPS is the target, then `player.lapCount === TOTAL_LAPS` might be more accurate for detecting race completion.
         if (players[i].id === 0 && players[i].lapCount === TOTAL_LAPS - 1) {
           if (onRaceComplete && !recordSaved.current) {
-            console.debug({onRaceComplete})
+            console.debug({ onRaceComplete });
             recordSaved.current = true;
             onRaceComplete();
             setRaceComplete(); // Mark the player's race as completed in the store.

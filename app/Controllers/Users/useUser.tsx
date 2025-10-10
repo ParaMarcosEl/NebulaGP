@@ -7,16 +7,15 @@ import { getToken } from 'firebase/app-check';
 
 // Fetch wrapper that automatically attaches App Check token and retries once on failure
 export async function fetchWithAppCheck(url: string, options: RequestInit = {}) {
-  if (!appCheck) throw new Error("App Check not initialized");
+  if (!appCheck) throw new Error('App Check not initialized');
 
   const { token } = await getToken(appCheck, /* forceRefresh */ false);
 
   const headers = new Headers(options.headers || {});
-  headers.set("x-firebase-appcheck", token);
+  headers.set('x-firebase-appcheck', token);
 
   return fetch(url, { ...options, headers });
 }
-
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -32,7 +31,7 @@ export function useUser() {
       const data: User = await res.json();
       setUser(data);
       return data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || 'Failed to fetch user');
       throw err;
@@ -55,7 +54,7 @@ export function useUser() {
         throw new Error(err.error || 'Failed to create user');
       }
       return await res.json();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || 'Failed to create user');
       throw err;
@@ -78,7 +77,7 @@ export function useUser() {
         throw new Error(err.error || 'Failed to update user');
       }
       return await res.json();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || 'Failed to update user');
       throw err;
@@ -97,7 +96,7 @@ export function useUser() {
         throw new Error(err.error || 'Failed to delete user');
       }
       setUser(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || 'Failed to delete user');
       throw err;
@@ -111,7 +110,7 @@ export function useUser() {
       await signOut(auth);
       setUser(null);
       setError(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || 'Failed to sign out');
       throw err;

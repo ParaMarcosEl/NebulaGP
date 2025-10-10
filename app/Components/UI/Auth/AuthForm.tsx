@@ -23,15 +23,71 @@ interface AuthFormProps {
 }
 
 export const COUNTRIES = [
-  'Argentina', 'Australia', 'Canada', 'China', 'France', 'Germany',
-  'India', 'Japan', 'Mexico', 'United Kingdom', 'United States', 'Other',
+  'Argentina',
+  'Australia',
+  'Canada',
+  'China',
+  'France',
+  'Germany',
+  'India',
+  'Japan',
+  'Mexico',
+  'United Kingdom',
+  'United States',
+  'Other',
 ];
 
 export const US_STATES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
-  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
-  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
-  'VA','WA','WV','WI','WY',
+  'AL',
+  'AK',
+  'AZ',
+  'AR',
+  'CA',
+  'CO',
+  'CT',
+  'DE',
+  'FL',
+  'GA',
+  'HI',
+  'ID',
+  'IL',
+  'IN',
+  'IA',
+  'KS',
+  'KY',
+  'LA',
+  'ME',
+  'MD',
+  'MA',
+  'MI',
+  'MN',
+  'MS',
+  'MO',
+  'MT',
+  'NE',
+  'NV',
+  'NH',
+  'NJ',
+  'NM',
+  'NY',
+  'NC',
+  'ND',
+  'OH',
+  'OK',
+  'OR',
+  'PA',
+  'RI',
+  'SC',
+  'SD',
+  'TN',
+  'TX',
+  'UT',
+  'VT',
+  'VA',
+  'WA',
+  'WV',
+  'WI',
+  'WY',
 ];
 
 export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormProps) {
@@ -75,7 +131,7 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
         type: 'info',
         message: `Password reset email sent to ${email}. Please check your inbox.`,
       });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error('Password reset error:', err);
       setAlert({
@@ -146,7 +202,10 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
             return;
           }
           await fetchUserFromAPI(cred.user.uid);
-          setAlert({ type: 'info', message: `Logged in as ${cred.user.displayName || normalizedEmail}` });
+          setAlert({
+            type: 'info',
+            message: `Logged in as ${cred.user.displayName || normalizedEmail}`,
+          });
         }
       }
     } catch (err) {
@@ -177,7 +236,9 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
       {currentMode === 'register' ? (
         <>
           <div className="input">
-            <label htmlFor="password"><span className='required'>* </span>Password</label>
+            <label htmlFor="password">
+              <span className="required">* </span>Password
+            </label>
             <input
               id="password"
               type="password"
@@ -189,7 +250,9 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
           </div>
 
           <div className="input">
-            <label htmlFor="confirmPassword"><span className='required'>* </span>Confirm Password</label>
+            <label htmlFor="confirmPassword">
+              <span className="required">* </span>Confirm Password
+            </label>
             <input
               id="confirmPassword"
               type="password"
@@ -204,7 +267,9 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
           <div className="password-strengths">
             <ul className="password-hints">
               <li className={requirements.length ? 'valid' : ''}>8+ characters</li>
-              <li className={requirements.uppercase ? 'valid' : ''}>At least one uppercase letter</li>
+              <li className={requirements.uppercase ? 'valid' : ''}>
+                At least one uppercase letter
+              </li>
               <li className={requirements.number ? 'valid' : ''}>At least one number</li>
               <li className={requirements.symbol ? 'valid' : ''}>At least one symbol</li>
             </ul>
@@ -262,86 +327,81 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
           />
           <div className="address">
             <h2>Address (optional)</h2>
-            </div>
-            <Input
-              type="text"
-              rootClass="input"
-              placeholder="Address Line 1"
-              label="Address Line 1"
-              value={address1}
-              setValue={setAddress1}
-              className="auth-input"
-            />
-            <Input
-              type="text"
-              rootClass="input"
-              placeholder="Address Line 2"
-              label="Address Line 2"
-              value={address2}
-              setValue={setAddress2}
-              className="auth-input"
-            />
-            <Input
-              rootClass="input"
-              type="text"
-              placeholder="City"
-              label="City"
-              value={city}
-              setValue={setCity}
-              className="auth-input"
-            />
-            {region === 'United States' && 
-            
-              <div className="input">
-                <label htmlFor="state">State</label>
-                <select
-                  id="state"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="auth-input"
-                >
-                  <option value="">Select State</option>
-                  {US_STATES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            }
-            <Input
-              rootClass="input"
-              label="Zip"
-              type="text"
-              placeholder="Zip"
-              value={zip}
-              setValue={setZip}
-              className="auth-input"
-            />
+          </div>
+          <Input
+            type="text"
+            rootClass="input"
+            placeholder="Address Line 1"
+            label="Address Line 1"
+            value={address1}
+            setValue={setAddress1}
+            className="auth-input"
+          />
+          <Input
+            type="text"
+            rootClass="input"
+            placeholder="Address Line 2"
+            label="Address Line 2"
+            value={address2}
+            setValue={setAddress2}
+            className="auth-input"
+          />
+          <Input
+            rootClass="input"
+            type="text"
+            placeholder="City"
+            label="City"
+            value={city}
+            setValue={setCity}
+            className="auth-input"
+          />
+          {region === 'United States' && (
             <div className="input">
-              <label htmlFor="region">Country/Region</label>
+              <label htmlFor="state">State</label>
               <select
-                id="region"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
+                id="state"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
                 className="auth-input"
               >
-                <option value="">Select Region</option>
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                <option value="">Select State</option>
+                {US_STATES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+          <Input
+            rootClass="input"
+            label="Zip"
+            type="text"
+            placeholder="Zip"
+            value={zip}
+            setValue={setZip}
+            className="auth-input"
+          />
+          <div className="input">
+            <label htmlFor="region">Country/Region</label>
+            <select
+              id="region"
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              className="auth-input"
+            >
+              <option value="">Select Region</option>
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
         </>
       )}
 
-      <button
-        type="submit"
-        className="auth-button"
-        disabled={loading}
-      >
+      <button type="submit" className="auth-button" disabled={loading}>
         {loading ? <Spinner size={0.3} /> : currentMode === 'register' ? 'Register' : 'Login'}
       </button>
 
@@ -357,7 +417,7 @@ export default function AuthForm({ mode = 'login', setRegisterOpen }: AuthFormPr
               Register
             </button>
           </span>
-          
+
           <button
             type="button"
             className="auth-switch-btn forgot-btn"

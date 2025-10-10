@@ -1,4 +1,4 @@
-import { useCleanup } from "./useCleanup";
+import { useCleanup } from './useCleanup';
 
 // Add the new custom hook
 export function SceneCleanup() {

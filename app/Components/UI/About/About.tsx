@@ -8,7 +8,9 @@ export default function About() {
     <div className={styles.container} role="dialog" aria-labelledby="about-title">
       <header className={styles.header}>
         <div>
-          <h1 id="about-title" className={styles.title}>Nebula Grand Prix</h1>
+          <h1 id="about-title" className={styles.title}>
+            Nebula Grand Prix
+          </h1>
           <p className={styles.subtitle}>A 3D zero gravity flight racing simulator</p>
         </div>
         <div className={styles.version}>v0.1</div>
@@ -16,7 +18,13 @@ export default function About() {
 
       <section className={styles.authorSection}>
         <div className={styles.avatar} aria-hidden>
-          <svg viewBox="0 0 96 96" width="56" height="56" xmlns="http://www.w3.org/2000/svg" role="img">
+          <svg
+            viewBox="0 0 96 96"
+            width="56"
+            height="56"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+          >
             <defs>
               <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
                 <stop offset="0" stopColor="#1f6feb" />
@@ -24,7 +32,17 @@ export default function About() {
               </linearGradient>
             </defs>
             <rect width="96" height="96" rx="18" fill="url(#g)" />
-            <text x="50%" y="54%" textAnchor="middle" fontSize="36" fontWeight="700" fill="#fff" fontFamily="Inter, Arial, sans-serif">PE</text>
+            <text
+              x="50%"
+              y="54%"
+              textAnchor="middle"
+              fontSize="36"
+              fontWeight="700"
+              fill="#fff"
+              fontFamily="Inter, Arial, sans-serif"
+            >
+              PE
+            </text>
           </svg>
         </div>
 
@@ -35,9 +53,10 @@ export default function About() {
       </section>
 
       <p className={styles.bio}>
-        Nebula Grand Prix is an experimental browser-native flight experience that explores procedural worlds,
-        GPU-driven effects, and responsive, high-performance WebGL gameplay. It mixes creative systems
-        design with practical engineering to push the limits of real-time graphics in the browser.
+        Nebula Grand Prix is an experimental browser-native flight experience that explores
+        procedural worlds, GPU-driven effects, and responsive, high-performance WebGL gameplay. It
+        mixes creative systems design with practical engineering to push the limits of real-time
+        graphics in the browser.
       </p>
 
       <section className={styles.section}>
@@ -54,8 +73,19 @@ export default function About() {
       <section className={styles.section}>
         <h4 className={styles.sectionTitle}>Tech Stack</h4>
         <div className={styles.techList}>
-          {['TypeScript', 'Next.js', 'React', 'React Three Fiber', 'Three.js', 'GLSL', 'Zustand', 'Firebase'].map(t => (
-            <span key={t} className={styles.techTag}>{t}</span>
+          {[
+            'TypeScript',
+            'Next.js',
+            'React',
+            'React Three Fiber',
+            'Three.js',
+            'GLSL',
+            'Zustand',
+            'Firebase',
+          ].map((t) => (
+            <span key={t} className={styles.techTag}>
+              {t}
+            </span>
           ))}
         </div>
       </section>

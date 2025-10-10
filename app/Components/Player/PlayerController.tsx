@@ -339,7 +339,7 @@ export function usePlayerController({
         ship,
         curve, // the same curve you used for TubeGeometry
         TUBE_RADIUS, // your base radius
-        [], // SphereSpec[] for swells
+        [{ t: 0.4, radius: 100 }], // SphereSpec[] for swells
         playerId,
         delta,
         raceData,

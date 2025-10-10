@@ -50,51 +50,51 @@ export default function GameSettings() {
             Enable Mobile Controls
           </label>
         </div>
-        
-            <div className="subheading">🕹️ Keyboard</div>
 
-            <table className="control-table">
-              <thead>
-                <tr>
-                  <th>Key</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {keyboardControls.map(([keys, action], i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'even-row' : ''}>
-                    <td>
-                      {(keys as string[]).map((key) => (
-                        <kbd key={key}>{key}</kbd>
-                      ))}
-                    </td>
-                    <td>{action}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="subheading">🕹️ Keyboard</div>
 
-            <h3 className="subheading">🎮 Gamepad (PlayStation-style)</h3>
-            <table className="control-table">
-              <thead>
-                <tr>
-                  <th>Button</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {gamepadControls.map(([keys, action], i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'even-row' : ''}>
-                    <td>
-                      {(keys as string[]).map((key) => (
-                        <kbd key={key}>{key}</kbd>
-                      ))}
-                    </td>
-                    <td>{action}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <table className="control-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {keyboardControls.map(([keys, action], i) => (
+              <tr key={i} className={i % 2 === 0 ? 'even-row' : ''}>
+                <td>
+                  {(keys as string[]).map((key) => (
+                    <kbd key={key}>{key}</kbd>
+                  ))}
+                </td>
+                <td>{action}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <h3 className="subheading">🎮 Gamepad (PlayStation-style)</h3>
+        <table className="control-table">
+          <thead>
+            <tr>
+              <th>Button</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gamepadControls.map(([keys, action], i) => (
+              <tr key={i} className={i % 2 === 0 ? 'even-row' : ''}>
+                <td>
+                  {(keys as string[]).map((key) => (
+                    <kbd key={key}>{key}</kbd>
+                  ))}
+                </td>
+                <td>{action}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export default function OrientationLock() {
   if (isLandscape === null) return null;
 
   return !isLandscape ? (
-    <div className='overlay'>
+    <div className="overlay">
       <p>Please rotate your device to landscape mode.</p>
     </div>
   ) : null;

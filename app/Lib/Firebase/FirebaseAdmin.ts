@@ -4,7 +4,6 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore'; // If you're using Firestore
 import { getAppCheck } from 'firebase-admin/app-check';
 
-
 // Define a type for your service account object for type safety
 type ServiceAccount = {
   projectId: string;

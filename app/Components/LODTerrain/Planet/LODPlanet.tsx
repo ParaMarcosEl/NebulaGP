@@ -126,7 +126,7 @@ export function LODPlanet({
       usePlanetStore.getState().setPlanetReady(false);
       usePlanetStore.getState().setPlanetMeshes([]);
       useGameStore.getState().setMaterialLoaded(false);
-    }
+    };
   }, [planetGroup]);
 
   const [lowTexture, midTexture, highTexture] = useTexture([

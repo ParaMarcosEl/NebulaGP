@@ -16,7 +16,7 @@ function useMemoryStats() {
     const tex = info.memory.textures;
 
     let mat = 0;
-    scene.traverse(obj => {
+    scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.material) {
         mat += Array.isArray(mesh.material) ? mesh.material.length : 1;

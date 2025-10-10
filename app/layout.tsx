@@ -84,7 +84,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <link rel="apple-touch-icon" href="/icons/nebula_logo192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icons/nebula_logo512.png" />
-
       </Head>
       <body>
         {/* <TransitionLayout > */}

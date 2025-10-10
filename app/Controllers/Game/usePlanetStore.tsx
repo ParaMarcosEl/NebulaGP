@@ -21,7 +21,6 @@ export function ensureBVH(mesh: THREE.Mesh) {
 }
 
 interface PlanetState {
-  
   pendingBuilds: number;
   planetReady: boolean;
   incrementBuilds: () => void;
@@ -35,7 +34,6 @@ interface PlanetState {
 }
 
 export const usePlanetStore = create<PlanetState>((set, get) => ({
-  
   pendingBuilds: 0,
   planetReady: false,
 

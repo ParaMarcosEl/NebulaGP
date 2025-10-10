@@ -31,7 +31,7 @@ export default function StageSelect() {
   useEffect(() => {
     setMaterialLoaded(true);
     usePlanetStore.getState().setPlanetReady(true);
-    
+
     return () => {
       usePlanetStore.getState().setPlanetReady(false);
       setMaterialLoaded(false);

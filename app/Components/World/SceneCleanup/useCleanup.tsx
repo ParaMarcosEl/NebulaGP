@@ -7,9 +7,9 @@ export function useCleanup() {
   useEffect(() => {
     // This function will run when the component unmounts.
     return () => {
-    //   gl.dispose();
-    //   gl.forceContextLoss(); // Forcefully lose the context to ensure a clean slate
-    //   console.log('WebGLRenderer disposed and context lost.');
+      //   gl.dispose();
+      //   gl.forceContextLoss(); // Forcefully lose the context to ensure a clean slate
+      //   console.log('WebGLRenderer disposed and context lost.');
     };
   }, [gl]);
 }

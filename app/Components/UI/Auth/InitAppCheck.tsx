@@ -1,12 +1,11 @@
 'use client';
 
-import { initAppCheck } from "@/Lib/Firebase/AppCheck";
-import { useEffect } from "react";
-
+import { initAppCheck } from '@/Lib/Firebase/AppCheck';
+import { useEffect } from 'react';
 
 export const InitAppCheck = () => {
-  useEffect(() => { 
+  useEffect(() => {
     initAppCheck();
   }, []);
   return null;
-}
+};
