@@ -116,7 +116,7 @@ export type RaceDataType = Record<
     outOfBoundsTime?: number;
     lapTime: number; // Current time for the active lap (for the local player).
     totalTime: number; // Total accumulated time for the local player across all completed laps.
-    raceToime: number;
+    raceTime: number;
     lapStartTime: number; // Timestamp when the current lap started.
     penaltyTime: number;
   }
