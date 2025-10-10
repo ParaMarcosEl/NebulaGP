@@ -17,9 +17,10 @@ import { useGameStore } from './Controllers/Game/GameController';
 import { usePlanetStore } from './Controllers/Game/usePlanetStore';
 import Modal from './Components/UI/Modal/Modal';
 import Leaderboard from './Components/UI/Leaderboard/Leaderboard';
-import { Dashboard } from './Components/UI/Dashboard/Dashboard';
+import Dashboard from './Components/UI/Dashboard/Dashboard';
 import ScrollCamera from './Components/Camera/ScrollCamera';
 import Satellite from './Components/World/Satellite';
+import Stars from './Components/World/Stars';
 
 export default function Home() {
   useFullscreen();
@@ -78,17 +79,17 @@ export default function Home() {
             shadow-camera-far={500}
           />
           <pointLight position={[-10, 5, -10]} intensity={0.3} />
-
+        <Stars texturePath='/textures/particleDot512.png' />
           <Planet
             clouds={false}
-            texturePath="gold_ground128"
+            texturePath="molten_rock128"
             emissive
             color="white"
             emissiveColor="white"
             emissiveIntensity={2}
-            size={30}
+            size={40}
             ref={sunRef as React.RefObject<THREE.Object3D>}
-            position={new THREE.Vector3(-60, -60, -250)}
+            position={new THREE.Vector3(-120, -120, -500)}
           />
 
           <Satellite
@@ -101,34 +102,43 @@ export default function Home() {
           </Satellite>
           <Planet
             clouds={false}
-            texturePath="granite_ground128"
-            emissive
-            color="white"
-            emissiveColor="white"
-            emissiveIntensity={2}
-            size={30}
-            ref={graniteRef as React.RefObject<THREE.Object3D>}
-            position={new THREE.Vector3(80, 0, -100)}
-          />
-
-          <Satellite
-            planetRef={graniteRef as React.RefObject<THREE.Object3D>}
-            orbitRadius={50}
-            orbitSpeed={0.431}
-            tilt={0.2}
-          >
-            <Planet color="red" size={5} cloudRadius={0.5} />
-          </Satellite>
-          <Planet
-            clouds={false}
             texturePath="ruby_ground128"
             emissive
             color="white"
             emissiveColor="white"
             emissiveIntensity={2}
             size={30}
+            ref={graniteRef as React.RefObject<THREE.Object3D>}
+            position={new THREE.Vector3(160, 0, -200)}
+          />
+
+          <Satellite
+            planetRef={graniteRef as React.RefObject<THREE.Object3D>}
+            orbitRadius={60}
+            orbitSpeed={0.287}
+            tilt={1}
+          >
+            <Planet texturePath='granite_ground128' size={1} clouds={false} />
+          </Satellite>
+
+          <Satellite
+            planetRef={graniteRef as React.RefObject<THREE.Object3D>}
+            orbitRadius={40}
+            orbitSpeed={0.431}
+            tilt={5}
+          >
+            <Planet texturePath='granite_ground128' size={1} clouds={false} />
+          </Satellite>
+          <Planet
+            clouds={false}
+            texturePath="rocky_ground128"
+            emissive
+            color="white"
+            emissiveColor="white"
+            emissiveIntensity={2}
+            size={30}
             ref={rubyRef as React.RefObject<THREE.Object3D>}
-            position={new THREE.Vector3(-20, 0, 150)}
+            position={new THREE.Vector3(-20, 0, 300)}
           />
           <ScrollCamera
             uiContainerRef={uiContainerRef as React.RefObject<HTMLDivElement>}
@@ -152,7 +162,6 @@ export default function Home() {
             <button
               className="link play"
               onClick={() => {
-                console.log(stageSelectRef?.current?.offsetTop, window.innerHeight);
                 if (stageSelectRef.current && uiContainerRef.current)
                   // uiContainerRef.current.scrollTo(0, stageSelectRef.current.offsetTop);
                   uiContainerRef.current.scrollTo({
