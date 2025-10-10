@@ -131,6 +131,7 @@ export function useGhostRecorder({
         userId: user?.id || '-undefined-',
         name: user?.displayName || '-undefined-',
         trackId: trackId.toString(),
+        raceTime: bestTime || 0,
         totalTime,
         lapTimes,
         penalty: 0,
