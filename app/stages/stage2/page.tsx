@@ -242,7 +242,7 @@ export default function Stage1() {
           top: 0,
           left: 0,
         }}
-        href={'/stage-select'}
+        href={'/'}
       >
         EXIT RACE
       </Link>

@@ -27,6 +27,7 @@ const defaultRaceData = (id: number): RaceData => ({
   history: [], // Array to store records of completed laps.
   lapTime: 0, // Current time for the active lap (for the local player).
   totalTime: 0, // Total accumulated time for the local player across all completed laps.
+  raceTime: 0,
   lapStartTime: 0, // Timestamp when the current lap started.
   outOfBounds: false,
   outOfBoundsTime: 0,
@@ -63,6 +64,7 @@ type RaceData = {
   outOfBoundsTime: number;
   lapTime: number; // Current time for the active lap (for the local player).
   totalTime: number; // Total accumulated time for the local player across all completed laps.
+  raceTime: number;
   lapStartTime: number; // Timestamp when the current lap started.
   penaltyTime: number;
 };
@@ -114,6 +116,7 @@ export type RaceDataType = Record<
     outOfBoundsTime?: number;
     lapTime: number; // Current time for the active lap (for the local player).
     totalTime: number; // Total accumulated time for the local player across all completed laps.
+    raceTime: number;
     lapStartTime: number; // Timestamp when the current lap started.
     penaltyTime: number;
   }
@@ -166,6 +169,7 @@ type GameState = {
       outOfBounds: boolean;
       outOfBoundsTime: number;
       penaltyTime: number;
+      raceTime: number;
     }
   >;
   playerPhase: 'Idle' | 'Race' | 'Finished'; // The current phase of the local player.
@@ -548,7 +552,7 @@ export const useGameStore = create(
           0,
         );
 
-        newRaceData[racer].totalTime = completedTime + newTime;
+        newRaceData[racer].raceTime = completedTime + newTime;
         newRaceData[racer].lapTime = newTime;
       }
 
@@ -641,6 +645,7 @@ export const useGameStore = create(
           outOfBounds: false,
           outOfBoundsTime: 0,
           penaltyTime: 0,
+          raceTime: 0,
         };
       }
 

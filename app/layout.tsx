@@ -1,7 +1,7 @@
 // app/layout.tsx
 import Head from 'next/head';
 import './globals.css';
-import OrientationLock from '@/Components/UI/OrientationLock';
+import OrientationLock from '@/Components/UI/OrientationLock/OrientationLock';
 import { TextureLoader } from './Components/TextureLoader/TextureLoader';
 import UserProvider from './Components/UI/Auth/UserProvider';
 import { SettingsInitializer } from './Controllers/Settings/SettingsInitializer';

@@ -1,0 +1,143 @@
+.container {
+  text-align: left;;
+  color: #e6eef8;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  padding-bottom: 1rem;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.title {
+  font-size: 1.25rem;
+  margin: 0;
+  font-weight: 700;
+  color: #ffffff;
+}
+.subtitle {
+  margin: 4px 0 0 0;
+  color: #9fb0d9;
+  font-size: 0.875rem;
+}
+.version {
+  color: #7f8fa8;
+  font-size: 0.8rem;
+  align-self: center;
+}
+
+/* Author */
+.authorSection {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 0.75rem 0 1rem 0;
+}
+.avatar {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(20, 30, 60, 0.45);
+}
+.authorInfo { }
+.authorName {
+  margin: 0;
+  font-size: 1rem;
+  color: #fff;
+}
+.authorRole {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
+  color: #90a7d0;
+}
+
+/* Body */
+.bio {
+  margin: 0 0 1rem 0;
+  line-height: 1.45;
+  color: #cfe0ff;
+  font-size: 0.95rem;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 1rem;
+}
+.sectionTitle {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  color: #dbeafe;
+  font-weight: 600;
+}
+.list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #bcd0f7;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.list li {
+  margin-bottom: 6px;
+}
+
+/* Tech list badges */
+.techList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.techTag {
+  display: inline-block;
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  color: #dbeefe;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+/* Links */
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px 0;
+}
+.linkBtn {
+  display:inline-block;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  border-radius: 999px;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  color: #e6f1ff;
+}
+.linkBtn:hover { transform: translateY(-1px); }
+.linkGhost {
+  align-self: center;
+  font-size: 0.82rem;
+  color: #90a7d0;
+  text-decoration: underline;
+}
+
+/* Footer */
+.footer {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: #7d8faa;
+}
+
+/* Small screens */
+@media (max-width: 420px) {
+  .header { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .version { align-self: flex-start; }
+  .avatar { width: 48px; height: 48px; flex: 0 0 48px; }
+}

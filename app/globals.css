@@ -1,6 +1,6 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #171717;
+  --foreground:  #ffffff;
 
   --font-sans: Arial, Helvetica, sans-serif;
   --font-mono: monospace;
@@ -12,6 +12,11 @@
     --foreground: #ededed;
   }
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
 
 body {
   background: var(--background);
@@ -103,11 +108,5 @@ button:hover {
 }
 
 .main {
-  height: 100vh;
-  margin: 0;
-  padding: 20px;
   overflow: hidden;
-  touch-action: none;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: auto;
 }

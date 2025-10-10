@@ -321,6 +321,7 @@ export function usePlayerController({
             // Reduce velocity to avoid jitter
             if (ship.userData.velocity) {
               ship.userData.velocity.multiplyScalar(0.5);
+              speedRef.current *= 0.99;
             }
 
             if (audioEnabled) playSound(buffers['clank04'], ship.position, 1, 3);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, forwardRef, useRef } from 'react';
-import { useTexture } from '@react-three/drei';
+import { Line, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { TUBE_RADIUS } from '@/Constants';
 import { computeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
@@ -108,7 +108,7 @@ const Track = forwardRef<
           curve={curve}
           maxParticles={1500}
         />
-        {/* <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} /> */}
+         <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} />
 
         {/* Render the tube mesh with texture */}
         <mesh ref={ref} geometry={geometry.modifiedGeometry}>

@@ -11,7 +11,8 @@
   text-align: center;
   border-radius: 8px;
   opacity: 0;
-  transition: opacity 1s ease-in-out, left 1s ease-in-out, transform 1s ease-in-out;
+  transition: opacity 1s ease-in-out;
+  will-change: opacity;
 }
 
 .race-over.visible {
@@ -19,20 +20,5 @@
 }
 
 .race-over.docked {
-    top: 17em;
-  left: 1em;
-  right: auto;
-  transform: none; /* cancel centering */
-}
-
-.placement {
-  font-size: 4em;
-}
-
-.hash {
-  font-size: 0.5em;
-}
-
-.penalty {
-  opacity: 0.8;
+  opacity: 0; /* fade away when docking */
 }

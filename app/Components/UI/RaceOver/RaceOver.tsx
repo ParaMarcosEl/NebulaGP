@@ -21,7 +21,7 @@ export function RaceOver() {
       setTimeout(() => setVisible(true), 100);
 
       // After 5 seconds, move to side
-      const timer = setTimeout(() => setDocked(true), 5100);
+      const timer = setTimeout(() => setDocked(true), 10100);
       return () => clearTimeout(timer);
     }
   }, [raceOver]);
@@ -57,7 +57,7 @@ export function RaceOver() {
       <hr />
       <br />
       <div>
-        <Link href={'/stage-select'} onClick={handleTryAgain}>
+        <Link href={'/'} onClick={handleTryAgain}>
           Stage Select
         </Link>
       </div>

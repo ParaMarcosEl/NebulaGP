@@ -94,35 +94,6 @@ class PlanetWorkerPool {
     targetMesh?: THREE.Mesh,
   ): Promise<THREE.BufferGeometry> {
     return new Promise(async (resolve) => {
-      // const cacheKey = JSON.stringify({ planetId: window.location.pathname, params });
-
-      // 🔹 Step 1: Try cache
-      // here we get cache record once and keep reference to planetCache.
-      // we then check for record with cacheKey
-      // planetCache = await getPlanetCache(planetId); this should only happen on the first itteration. and reference
-      // keep persistent reference to current planetCache in this file with usePlanetStore?
-      // const cached = planetCache.current[cacheKey];
-
-      // const cached = await getPlanetCache(cacheKey);
-      // if (cached) {
-      //   console.debug('getting mesh from cache')
-      //   const geometry = new THREE.BufferGeometry();
-      //   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(cached.positions), 3));
-      //   geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(cached.normals), 3));
-      //   geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(cached.uvs), 2));
-      //   geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(cached.elevations), 1));
-      //   geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(cached.indices), 1));
-
-      //   geometry.computeBoundingBox?.();
-      //   geometry.computeBoundingSphere?.();
-
-      //   const mesh = new THREE.Mesh(geometry, this.material);
-      //   buildBVHForMeshes(mesh);
-
-      //   return resolve(geometry);
-      // }
-
-      // 🔹 Step 2: Otherwise queue worker task
       const vertexCount = (segments + 1) * (segments + 1);
 
       const posBuffer = this.getBuffer(this.posPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT);
@@ -139,16 +110,6 @@ class PlanetWorkerPool {
         params,
         segments,
         resolve: async (geometry: THREE.BufferGeometry) => {
-          // 🔹 Step 3: Save generated chunk to cache
-          // in this step we should use current planet cache record and modify record.
-          // setPlanetCache(planetId, { ...planetCache, cacheKey: {...}});
-          // await setPlanetCache(cacheKey, {
-          //   positions: geometry.attributes.position.array,
-          //   normals: geometry.attributes.normal.array,
-          //   uvs: geometry.attributes.uv.array,
-          //   elevations: geometry.attributes.elevation.array,
-          //   indices: geometry.index?.array,
-          // });
           resolve(geometry);
         },
         ...(targetMesh ? { targetMesh } : {}),
