@@ -96,9 +96,21 @@ class PlanetWorkerPool {
     return new Promise(async (resolve) => {
       const vertexCount = (segments + 1) * (segments + 1);
 
-      const posBuffer = this.getBuffer(this.posPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT);
-      const normalBuffer = this.getBuffer(this.normalPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT);
-      const elevationBuffer = this.getBuffer(this.elevationPool, vertexCount, Float32Array.BYTES_PER_ELEMENT);
+      const posBuffer = this.getBuffer(
+        this.posPool,
+        vertexCount,
+        3 * Float32Array.BYTES_PER_ELEMENT,
+      );
+      const normalBuffer = this.getBuffer(
+        this.normalPool,
+        vertexCount,
+        3 * Float32Array.BYTES_PER_ELEMENT,
+      );
+      const elevationBuffer = this.getBuffer(
+        this.elevationPool,
+        vertexCount,
+        Float32Array.BYTES_PER_ELEMENT,
+      );
       const uvBuffer = this.getBuffer(this.uvPool, vertexCount, 2 * Float32Array.BYTES_PER_ELEMENT);
 
       const task: Task = {
@@ -140,7 +152,10 @@ class PlanetWorkerPool {
       geometry = task.targetMesh.geometry as THREE.BufferGeometry;
       geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
       geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
-      geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(elevations), 1));
+      geometry.setAttribute(
+        'elevation',
+        new THREE.BufferAttribute(new Float32Array(elevations), 1),
+      );
 
       geometry.computeBoundingBox?.();
       geometry.computeBoundingSphere?.();
@@ -160,7 +175,10 @@ class PlanetWorkerPool {
       geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
       geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
       geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
-      geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(elevations), 1));
+      geometry.setAttribute(
+        'elevation',
+        new THREE.BufferAttribute(new Float32Array(elevations), 1),
+      );
 
       // Index caching
       let index = this.indexCache.get(task.segments);
@@ -177,8 +195,12 @@ class PlanetWorkerPool {
             const b = y * cols + (x + 1);
             const c = (y + 1) * cols + x;
             const d = (y + 1) * cols + (x + 1);
-            idxArr[ptr++] = a; idxArr[ptr++] = c; idxArr[ptr++] = b;
-            idxArr[ptr++] = b; idxArr[ptr++] = c; idxArr[ptr++] = d;
+            idxArr[ptr++] = a;
+            idxArr[ptr++] = c;
+            idxArr[ptr++] = b;
+            idxArr[ptr++] = b;
+            idxArr[ptr++] = c;
+            idxArr[ptr++] = d;
           }
         }
         index = idxArr;

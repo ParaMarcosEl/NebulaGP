@@ -1,10 +1,5 @@
 import * as THREE from 'three';
-import {
-  forwardRef,
-  useImperativeHandle,
-  useMemo,
-  useRef
-} from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 export type ExplosionHandle = {
@@ -19,15 +14,7 @@ type Props = {
 };
 
 const ExplosionParticles = forwardRef<ExplosionHandle, Props>(
-  (
-    {
-      maxParticles = 2000,
-      lifetime = 2.0,
-      baseSpeed = 20,
-      particleSize = 10,
-    },
-    ref
-  ) => {
+  ({ maxParticles = 2000, lifetime = 2.0, baseSpeed = 20, particleSize = 10 }, ref) => {
     const pointsRef = useRef<THREE.Points>(null);
 
     // Store next free particle index
@@ -42,22 +29,10 @@ const ExplosionParticles = forwardRef<ExplosionHandle, Props>(
     const geometry = useMemo(() => {
       const geo = new THREE.BufferGeometry();
 
-      geo.setAttribute(
-        'position',
-        new THREE.BufferAttribute(positions.current, 3)
-      );
-      geo.setAttribute(
-        'velocity',
-        new THREE.BufferAttribute(velocities.current, 3)
-      );
-      geo.setAttribute(
-        'spawnTime',
-        new THREE.BufferAttribute(spawnTimes.current, 1)
-      );
-      geo.setAttribute(
-        'color',
-        new THREE.BufferAttribute(colors.current, 3)
-      );
+      geo.setAttribute('position', new THREE.BufferAttribute(positions.current, 3));
+      geo.setAttribute('velocity', new THREE.BufferAttribute(velocities.current, 3));
+      geo.setAttribute('spawnTime', new THREE.BufferAttribute(spawnTimes.current, 1));
+      geo.setAttribute('color', new THREE.BufferAttribute(colors.current, 3));
 
       return geo;
     }, [maxParticles]);
@@ -68,7 +43,7 @@ const ExplosionParticles = forwardRef<ExplosionHandle, Props>(
           time: { value: 0 },
           lifetime: { value: lifetime },
           baseSpeed: { value: baseSpeed },
-          particleSize: { value: particleSize }
+          particleSize: { value: particleSize },
         },
         vertexShader: `
           attribute vec3 velocity;
@@ -112,7 +87,7 @@ const ExplosionParticles = forwardRef<ExplosionHandle, Props>(
         `,
         transparent: true,
         depthWrite: false,
-        blending: THREE.AdditiveBlending
+        blending: THREE.AdditiveBlending,
       });
     }, [lifetime, baseSpeed, particleSize]);
 
@@ -140,7 +115,7 @@ const ExplosionParticles = forwardRef<ExplosionHandle, Props>(
           const dir = new THREE.Vector3(
             (Math.random() - 0.5) * 2,
             (Math.random() - 0.5) * 2,
-            (Math.random() - 0.5) * 2
+            (Math.random() - 0.5) * 2,
           ).normalize();
           velocities.current[idx * 3 + 0] = dir.x;
           velocities.current[idx * 3 + 1] = dir.y;
@@ -161,13 +136,11 @@ const ExplosionParticles = forwardRef<ExplosionHandle, Props>(
         geometry.attributes.velocity.needsUpdate = true;
         geometry.attributes.color.needsUpdate = true;
         geometry.attributes.spawnTime.needsUpdate = true;
-      }
+      },
     }));
 
-    return (
-      <points ref={pointsRef} geometry={geometry} material={material} frustumCulled={false} />
-    );
-  }
+    return <points ref={pointsRef} geometry={geometry} material={material} frustumCulled={false} />;
+  },
 );
 
 ExplosionParticles.displayName = 'ExplosionParticles';

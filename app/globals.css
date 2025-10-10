@@ -1,6 +1,6 @@
 :root {
   --background: #171717;
-  --foreground:  #ffffff;
+  --foreground: #ffffff;
 
   --font-sans: Arial, Helvetica, sans-serif;
   --font-mono: monospace;
@@ -16,7 +16,6 @@
 html {
   scroll-behavior: smooth;
 }
-
 
 body {
   background: var(--background);

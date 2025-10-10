@@ -63,7 +63,7 @@ export function useProjectileCollisions({
           } else {
             setShieldValue(shieldValue - 0.2, id);
           }
-    
+
           if (explosionsRef.current) {
             explosionsRef.current.play(proj.mesh.position);
           }

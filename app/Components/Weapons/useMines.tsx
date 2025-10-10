@@ -72,7 +72,6 @@ export function useMines(
     mine.active = false;
     mine.mesh.visible = false;
 
-    
     if (explosionsRef.current) {
       explosionsRef.current.play(mine.mesh.position);
     }

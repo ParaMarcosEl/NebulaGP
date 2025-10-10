@@ -53,8 +53,6 @@ export default function Bot({
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
 
-  
-
   useBotController({
     id,
     playerRefs,

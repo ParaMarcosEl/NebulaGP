@@ -184,7 +184,7 @@ const MineExplosionParticles = forwardRef<
         startTime.current = t;
         material.uniforms.explosionStartTime.value = t;
       }
-      
+
       material.uniforms.time.value = t;
 
       if (t - startTime.current > lifetime) {

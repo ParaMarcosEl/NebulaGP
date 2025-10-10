@@ -23,14 +23,14 @@ export function useRecords() {
       if (trackId) queryParams.append('trackId', trackId);
 
       const res = await fetch(`/api/records?${queryParams.toString()}`);
-      console.debug('api hit')
+      console.debug('api hit');
       if (!res.ok) {
-        setAlert({ type: 'error', message: 'No record found.'})
+        setAlert({ type: 'error', message: 'No record found.' });
         throw new Error(`Failed to fetch records: ${res.statusText}`);
       }
       const data: Record[] = await res.json();
       setRecords(data);
-      setAlert({ type: 'info', message: `${data.length} records found.`}); 
+      setAlert({ type: 'info', message: `${data.length} records found.` });
 
       return data;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,18 +58,18 @@ export function useRecords() {
       });
       if (!res.ok) {
         const err = await res.json();
-        console.error({err});
-        setAlert({ type: 'error', message: 'Failed to save record.'})
+        console.error({ err });
+        setAlert({ type: 'error', message: 'Failed to save record.' });
         throw new Error(err.error || 'Failed to create record');
       }
       const data: { message: string; recordId: string } = await res.json();
       // Optionally refetch records to update the list
       // await fetchRecords(newRecord.userId, newRecord.trackId);
-      setAlert({ type: 'info', message: 'Record saved.'})
+      setAlert({ type: 'info', message: 'Record saved.' });
       return data;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-        setAlert({ type: 'error', message: 'Failed to save record.'})
+      setAlert({ type: 'error', message: 'Failed to save record.' });
       setError(err.message || 'Failed to create record');
       throw err;
     } finally {
@@ -94,17 +94,17 @@ export function useRecords() {
       });
       if (!res.ok) {
         const err = await res.json();
-        setAlert({ type: 'error', message: 'Failed to save record.'})
+        setAlert({ type: 'error', message: 'Failed to save record.' });
         throw new Error(err.error || 'Failed to update record');
       }
       const data: { message: string } = await res.json();
-      setAlert({ type: 'info', message: `Race time saved to leaderboard.`})
+      setAlert({ type: 'info', message: `Race time saved to leaderboard.` });
       // Optionally refetch to update local state
       // This is a good place to optimistically update the state before refetching.
       return data;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setAlert({ type: 'error', message: 'Failed to save record.'})
+      setAlert({ type: 'error', message: 'Failed to save record.' });
       setError(err.message || 'Failed to update record');
       throw err;
     } finally {
@@ -129,7 +129,7 @@ export function useRecords() {
       // Update state to remove the deleted record
       setRecords((prevRecords) => (prevRecords || []).filter((record) => record.id !== recordId));
       const data: { message: string } = await res.json();
-      setAlert({ type: 'info', message: 'Record deleted.'})
+      setAlert({ type: 'info', message: 'Record deleted.' });
       return data;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

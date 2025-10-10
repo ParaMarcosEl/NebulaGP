@@ -1,5 +1,6 @@
 /* Navbar container */
-.navbar, .account-navbar {
+.navbar,
+.account-navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;

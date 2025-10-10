@@ -46,9 +46,7 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
     if (!active.current || !center || touchId.current === null) return;
 
     // find our tracked touch
-    const touch = Array.from(e.touches).find(
-      (t) => t.identifier === touchId.current
-    );
+    const touch = Array.from(e.touches).find((t) => t.identifier === touchId.current);
     if (!touch) return;
 
     const screenMid = window.innerWidth * 0.7;
@@ -77,9 +75,7 @@ export default function RadialTouchInput({ radius = 120 }: Props) {
     if (touchId.current === null) return;
 
     // did our tracked finger end?
-    const ended = Array.from(e.changedTouches).some(
-      (t) => t.identifier === touchId.current
-    );
+    const ended = Array.from(e.changedTouches).some((t) => t.identifier === touchId.current);
 
     if (ended) {
       active.current = false;

@@ -24,100 +24,86 @@ const Track = forwardRef<
     onRaceComplete?: () => void;
     onLapComplete?: () => void;
   }
->(
-  (
-    {
-      playerRefs,
-      curve,
-      spheres = [],
-      onRaceComplete,
-      onLapComplete,
-    },
-    ref,
-  ) => {
-    const checkpointMeshRef = useRef<THREE.Mesh | null>(null);
+>(({ playerRefs, curve, spheres = [], onRaceComplete, onLapComplete }, ref) => {
+  const checkpointMeshRef = useRef<THREE.Mesh | null>(null);
 
-    useLapTimer();
+  useLapTimer();
 
-    const checkpoint = useCheckpointController({
-      playerRefs,
-      checkpointMeshRef: checkpointMeshRef as React.RefObject<THREE.Mesh>,
-      onRaceComplete,
-      onLapComplete
-    });
+  const checkpoint = useCheckpointController({
+    playerRefs,
+    checkpointMeshRef: checkpointMeshRef as React.RefObject<THREE.Mesh>,
+    onRaceComplete,
+    onLapComplete,
+  });
 
-    const particleTexture = useTexture('/textures/particleDot512.png');
+  const particleTexture = useTexture('/textures/particleDot512.png');
 
-    // Create tube geometry with BVH acceleration
-    const geometry = useMemo(() => {
-      const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
+  // Create tube geometry with BVH acceleration
+  const geometry = useMemo(() => {
+    const tubeGeometry = new THREE.TubeGeometry(curve, 400, TUBE_RADIUS, 16, true);
 
-      const modifiedGeometry = modifyTubeGeometrySDF(tubeGeometry, curve, spheres, TUBE_RADIUS);
+    const modifiedGeometry = modifyTubeGeometrySDF(tubeGeometry, curve, spheres, TUBE_RADIUS);
 
-      modifiedGeometry.computeBoundsTree();
-      const shortestFlightPath = getShortestFlightPath(curve, TUBE_RADIUS);
-      return { modifiedGeometry, shortestFlightPath };
-    }, [curve]);
+    modifiedGeometry.computeBoundsTree();
+    const shortestFlightPath = getShortestFlightPath(curve, TUBE_RADIUS);
+    return { modifiedGeometry, shortestFlightPath };
+  }, [curve]);
 
-    // Get points along the curve for rendering the line
-    const curvePoints = useMemo(() => curve.getPoints(1000), [curve]);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const shortestFlightPath = useMemo(
-      () => geometry.shortestFlightPath.getPoints(2000),
-      [geometry],
-    );
+  // Get points along the curve for rendering the line
+  const curvePoints = useMemo(() => curve.getPoints(1000), [curve]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const shortestFlightPath = useMemo(() => geometry.shortestFlightPath.getPoints(2000), [geometry]);
 
-    const { quaternion } = useMemo(() => {
-      const tangent = curve.getTangentAt(0).normalize();
+  const { quaternion } = useMemo(() => {
+    const tangent = curve.getTangentAt(0).normalize();
 
-      // Default orientation of cylinder is Y-up. Compute rotation from Y-up to tangent.
-      const up = new THREE.Vector3(0, 1, 0);
-      const quaternion = new THREE.Quaternion().setFromUnitVectors(up, tangent);
+    // Default orientation of cylinder is Y-up. Compute rotation from Y-up to tangent.
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, tangent);
 
-      return {
-        quaternion,
-      };
-    }, [curve]);
+    return {
+      quaternion,
+    };
+  }, [curve]);
 
-    // Load and configure repeating texture for the playing field
-    const texture = useTexture('/textures/bio_mech128.png');
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(10, 1);
+  // Load and configure repeating texture for the playing field
+  const texture = useTexture('/textures/bio_mech128.png');
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(10, 1);
 
-    return (
-      <>
-        {/* Render checkpoints as translucent spheres with color indication */}
-        <mesh ref={checkpointMeshRef} position={curvePoints[0]} quaternion={quaternion}>
-          <cylinderGeometry args={[35, 35, 1]} />
-          <meshBasicMaterial
-            color={!checkpoint.current.didPass ? 'green' : 'red'}
-            transparent
-            opacity={0.8}
-            wireframe
-          />
-        </mesh>
-
-        {/* Render the tube path line */}
-        <CurveParticles
-          texture={particleTexture}
-          particleSize={1800}
-          orbitSpeed={3}
-          tubeRadius={20}
-          speed={0.0001}
-          curve={curve}
-          maxParticles={1500}
+  return (
+    <>
+      {/* Render checkpoints as translucent spheres with color indication */}
+      <mesh ref={checkpointMeshRef} position={curvePoints[0]} quaternion={quaternion}>
+        <cylinderGeometry args={[35, 35, 1]} />
+        <meshBasicMaterial
+          color={!checkpoint.current.didPass ? 'green' : 'red'}
+          transparent
+          opacity={0.8}
+          wireframe
         />
-         <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} />
+      </mesh>
 
-        {/* Render the tube mesh with texture */}
-        <mesh ref={ref} geometry={geometry.modifiedGeometry}>
-          <meshStandardMaterial map={texture} side={THREE.BackSide} wireframe />
-        </mesh>
-      </>
-    );
-  },
-);
+      {/* Render the tube path line */}
+      <CurveParticles
+        texture={particleTexture}
+        particleSize={1800}
+        orbitSpeed={3}
+        tubeRadius={20}
+        speed={0.0001}
+        curve={curve}
+        maxParticles={1500}
+      />
+      <Line points={shortestFlightPath} color="#00ffff" lineWidth={2} dashed={false} />
+
+      {/* Render the tube mesh with texture */}
+      <mesh ref={ref} geometry={geometry.modifiedGeometry}>
+        <meshStandardMaterial map={texture} side={THREE.BackSide} wireframe />
+      </mesh>
+    </>
+  );
+});
 
 Track.displayName = 'Track';
 

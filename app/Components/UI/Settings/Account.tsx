@@ -29,9 +29,7 @@ export default function AccountSettings() {
     return <p className="accountsettings__notice">No user signed in.</p>;
   }
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -72,13 +70,7 @@ export default function AccountSettings() {
 
           <div className="accountsettings__field">
             <label htmlFor="email">Email: </label>
-            <input
-              disabled
-              id="email"
-              name="email"
-              type="text"
-              value={user?.email}
-            />
+            <input disabled id="email" name="email" type="text" value={user?.email} />
           </div>
 
           <div className="accountsettings__field">
@@ -130,23 +122,12 @@ export default function AccountSettings() {
 
         <div className="accountsettings__field">
           <label htmlFor="city">City: </label>
-          <input
-            id="city"
-            name="city"
-            type="text"
-            value={formData.city}
-            onChange={handleChange}
-          />
+          <input id="city" name="city" type="text" value={formData.city} onChange={handleChange} />
         </div>
 
         <div className="accountsettings__field">
           <label htmlFor="state">State: </label>
-          <select
-            id="state"
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-          >
+          <select id="state" name="state" value={formData.state} onChange={handleChange}>
             <option value="">Select State</option>
             {US_STATES.map((s) => (
               <option key={s} value={s}>
@@ -158,23 +139,12 @@ export default function AccountSettings() {
 
         <div className="accountsettings__field">
           <label htmlFor="zip">Zip: </label>
-          <input
-            id="zip"
-            name="zip"
-            type="text"
-            value={formData.zip}
-            onChange={handleChange}
-          />
+          <input id="zip" name="zip" type="text" value={formData.zip} onChange={handleChange} />
         </div>
 
         <div className="accountsettings__field">
           <label htmlFor="region">Country/Region:</label>
-          <select
-            id="region"
-            name="region"
-            value={formData.region}
-            onChange={handleChange}
-          >
+          <select id="region" name="region" value={formData.region} onChange={handleChange}>
             <option value="">Select Region</option>
             {COUNTRIES.map((c) => (
               <option key={c} value={c}>

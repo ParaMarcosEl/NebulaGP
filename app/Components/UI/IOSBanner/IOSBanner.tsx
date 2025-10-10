@@ -18,8 +18,7 @@ const IOSBanner = () => {
     const isIpad = /ipad/i.test(ua);
 
     // Detect iPadOS in desktop mode (Macintosh + touch support)
-    const isIpadOSDesktop =
-      ua.includes('Macintosh') && navigator.maxTouchPoints > 1;
+    const isIpadOSDesktop = ua.includes('Macintosh') && navigator.maxTouchPoints > 1;
 
     const isIOS = isIphone || isIpad || isIpadOSDesktop;
 

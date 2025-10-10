@@ -5,13 +5,15 @@
   align-items: center;
   gap: 0.5rem;
   margin: 0 auto;
-  background-color: rgba(0,0,100,0.7);
+  background-color: rgba(0, 0, 100, 0.7);
   border-radius: 1em;
   padding: 1em;
   width: 36em;
 }
 
-.required { color: #7ff; }
+.required {
+  color: #7ff;
+}
 
 .register-form,
 .address {
@@ -131,21 +133,21 @@ button {
   list-style: none;
 }
 .password-hints li::after {
-  content: " ❌";
+  content: ' ❌';
   color: #d33;
 }
 .password-hints li.valid {
   color: #2a7;
 }
 .password-hints li.valid::after {
-  content: " ✅";
+  content: ' ✅';
 }
 
 .password-strengths {
   display: flex;
 }
 
-.forgot-btn, .register-btn {
+.forgot-btn,
+.register-btn {
   color: white;
 }
-

@@ -26,7 +26,9 @@ import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import Planet from '@/Components/World/Planet/WorldPlanet';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
-import ExplosionParticles, { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
+import ExplosionParticles, {
+  ExplosionHandle,
+} from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
 import { InitAudio } from '@/Components/Audio/InitAudio';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
 import { useRecords } from '@/Controllers/Records/useRecords';
@@ -57,7 +59,6 @@ function ShipCollisionTracker({
   return null;
 }
 
-
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
@@ -71,24 +72,19 @@ export default function Stage1() {
   const minePoolRef = useRef<Mine[]>([]);
   const { loader } = useCanvasLoader();
   const { setPlanetMeshes } = usePlanetStore((s) => s);
-  const { user } = useUserStore(s => s);
+  const { user } = useUserStore((s) => s);
   const { fetchRecords, updateRecord, createRecord, records } = useRecords();
-  const { setAlert } = useAlertStore(s => s);
-  
-  
+  const { setAlert } = useAlertStore((s) => s);
+
   useEffect(() => {
     const stageId = window.location.pathname;
-    console.debug({records});
+    console.debug({ records });
     if (records) return;
     fetchRecords(user?.id, stageId);
-  }, [records])
-
-
+  }, [records]);
 
   const playerRefs = useMemo(
-    () => [aircraftRef, botRef1, botRef2, 
-      botRef3, botRef4, botRef5, botRef6, botRef7
-    ],
+    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
     [],
   );
 
@@ -301,18 +297,20 @@ export default function Stage1() {
                 const newBestTime = totalTime < userRecord.raceTime + userRecord.penalty;
 
                 if (newBestTime) {
-                  setAlert({ type: 'info', message: `New best time recorded for ${userRecord.name}!` })
+                  setAlert({
+                    type: 'info',
+                    message: `New best time recorded for ${userRecord.name}!`,
+                  });
                   updateRecord(userRecord.id, {
                     ...userRecord,
                     raceTime: userRecord.raceTime,
                     penalty: userRecord.penalty,
                     totalTime,
-                  })
-                } else { 
-                  setAlert({ type: 'info', message: `Try Again.`})
+                  });
+                } else {
+                  setAlert({ type: 'info', message: `Try Again.` });
                 }
               } else {
-                
                 const recordData = {
                   userId: user?.uid || '-undefined-',
                   name: user?.displayName || '-undefined-',
@@ -323,10 +321,10 @@ export default function Stage1() {
                   penalty: playerRaceData.penaltyTime,
                 };
                 createRecord(recordData);
-                
+
                 const newBestTime = !records[0].totalTime || totalTime < records[0].totalTime;
                 if (newBestTime) {
-                  setAlert({ type: 'success', message: `New Best Time!`})
+                  setAlert({ type: 'success', message: `New Best Time!` });
                 }
               }
             }}
@@ -377,14 +375,14 @@ export default function Stage1() {
             lacunarity={1.1}
             frequency={4}
             exponentiation={6}
-            lowTextPath='/textures/granite_ground128.png'
-            midTextPath='/textures/gold_ground128.png'
-            highTextPath='/textures/ruby_ground128.png'
+            lowTextPath="/textures/granite_ground128.png"
+            midTextPath="/textures/gold_ground128.png"
+            highTextPath="/textures/ruby_ground128.png"
           />
           {/* Players */}
           {players}
           {boosters}
-          <ExplosionParticles ref={explosionsRef}/>
+          <ExplosionParticles ref={explosionsRef} />
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>

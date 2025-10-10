@@ -39,8 +39,7 @@ export default function ScrollCamera({
     if (!container || !stageSelectRef.current || !dashboardRef.current) return;
 
     const handleScroll = () => {
-      const maxScroll =
-        container.scrollHeight - container.clientHeight;
+      const maxScroll = container.scrollHeight - container.clientHeight;
       scrollProgress.current = container.scrollTop / maxScroll;
     };
 
@@ -77,7 +76,9 @@ export default function ScrollCamera({
     }
 
     // Interpolate between planet positions
-    desiredPosition.current.copy(fromPlanet.position).lerp(toPlanet.position, (t - (t < 0.3 ? 0 : 0.3)) / (t < 0.3 ? 0.3 : 0.6));
+    desiredPosition.current
+      .copy(fromPlanet.position)
+      .lerp(toPlanet.position, (t - (t < 0.3 ? 0 : 0.3)) / (t < 0.3 ? 0.3 : 0.6));
 
     // Offset camera backwards so it looks *at* the planet from a distance
     const offsetDir = new THREE.Vector3()

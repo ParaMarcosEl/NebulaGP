@@ -1,10 +1,9 @@
 export function validatePassword(password: string): string | null {
   // At least 8 chars, one uppercase, one lowercase, one number, one special char
-  const pattern =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   if (!pattern.test(password)) {
-    return "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.";
+    return 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.';
   }
   return null;
 }

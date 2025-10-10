@@ -18,8 +18,10 @@ function fbmToUniforms(params: FBMParams): Record<string, { value: number }> {
 }
 
 function getCameraFrustum(camera: THREE.Camera): THREE.Frustum {
-  const projScreenMatrix = new THREE.Matrix4()
-    .multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  const projScreenMatrix = new THREE.Matrix4().multiplyMatrices(
+    camera.projectionMatrix,
+    camera.matrixWorldInverse,
+  );
 
   const frustum = new THREE.Frustum();
   frustum.setFromProjectionMatrix(projScreenMatrix);
@@ -59,7 +61,11 @@ class QuadTreeNode {
     return 64;
   }
 
-  constructor(level: number, bounds: THREE.Vector2[], meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>) {
+  constructor(
+    level: number,
+    bounds: THREE.Vector2[],
+    meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>,
+  ) {
     this.level = level;
     this.bounds = bounds;
     this.meshCache = meshCache;
@@ -184,9 +190,7 @@ class QuadTreeNode {
     if (!frustum.intersectsSphere(sphere)) return;
 
     const dist = camera.position.distanceTo(tmpCenter);
-    const cameraFov = THREE.MathUtils.degToRad(
-      (camera as THREE.PerspectiveCamera).fov
-    );
+    const cameraFov = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov);
     const viewportHeight = window.innerHeight;
     const projectedScreenSize =
       (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
@@ -247,12 +251,34 @@ class QuadTreeNode {
     const midY = (bl.y + tr.y) / 2;
 
     const newBounds = [
-      [new THREE.Vector2(bl.x, midY), new THREE.Vector2(midX, midY), new THREE.Vector2(midX, tr.y), new THREE.Vector2(bl.x, tr.y)],
-      [new THREE.Vector2(midX, midY), new THREE.Vector2(tr.x, midY), new THREE.Vector2(tr.x, tr.y), new THREE.Vector2(midX, tr.y)],
-      [new THREE.Vector2(bl.x, bl.y), new THREE.Vector2(midX, bl.y), new THREE.Vector2(midX, midY), new THREE.Vector2(bl.x, midY)],
-      [new THREE.Vector2(midX, bl.y), new THREE.Vector2(tr.x, bl.y), new THREE.Vector2(tr.x, midY), new THREE.Vector2(midX, midY)],
+      [
+        new THREE.Vector2(bl.x, midY),
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(midX, tr.y),
+        new THREE.Vector2(bl.x, tr.y),
+      ],
+      [
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(tr.x, midY),
+        new THREE.Vector2(tr.x, tr.y),
+        new THREE.Vector2(midX, tr.y),
+      ],
+      [
+        new THREE.Vector2(bl.x, bl.y),
+        new THREE.Vector2(midX, bl.y),
+        new THREE.Vector2(midX, midY),
+        new THREE.Vector2(bl.x, midY),
+      ],
+      [
+        new THREE.Vector2(midX, bl.y),
+        new THREE.Vector2(tr.x, bl.y),
+        new THREE.Vector2(tr.x, midY),
+        new THREE.Vector2(midX, midY),
+      ],
     ];
-    this.children = newBounds.map((bounds) => new QuadTreeNode(this.level + 1, bounds, this.meshCache));
+    this.children = newBounds.map(
+      (bounds) => new QuadTreeNode(this.level + 1, bounds, this.meshCache),
+    );
   }
 }
 
@@ -260,14 +286,21 @@ class CubeFace {
   normal: THREE.Vector3;
   root: QuadTreeNode;
 
-  constructor(normal: THREE.Vector3, meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>) {
+  constructor(
+    normal: THREE.Vector3,
+    meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>,
+  ) {
     this.normal = normal;
-    this.root = new QuadTreeNode(0, [
-      new THREE.Vector2(-1, -1),
-      new THREE.Vector2(1, -1),
-      new THREE.Vector2(1, 1),
-      new THREE.Vector2(-1, 1),
-    ], meshCache);
+    this.root = new QuadTreeNode(
+      0,
+      [
+        new THREE.Vector2(-1, -1),
+        new THREE.Vector2(1, -1),
+        new THREE.Vector2(1, 1),
+        new THREE.Vector2(-1, 1),
+      ],
+      meshCache,
+    );
   }
 
   async getMeshesAsync(
@@ -335,8 +368,12 @@ export class CubeTree {
     this.faces = normals.map((n) => new CubeFace(n, this.meshCache));
   }
 
-  markDead() { this._cubeTreeAlive = false; }
-  get isAlive() { return this._cubeTreeAlive; }
+  markDead() {
+    this._cubeTreeAlive = false;
+  }
+  get isAlive() {
+    return this._cubeTreeAlive;
+  }
 
   updateBoundsCache(meshes: THREE.Mesh[]) {
     this.boundsCache = meshes.map((m) => {
@@ -379,10 +416,12 @@ export class CubeTree {
           this.group.remove(entry.mesh);
         }
         disposeMesh(entry.mesh);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         // best-effort dispose
-        try { disposeMesh(entry.mesh); } catch {}
+        try {
+          disposeMesh(entry.mesh);
+        } catch {}
       }
       this.meshCache.delete(key);
     }
@@ -436,7 +475,7 @@ export class CubeTree {
     const meshes: THREE.Mesh[] = [];
     for (const face of this.faces) {
       meshes.push(
-        ...(await face.getMeshesAsync(
+        ...((await face.getMeshesAsync(
           this.planetSize,
           this.cubeSize,
           camera,
@@ -447,7 +486,7 @@ export class CubeTree {
           this.uniforms,
           frustum,
           this.addMesh,
-        )) as THREE.Mesh[],
+        )) as THREE.Mesh[]),
       );
     }
     return meshes;
@@ -460,7 +499,9 @@ export class CubeTree {
       if (entry.mesh.geometry) entry.mesh.geometry.dispose();
       if (Array.isArray(entry.mesh.material)) entry.mesh.material.forEach((m) => m.dispose());
       else (entry.mesh.material as THREE.Material)?.dispose();
-      try { disposeMesh(entry.mesh); } catch {}
+      try {
+        disposeMesh(entry.mesh);
+      } catch {}
     });
 
     this.meshCache.clear();

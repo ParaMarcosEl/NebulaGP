@@ -19,8 +19,10 @@ interface UserState {
 
   fetchUserFromAPI: (uid: string) => Promise<User>;
   createUser: (newUser: User & { password?: string }) => Promise<{
-    [x: string]: string; message: string; uid: string 
-}>;
+    [x: string]: string;
+    message: string;
+    uid: string;
+  }>;
   updateUser: (uid: string, updates: Partial<User>) => Promise<{ message: string }>;
   deleteUser: (uid: string) => Promise<void>;
   signOutUser: () => Promise<void>;
@@ -145,12 +147,12 @@ export function initUserStore() {
   const { fetchUserFromAPI, setUser } = useUserStore.getState();
   onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
     if (firebaseUser) {
-      if(!firebaseUser.emailVerified) {
-            useAlertStore.getState().setAlert({
-              type: 'error',
-              message: 'Please verify your email before logging in.',
-            });
-            return;
+      if (!firebaseUser.emailVerified) {
+        useAlertStore.getState().setAlert({
+          type: 'error',
+          message: 'Please verify your email before logging in.',
+        });
+        return;
       }
       try {
         await fetchUserFromAPI(firebaseUser.uid);
