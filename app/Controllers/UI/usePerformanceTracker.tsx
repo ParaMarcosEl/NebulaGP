@@ -5,8 +5,7 @@ import { useRef } from 'react';
 
 export function usePerformanceTracker() {
   const { gl } = useThree();
-  const { updateMetrics, fps, drawCalls, geometries } = usePerformanceStore((s) => s);
-  console.log('performance', { fps, drawCalls, geometries });
+  const { updateMetrics } = usePerformanceStore((s) => s);
   const lastTime = useRef(performance.now());
   const frames = useRef(0);
 
@@ -16,7 +15,6 @@ export function usePerformanceTracker() {
 
     // Update every ~1s to reduce overhead
     if (now - lastTime.current >= 1000) {
-      console.log('updating performance');
       const fps = (frames.current * 1000) / (now - lastTime.current);
       const frameTime = 1000 / fps;
 

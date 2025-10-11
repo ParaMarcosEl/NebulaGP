@@ -20,7 +20,6 @@ export const usePerformanceStore = create<PerformanceState>((set) => {
     textures: 0,
     triangles: 0,
     updateMetrics: (data) => {
-      console.log('updating performance', data);
       set(data);
     },
   };

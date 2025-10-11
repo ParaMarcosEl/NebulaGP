@@ -190,7 +190,7 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         acceleration={0.01}
         damping={0.99}
-        botSpeed={2 + id * 0.1}
+        botSpeed={1.4 + id * 0.1}
       />
     ),
   );

@@ -257,9 +257,9 @@ export const useGameStore = create(
   devtools<GameStore>((set, get) => ({
     // --- Initial State ---
     showNav: true,
-    baseSpeed: 0.5,
+    baseSpeed: 0.7,
     GhostLoaded: false,
-    playerSpeed: 0.5,
+    playerSpeed: 0.7,
     lapTime: 0, // Current lap time, initialized to 0.
     totalTime: 0, // Total race time, initialized to 0.
     raceCompleted: false, // Race not completed initially.

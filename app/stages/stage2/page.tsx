@@ -33,6 +33,8 @@ import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 import { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
+import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
+import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 
 function RaceProgressTracker({
   playerRefs,
@@ -202,7 +204,7 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         acceleration={0.01}
         damping={0.99}
-        botSpeed={1.4 + id * 0.1}
+        botSpeed={1.0 + id * 0.1}
       />
     ),
   );
@@ -258,6 +260,7 @@ export default function Stage1() {
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
         <Suspense fallback={null}>
           <InitAudio />
+          <PerformanceTracker />
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}
@@ -367,6 +370,7 @@ export default function Stage1() {
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>
       </Canvas>
+      <PerformanceOverlay />
     </main>
   );
 }
