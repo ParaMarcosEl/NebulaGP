@@ -1,6 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import Link from 'next/link';
 import './NavBar.css';
 import cx from 'classnames';
 import LogoutButton from '../Auth/Logout';
@@ -15,19 +14,27 @@ import PrevNextButtons from '@/Components/Audio/PrevNextButtons';
 import About from '../About/About';
 import { User } from '@/Constants/types';
 
-export default function NavBar() {
+export default function NavBar({
+  uiContainerRef,
+}: {
+  uiContainerRef?: React.RefObject<HTMLElement>;
+}) {
   const { user } = useUserStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
+  const scrollToTop = () => {
+    uiContainerRef?.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="navbar-container">
       <div className={cx('navbar')}>
         {/* Logo */}
-        <Link href="/" className="navbar-logo">
+        <button className="navbar-logo" onClick={scrollToTop}>
           NebulaGP
-        </Link>
+        </button>
         {/* Desktop Menu */}
         <div className="navbar-links desktop">
           <PrevNextButtons />
@@ -51,7 +58,7 @@ export default function NavBar() {
         </Modal>
       </div>
       <div className="account-navbar">
-        <AccountLinks user={user} setAccountOpen={setAccountOpen} />
+        <AccountLinks scrollToTop={scrollToTop} user={user} setAccountOpen={setAccountOpen} />
       </div>
     </div>
   );
@@ -83,9 +90,11 @@ function NavLinks({
 function AccountLinks({
   user,
   setAccountOpen,
+  scrollToTop,
 }: {
   user: User | null;
   setAccountOpen: (v: boolean) => void;
+  scrollToTop: () => void;
 }) {
   return (
     <>
@@ -95,7 +104,9 @@ function AccountLinks({
         </button>
         <LogoutButton className={'nav-btn'} />
         <span className="user">
-          <span className="name">Pilot: {user?.displayName} </span>
+          <button onClick={scrollToTop} className="name">
+            Pilot: {user?.displayName}{' '}
+          </button>
         </span>
       </AuthGuard>
     </>
