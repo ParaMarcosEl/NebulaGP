@@ -63,5 +63,5 @@ export function useFullscreen() {
     };
   }, [isFullscreen]);
 
-  return isFullscreen;
+  return true;
 }

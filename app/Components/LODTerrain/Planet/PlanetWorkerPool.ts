@@ -221,8 +221,6 @@ class PlanetWorkerPool {
       geometry.attributes.normal.needsUpdate = true;
       geometry.attributes.uv.needsUpdate = true;
       geometry.attributes.elevation.needsUpdate = true;
-
-      window.dispatchEvent(new Event('mesh-ready'));
     }
 
     // Return buffers to pool

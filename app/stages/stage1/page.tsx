@@ -34,6 +34,8 @@ import { useUserStore } from '@/Controllers/Users/useUserStore';
 import { useRecords } from '@/Controllers/Records/useRecords';
 import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
 import { MemoryDebugHUD } from '@/Components/UI/HUD/Debug/Debug';
+import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
+import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
 
 function RaceProgressTracker({
   playerRefs,
@@ -259,6 +261,7 @@ export default function Stage1() {
       >
         <Suspense fallback={null}>
           <InitAudio />
+          <PerformanceTracker />
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}
@@ -388,6 +391,7 @@ export default function Stage1() {
         </Suspense>
         <MemoryDebugHUD />
       </Canvas>
+      <PerformanceOverlay />
     </main>
   );
 }

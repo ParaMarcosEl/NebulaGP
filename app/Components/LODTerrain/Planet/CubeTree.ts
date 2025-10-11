@@ -2,12 +2,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as THREE from 'three';
-import { PlanetMaterial } from '../Planet/PlanetMaterial';
 import { planetWorkerPool } from '../Planet/PlanetWorkerPool';
 import { FBMParams } from './fbm';
-import { ensureBVH, prepareAndStoreMesh, usePlanetStore } from '@/Controllers/Game/usePlanetStore';
-import { buildBVHForMeshes } from './LODPlanet';
+import { prepareAndStoreMesh, usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { clearGroup, disposeMesh } from './helper';
+import { buildBVHAsync } from './BVHBuilder';
+import { planetMaterialManager } from './PlanetMaterialManager';
+import { geometryPool } from './GeometryPool';
 
 type NoiseUniforms = FBMParams;
 
@@ -15,6 +16,45 @@ function fbmToUniforms(params: FBMParams): Record<string, { value: number }> {
   return Object.fromEntries(
     Object.entries(params).map(([key, value]) => [key, { value: value as number }]),
   );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function buildPlanetNodeMesh(nodeData: {
+  segmentCount: any;
+  lowTex: any;
+  midTex: any;
+  highTex: any;
+  vertexData: any;
+}) {
+  const { segmentCount, lowTex, midTex, highTex, vertexData } = nodeData;
+
+  // 1️⃣ Get shared material
+  const material = planetMaterialManager.getMaterial(lowTex, midTex, highTex);
+
+  // 2️⃣ Get or reuse geometry
+  const geometry = geometryPool.getGeometry(segmentCount);
+
+  // Fill geometry attributes from worker data
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertexData.positions, 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(vertexData.normals, 3));
+  geometry.setAttribute('uv', new THREE.BufferAttribute(vertexData.uvs, 2));
+  geometry.setIndex(new THREE.BufferAttribute(vertexData.indices, 1));
+  geometry.computeBoundingSphere();
+
+  // 3️⃣ Create mesh
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = true;
+
+  // 4️⃣ Optionally async BVH
+  buildBVHAsync(mesh);
+
+  return mesh;
+}
+
+// When node is removed:
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function releaseNodeMesh(mesh: THREE.Mesh) {
+  geometryPool.releaseGeometry(mesh.geometry as THREE.BufferGeometry);
 }
 
 function getCameraFrustum(camera: THREE.Camera): THREE.Frustum {
@@ -107,7 +147,6 @@ class QuadTreeNode {
     const cacheKey = this.getCacheKey();
     if (this.meshCache.has(cacheKey)) {
       const entry = this.meshCache.get(cacheKey)!;
-      // update last used
       entry.lastUsed = Date.now();
       this.mesh = entry.mesh;
       return this.mesh;
@@ -120,40 +159,50 @@ class QuadTreeNode {
       const [bl, , tr] = this.bounds;
       const segments = this.getSegmentsForDistance(projectedScreenSize);
 
-      const material = new PlanetMaterial(lowTexture, midTexture, highTexture);
+      // ✅ Reuse materials from the manager (shared per texture set)
+      const material = planetMaterialManager.getMaterial(lowTexture, midTexture, highTexture);
       material.customUniforms.uPlanetSize.value = planetSize;
       material.setParams(fbmToUniforms(uniforms));
 
-      const geometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
+      // ✅ Get pooled geometry
+      const geometry = geometryPool.getGeometry(segments);
+
+      // ✅ Generate vertex data from the worker
+      const workerGeometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
         ...uniforms,
         useRidged: true,
       });
 
-      this.mesh = new THREE.Mesh(geometry, material);
-      this.mesh.userData.isPlanet = true;
+      // Copy worker geometry attributes into pooled geometry
+      geometry.copy(workerGeometry);
+      geometry.computeBoundingSphere();
 
+      // ✅ Create mesh
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.userData.isPlanet = true;
+
+      // Orient and position
       const up = new THREE.Vector3(0, 0, 1);
       const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
-      this.mesh.quaternion.copy(q);
+      mesh.quaternion.copy(q);
 
       const quadCenterX = (bl.x + tr.x) / 2;
       const quadCenterY = (bl.y + tr.y) / 2;
       const translation = new THREE.Vector3(quadCenterX, quadCenterY, 1);
       translation.applyQuaternion(q);
       translation.multiplyScalar(cubeSize / 2);
-      this.mesh.position.copy(translation);
+      mesh.position.copy(translation);
 
-      prepareMeshBounds(this.mesh);
-      if (!this.mesh.userData.bvhBuilt) {
-        buildBVHForMeshes(this.mesh);
-        this.mesh.userData.bvhBuilt = true;
-      }
+      prepareMeshBounds(mesh);
 
-      if (addMesh) addMesh(this.mesh);
-      this.meshCache.set(cacheKey, { mesh: this.mesh, lastUsed: Date.now() });
+      // ✅ Build BVH asynchronously (idle-safe)
+      buildBVHAsync(mesh);
 
-      window.dispatchEvent(new Event('mesh-ready'));
-      return this.mesh;
+      if (addMesh) addMesh(mesh);
+      this.meshCache.set(cacheKey, { mesh, lastUsed: Date.now() });
+      this.mesh = mesh;
+
+      return mesh;
     } finally {
       usePlanetStore.getState().decrementBuilds();
     }
@@ -448,7 +497,9 @@ export class CubeTree {
     const meshes = results.flat();
     clearGroup(this.group);
     meshes.forEach((m) => {
-      ensureBVH(m);
+      if (!m.userData.bvhBuilt) {
+        buildBVHAsync(m); // don't await, async fire-and-forget
+      }
       this.group.add(m);
 
       // mark mesh as recently used if cached

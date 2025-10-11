@@ -79,7 +79,7 @@ export default function Home() {
             shadow-camera-far={500}
           />
           <pointLight position={[-10, 5, -10]} intensity={0.3} />
-          <Stars texturePath="/textures/particleDot512.png" />
+          <Stars radius={500} count={3000} texturePath="/textures/particleDot512.png" />
           <Planet
             clouds={false}
             texturePath="molten_rock128"
@@ -154,7 +154,7 @@ export default function Home() {
       </Canvas>
 
       <main className="main">
-        <NavBar />
+        <NavBar uiContainerRef={uiContainerRef as React.RefObject<HTMLElement>} />
         <div ref={uiContainerRef} className="ui-container">
           <section ref={dashboardRef} className="section">
             <h1 className="heading">Zero-Gravity Racing</h1>
