@@ -1,12 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as THREE from 'three';
 import { FBMParams } from './fbm';
 import { PlanetMaterial } from './PlanetMaterial';
 import { buildBVHForMeshes } from './LODPlanet';
 import { prepareMeshBounds } from './CubeTree';
-// import { getPlanetCache, setPlanetCache } from './planetCache';
 
 type Task = {
   posBuffer: SharedArrayBuffer;
@@ -28,7 +28,7 @@ class PlanetWorkerPool {
   private indexCache = new Map<number, Uint32Array>();
   private material: PlanetMaterial;
 
-  // Buffer pools
+  // Attribute pools
   private posPool = new Map<number, SharedArrayBuffer[]>();
   private normalPool = new Map<number, SharedArrayBuffer[]>();
   private elevationPool = new Map<number, SharedArrayBuffer[]>();
@@ -36,13 +36,12 @@ class PlanetWorkerPool {
 
   constructor(
     workerCount = navigator.hardwareConcurrency || 4,
-    material = new PlanetMaterial(new THREE.Texture(), new THREE.Texture(), new THREE.Texture()),
+    material = new PlanetMaterial(new THREE.Texture(), new THREE.Texture(), new THREE.Texture())
   ) {
     this.material = material;
+
     this.workers = Array.from({ length: workerCount }, () => {
-      const worker = new Worker(new URL('@/workers/PlanetWorker.worker.ts', import.meta.url), {
-        type: 'module',
-      });
+      const worker = new Worker(new URL('@/workers/PlanetWorker.worker.ts', import.meta.url), { type: 'module' });
       this.workerReady.set(worker, false);
 
       worker.onmessage = (e) => {
@@ -54,8 +53,6 @@ class PlanetWorkerPool {
           case 'chunk_ready':
             this.onWorkerDone(worker, e.data);
             break;
-          default:
-            console.warn('Unknown message from worker:', e.data);
         }
       };
 
@@ -63,122 +60,34 @@ class PlanetWorkerPool {
     });
   }
 
-  // --- Buffer pooling helpers ---
-  private getBuffer(
-    pool: Map<number, SharedArrayBuffer[]>,
-    vertexCount: number,
-    bytesPerElement: number,
-  ) {
-    const poolArr = pool.get(vertexCount);
-    if (poolArr && poolArr.length > 0) {
-      return poolArr.pop()!;
-    }
+  private getBuffer(pool: Map<number, SharedArrayBuffer[]>, vertexCount: number, bytesPerElement: number) {
+    const arr = pool.get(vertexCount);
+    if (arr && arr.length > 0) return arr.pop()!;
     return new SharedArrayBuffer(vertexCount * bytesPerElement);
   }
 
-  private returnBuffer(
-    pool: Map<number, SharedArrayBuffer[]>,
-    vertexCount: number,
-    buffer: SharedArrayBuffer,
-  ) {
+  private returnBuffer(pool: Map<number, SharedArrayBuffer[]>, vertexCount: number, buffer: SharedArrayBuffer) {
     if (!pool.has(vertexCount)) pool.set(vertexCount, []);
     pool.get(vertexCount)!.push(buffer);
   }
 
-  // --- Main API ---
-  enqueue(
-    segments: number,
-    planetSize: number,
-    material: PlanetMaterial,
-    params: FBMParams,
-    targetMesh?: THREE.Mesh,
-  ): Promise<THREE.BufferGeometry> {
-    return new Promise(async (resolve) => {
-      const vertexCount = (segments + 1) * (segments + 1);
-
-      const posBuffer = this.getBuffer(
-        this.posPool,
-        vertexCount,
-        3 * Float32Array.BYTES_PER_ELEMENT,
-      );
-      const normalBuffer = this.getBuffer(
-        this.normalPool,
-        vertexCount,
-        3 * Float32Array.BYTES_PER_ELEMENT,
-      );
-      const elevationBuffer = this.getBuffer(
-        this.elevationPool,
-        vertexCount,
-        Float32Array.BYTES_PER_ELEMENT,
-      );
-      const uvBuffer = this.getBuffer(this.uvPool, vertexCount, 2 * Float32Array.BYTES_PER_ELEMENT);
-
-      const task: Task = {
-        posBuffer,
-        normalBuffer,
-        elevationBuffer,
-        uvBuffer,
-        planetSize,
-        params,
-        segments,
-        resolve: async (geometry: THREE.BufferGeometry) => {
-          resolve(geometry);
-        },
-        ...(targetMesh ? { targetMesh } : {}),
-      };
-
-      this.queue.push(task);
-      this.dispatch();
-    });
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private onWorkerDone(worker: Worker, data: any) {
-    const task = (worker as any)._currentTask as Task;
-    if (!task) return;
-
+  // --- Preallocate geometry once ---
+  private createOrReuseMesh(task: Task) {
     const vertexCount = (task.segments + 1) * (task.segments + 1);
-
-    // Rehydrate views
-    const positions = new Float32Array(task.posBuffer);
-    const normals = new Float32Array(task.normalBuffer);
-    const elevations = new Float32Array(task.elevationBuffer);
-    const uvs = new Float32Array(task.uvBuffer);
-
     let geometry: THREE.BufferGeometry;
+    let mesh: THREE.Mesh;
 
     if (task.targetMesh) {
-      // Update existing mesh
-      geometry = task.targetMesh.geometry as THREE.BufferGeometry;
-      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-      geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
-      geometry.setAttribute(
-        'elevation',
-        new THREE.BufferAttribute(new Float32Array(elevations), 1),
-      );
-
-      geometry.computeBoundingBox?.();
-      geometry.computeBoundingSphere?.();
-
-      if ((geometry as any).boundsTree) {
-        (geometry as any).boundsTree.refit();
-      } else {
-        geometry.computeBoundsTree();
-      }
-
-      prepareMeshBounds(task.targetMesh);
-      task.resolve(geometry);
-      window.dispatchEvent(new Event('mesh-geometry-updated'));
+      mesh = task.targetMesh;
+      geometry = mesh.geometry as THREE.BufferGeometry;
     } else {
-      // New geometry
       geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-      geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
-      geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
-      geometry.setAttribute(
-        'elevation',
-        new THREE.BufferAttribute(new Float32Array(elevations), 1),
-      );
+
+      // Use SharedArrayBuffers directly
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(task.posBuffer), 3));
+      geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(task.normalBuffer), 3));
+      geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(task.uvBuffer), 2));
+      geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(task.elevationBuffer), 1));
 
       // Index caching
       let index = this.indexCache.get(task.segments);
@@ -208,22 +117,73 @@ class PlanetWorkerPool {
       }
       geometry.setIndex(new THREE.BufferAttribute(index, 1));
 
-      geometry.computeBoundingBox?.();
-      geometry.computeBoundingSphere?.();
-
-      const newMesh = new THREE.Mesh(geometry, this.material);
-      newMesh.userData.isPlanet = true;
-      buildBVHForMeshes(newMesh);
-
-      task.resolve(geometry);
-
-      geometry.attributes.position.needsUpdate = true;
-      geometry.attributes.normal.needsUpdate = true;
-      geometry.attributes.uv.needsUpdate = true;
-      geometry.attributes.elevation.needsUpdate = true;
+      mesh = new THREE.Mesh(geometry, this.material);
+      mesh.userData.isPlanet = true;
+      buildBVHForMeshes(mesh);
     }
 
+    return { mesh, geometry };
+  }
+
+  enqueue(
+    segments: number,
+    planetSize: number,
+    material: PlanetMaterial,
+    params: FBMParams,
+    targetMesh?: THREE.Mesh
+  ): Promise<THREE.BufferGeometry> {
+    return new Promise((resolve) => {
+      const vertexCount = (segments + 1) * (segments + 1);
+
+      const task: Task = {
+        posBuffer: this.getBuffer(this.posPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT),
+        normalBuffer: this.getBuffer(this.normalPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT),
+        elevationBuffer: this.getBuffer(this.elevationPool, vertexCount, Float32Array.BYTES_PER_ELEMENT),
+        uvBuffer: this.getBuffer(this.uvPool, vertexCount, 2 * Float32Array.BYTES_PER_ELEMENT),
+        planetSize,
+        params,
+        segments,
+        resolve,
+        targetMesh,
+      };
+
+      this.queue.push(task);
+      this.dispatch();
+    });
+  }
+
+  private onWorkerDone(worker: Worker, data: any) {
+    const task = (worker as any)._currentTask as Task;
+    if (!task) return;
+
+    const { mesh, geometry } = this.createOrReuseMesh(task);
+
+    // Directly update attributes (no allocations)
+    (geometry.getAttribute('position') as THREE.BufferAttribute).array.set(new Float32Array(task.posBuffer));
+    (geometry.getAttribute('normal') as THREE.BufferAttribute).array.set(new Float32Array(task.normalBuffer));
+    (geometry.getAttribute('uv') as THREE.BufferAttribute).array.set(new Float32Array(task.uvBuffer));
+    (geometry.getAttribute('elevation') as THREE.BufferAttribute).array.set(new Float32Array(task.elevationBuffer));
+
+    // Mark for GPU update
+    for (const name of ['position', 'normal', 'uv', 'elevation'] as const) {
+      (geometry.getAttribute(name) as THREE.BufferAttribute).needsUpdate = true;
+    }
+
+    geometry.computeBoundingBox?.();
+    geometry.computeBoundingSphere?.();
+
+    if ((geometry as any).boundsTree) {
+      (geometry as any).boundsTree.refit();
+    } else {
+      geometry.computeBoundsTree();
+    }
+
+    if (task.targetMesh) prepareMeshBounds(task.targetMesh);
+
+    task.resolve(geometry);
+
     // Return buffers to pool
+    const vertexCount = (task.segments + 1) * (task.segments + 1);
     this.returnBuffer(this.posPool, vertexCount, task.posBuffer);
     this.returnBuffer(this.normalPool, vertexCount, task.normalBuffer);
     this.returnBuffer(this.elevationPool, vertexCount, task.elevationBuffer);
@@ -244,9 +204,9 @@ class PlanetWorkerPool {
     worker.postMessage({
       type: 'build_chunk',
       payload: {
-        elevationBuffer: task.elevationBuffer,
         posBuffer: task.posBuffer,
         normalBuffer: task.normalBuffer,
+        elevationBuffer: task.elevationBuffer,
         uvBuffer: task.uvBuffer,
         planetSize: task.planetSize,
         params: task.params,

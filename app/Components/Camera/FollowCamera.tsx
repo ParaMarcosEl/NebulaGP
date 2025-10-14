@@ -30,7 +30,7 @@ export default function FollowCamera({
     desiredPos.copy(targetPos).add(worldOffset);
 
     // Interpolate camera using alpha (between last + current sim step)
-    camera.position.lerpVectors(camera.position, desiredPos, alpha * 8);
+    camera.position.lerpVectors(camera.position, desiredPos, alpha * 12);
     camera.quaternion.slerp(targetQuat, alpha * 5);
   });
 

@@ -240,10 +240,10 @@ export function usePlayerController({
 
     if (braking || throttle < 0) {
       speedRef.current = Math.max(
-        -playerSpeed,
+        -playerSpeed * 0.5,
         isMobileDevice()
           ? speedRef.current - acceleration * Math.abs(throttle)
-          : speedRef.current - acceleration,
+          : speedRef.current - acceleration * 2,
       );
     }
 

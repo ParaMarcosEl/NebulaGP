@@ -184,7 +184,7 @@ export default function Stage1() {
         startPosition={startPositions[id].position}
         startQuaternion={startPositions[id].quaternion}
         acceleration={0.001}
-        damping={0.99}
+        damping={0.997}
         onSpeedChange={setSpeed}
         botSpeed={2.2}
       />
