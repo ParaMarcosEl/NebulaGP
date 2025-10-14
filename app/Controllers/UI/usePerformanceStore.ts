@@ -8,6 +8,7 @@ interface PerformanceState {
   geometries: number;
   textures: number;
   triangles: number;
+  materials: number;
   updateMetrics: (data: Partial<PerformanceState>) => void;
 }
 
@@ -19,8 +20,8 @@ export const usePerformanceStore = create<PerformanceState>((set) => {
     geometries: 0,
     textures: 0,
     triangles: 0,
+    materials: 0,
     updateMetrics: (data) => {
-      console.log('updating performance', data);
       set(data);
     },
   };

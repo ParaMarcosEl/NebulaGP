@@ -35,6 +35,8 @@ import { HUDUI } from '@/Components/UI/HUD/HUDUI';
 // import LODPlanet from '@/Components/LODTerrain/Planet/Worker/Planet';
 import WorldPlanet from '@/Components/World/Planet/WorldPlanet';
 import { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
+import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
+import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 
 const InitAudio = () => {
   useAudioListener();
@@ -182,7 +184,7 @@ export default function Stage1() {
         startPosition={startPositions[id].position}
         startQuaternion={startPositions[id].quaternion}
         acceleration={0.001}
-        damping={0.99}
+        damping={0.997}
         onSpeedChange={setSpeed}
         botSpeed={2.2}
       />
@@ -258,6 +260,7 @@ export default function Stage1() {
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
         <Suspense fallback={null}>
           <InitAudio />
+          <PerformanceTracker />
           <RaceProgressTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}
@@ -358,6 +361,7 @@ export default function Stage1() {
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>
       </Canvas>
+      <PerformanceOverlay />
     </main>
   );
 }

@@ -40,7 +40,7 @@ export default function Bot({
   startQuaternion,
   curve,
   isBot,
-  botSpeed = 1,
+  botSpeed = 0,
   explosionsRef,
 }: AircraftProps) {
   const ship = useMemo(() => {

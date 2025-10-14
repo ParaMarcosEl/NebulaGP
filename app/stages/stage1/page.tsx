@@ -169,8 +169,8 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         startPosition={startPositions[id].position}
         startQuaternion={startPositions[id].quaternion}
-        acceleration={0.001}
-        damping={0.99}
+        acceleration={0.0015}
+        damping={0.997}
         onSpeedChange={setSpeed}
         botSpeed={2.2}
       />
@@ -190,7 +190,7 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         acceleration={0.01}
         damping={0.99}
-        botSpeed={2 + id * 0.1}
+        botSpeed={1.4 + id * 0.1}
       />
     ),
   );

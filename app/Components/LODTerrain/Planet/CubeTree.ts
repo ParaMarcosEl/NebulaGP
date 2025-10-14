@@ -6,9 +6,9 @@ import { planetWorkerPool } from '../Planet/PlanetWorkerPool';
 import { FBMParams } from './fbm';
 import { prepareAndStoreMesh, usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { clearGroup, disposeMesh } from './helper';
-import { buildBVHAsync } from './BVHBuilder';
-import { planetMaterialManager } from './PlanetMaterialManager';
+import { getPlanetMaterialManager } from './PlanetMaterialManager';
 import { geometryPool } from './GeometryPool';
+import { bvhQueue } from './BVHQueue';
 
 type NoiseUniforms = FBMParams;
 
@@ -27,11 +27,11 @@ async function buildPlanetNodeMesh(nodeData: {
   vertexData: any;
 }) {
   const { segmentCount, lowTex, midTex, highTex, vertexData } = nodeData;
-
-  // 1️⃣ Get shared material
+  const planetMaterialManager = getPlanetMaterialManager();
+  // Get shared material
   const material = planetMaterialManager.getMaterial(lowTex, midTex, highTex);
 
-  // 2️⃣ Get or reuse geometry
+  // Get or reuse geometry
   const geometry = geometryPool.getGeometry(segmentCount);
 
   // Fill geometry attributes from worker data
@@ -41,12 +41,12 @@ async function buildPlanetNodeMesh(nodeData: {
   geometry.setIndex(new THREE.BufferAttribute(vertexData.indices, 1));
   geometry.computeBoundingSphere();
 
-  // 3️⃣ Create mesh
+  // Create mesh
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = true;
 
-  // 4️⃣ Optionally async BVH
-  buildBVHAsync(mesh);
+  // Optionally async BVH
+  bvhQueue.enqueue(mesh);
 
   return mesh;
 }
@@ -91,8 +91,9 @@ class QuadTreeNode {
   children: QuadTreeNode[] = [];
   mesh: THREE.Mesh | null = null;
   private isSubdivided = false;
+  private planetMaterialManager = getPlanetMaterialManager();
   // meshCache now stores lastUsed metadata for LRU eviction
-  private meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>;
+  private meshCache: Map<string, { mesh: WeakRef<THREE.Mesh>; lastUsed: number }>;
 
   private getSegmentsForDistance(projectedSize: number): number {
     if (projectedSize > 700) return 512;
@@ -104,7 +105,7 @@ class QuadTreeNode {
   constructor(
     level: number,
     bounds: THREE.Vector2[],
-    meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>,
+    meshCache: Map<string, { mesh: WeakRef<THREE.Mesh>; lastUsed: number }>,
   ) {
     this.level = level;
     this.bounds = bounds;
@@ -124,7 +125,9 @@ class QuadTreeNode {
     if (this.meshCache.has(key)) {
       // dispose geometry/material and helpers
       const entry = this.meshCache.get(key)!;
-      disposeMesh(entry.mesh);
+      const mesh = entry?.mesh?.deref();
+      if (!mesh) this.meshCache.delete(key);
+      disposeMesh(mesh!);
       this.meshCache.delete(key);
     } else {
       disposeMesh(this.mesh);
@@ -148,7 +151,7 @@ class QuadTreeNode {
     if (this.meshCache.has(cacheKey)) {
       const entry = this.meshCache.get(cacheKey)!;
       entry.lastUsed = Date.now();
-      this.mesh = entry.mesh;
+      this.mesh = entry.mesh.deref()!;
       return this.mesh;
     }
 
@@ -159,15 +162,21 @@ class QuadTreeNode {
       const [bl, , tr] = this.bounds;
       const segments = this.getSegmentsForDistance(projectedScreenSize);
 
-      // ✅ Reuse materials from the manager (shared per texture set)
-      const material = planetMaterialManager.getMaterial(lowTexture, midTexture, highTexture);
+      console.log(
+        'Texture UUIDs:',
+        lowTexture.uuid,
+        midTexture.uuid,
+        highTexture.uuid
+      );
+      // Reuse materials from the manager (shared per texture set)
+      const material = getPlanetMaterialManager().getMaterial(lowTexture, midTexture, highTexture);
       material.customUniforms.uPlanetSize.value = planetSize;
       material.setParams(fbmToUniforms(uniforms));
 
-      // ✅ Get pooled geometry
+      // Get pooled geometry
       const geometry = geometryPool.getGeometry(segments);
 
-      // ✅ Generate vertex data from the worker
+      // Generate vertex data from the worker
       const workerGeometry = await planetWorkerPool.enqueue(segments, planetSize, material, {
         ...uniforms,
         useRidged: true,
@@ -177,9 +186,11 @@ class QuadTreeNode {
       geometry.copy(workerGeometry);
       geometry.computeBoundingSphere();
 
-      // ✅ Create mesh
+      // Create mesh
       const mesh = new THREE.Mesh(geometry, material);
       mesh.userData.isPlanet = true;
+      mesh.userData.sharedMaterial = true;
+
 
       // Orient and position
       const up = new THREE.Vector3(0, 0, 1);
@@ -195,11 +206,12 @@ class QuadTreeNode {
 
       prepareMeshBounds(mesh);
 
-      // ✅ Build BVH asynchronously (idle-safe)
-      buildBVHAsync(mesh);
+      // Build BVH asynchronously (idle-safe)
+      if (projectedScreenSize > 700) bvhQueue.enqueue(mesh);
 
       if (addMesh) addMesh(mesh);
-      this.meshCache.set(cacheKey, { mesh, lastUsed: Date.now() });
+      // store a WeakRef to allow LRU eviction without preventing GC
+      this.meshCache.set(cacheKey, { mesh: new WeakRef(mesh), lastUsed: Date.now() });
       this.mesh = mesh;
 
       return mesh;
@@ -244,7 +256,7 @@ class QuadTreeNode {
     const projectedScreenSize =
       (nodeSize / dist) * (viewportHeight / (2 * Math.tan(cameraFov / 2)));
 
-    const pixelThreshold = 512;
+    const pixelThreshold = 800;
 
     if (this.level < maxDepth && projectedScreenSize > pixelThreshold) {
       // subdividing — free parent's mesh immediately to reduce memory use
@@ -328,6 +340,10 @@ class QuadTreeNode {
     this.children = newBounds.map(
       (bounds) => new QuadTreeNode(this.level + 1, bounds, this.meshCache),
     );
+    if (this.mesh) {
+      geometryPool.releaseGeometry(this.mesh.geometry as THREE.BufferGeometry);
+      this.disposeOwnMesh();
+    }
   }
 }
 
@@ -337,7 +353,7 @@ class CubeFace {
 
   constructor(
     normal: THREE.Vector3,
-    meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }>,
+    meshCache: Map<string, { mesh: WeakRef<THREE.Mesh>; lastUsed: number }>,
   ) {
     this.normal = normal;
     this.root = new QuadTreeNode(
@@ -386,7 +402,7 @@ class CubeFace {
 export class CubeTree {
   private boundsCache: { mesh: THREE.Mesh; box: THREE.Box3; sphere: THREE.Sphere }[] = [];
   // meshCache holds metadata now for LRU eviction
-  private meshCache: Map<string, { mesh: THREE.Mesh; lastUsed: number }> = new Map();
+  private meshCache: Map<string, { mesh: WeakRef<THREE.Mesh>; lastUsed: number }> = new Map();
   private maxCacheSize = 500;
 
   private group: THREE.Group;
@@ -447,34 +463,39 @@ export class CubeTree {
     }
     return closest;
   }
+  
+  private evictBatchSize = 5; // number of meshes to evict per call
 
-  private evictIfNeeded() {
-    if (this.meshCache.size <= this.maxCacheSize) return;
+private evictIfNeeded() {
+  if (this.meshCache.size <= this.maxCacheSize) return;
 
-    // sort entries by lastUsed ascending (oldest first)
-    const entries = Array.from(this.meshCache.entries());
-    entries.sort((a, b) => a[1].lastUsed - b[1].lastUsed);
+  // Sort entries by lastUsed ascending (oldest first)
+  const entries = Array.from(this.meshCache.entries()).sort(
+    (a, b) => a[1].lastUsed - b[1].lastUsed
+  );
 
-    const toRemoveCount = this.meshCache.size - this.maxCacheSize;
-    for (let i = 0; i < toRemoveCount; i++) {
-      const [key, entry] = entries[i];
-      // remove from scene/group if present
-      try {
-        // If this mesh is in the group, remove it
-        if (this.group.children.includes(entry.mesh)) {
-          this.group.remove(entry.mesh);
-        }
-        disposeMesh(entry.mesh);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (err) {
-        // best-effort dispose
-        try {
-          disposeMesh(entry.mesh);
-        } catch {}
+  // Evict only a small batch at a time
+  const toEvict = Math.min(entries.length, this.evictBatchSize);
+
+  for (let i = 0; i < toEvict; i++) {
+    const [key, entry] = entries[i];
+    try {
+      const mesh = entry.mesh.deref();
+      if (mesh) {
+        if (this.group.children.includes(mesh)) this.group.remove(mesh);
+        disposeMesh(mesh);
       }
-      this.meshCache.delete(key);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      // best-effort dispose
+      try {
+        disposeMesh(entry.mesh.deref()!);
+      } catch {}
     }
+    this.meshCache.delete(key);
   }
+}
+
 
   async getDynamicMeshesAsync(camera: THREE.Camera, maxDepth = 1): Promise<THREE.Group> {
     const frustum = getCameraFrustum(camera);
@@ -498,7 +519,7 @@ export class CubeTree {
     clearGroup(this.group);
     meshes.forEach((m) => {
       if (!m.userData.bvhBuilt) {
-        buildBVHAsync(m); // don't await, async fire-and-forget
+        bvhQueue.enqueue(m); // don't await, async fire-and-forget
       }
       this.group.add(m);
 
@@ -506,7 +527,7 @@ export class CubeTree {
       // find its cache key by checking user data or using bounding boxes - we try to update cache by reference
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       for (const [key, entry] of this.meshCache.entries()) {
-        if (entry.mesh === m) {
+        if (entry.mesh.deref() === m) {
           entry.lastUsed = Date.now();
           break;
         }
@@ -516,7 +537,7 @@ export class CubeTree {
     this.updateBoundsCache(meshes);
 
     // Evict least-recently-used if over budget
-    this.evictIfNeeded();
+    if (performance.now() % 5000 < 16) this.evictIfNeeded();
 
     return this.group;
   }
@@ -547,11 +568,12 @@ export class CubeTree {
     this.markDead();
     // dispose cache entries
     this.meshCache.forEach((entry) => {
-      if (entry.mesh.geometry) entry.mesh.geometry.dispose();
-      if (Array.isArray(entry.mesh.material)) entry.mesh.material.forEach((m) => m.dispose());
-      else (entry.mesh.material as THREE.Material)?.dispose();
+      const mesh = entry.mesh.deref();
+      if (mesh?.geometry) mesh?.geometry.dispose();
+      if (Array.isArray(mesh?.material)) mesh?.material.forEach((m) => m.dispose());
+      else (mesh?.material as THREE.Material)?.dispose();
       try {
-        disposeMesh(entry.mesh);
+        disposeMesh(entry.mesh.deref()!);
       } catch {}
     });
 

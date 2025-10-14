@@ -26,6 +26,7 @@ export const Speedometer = function ({ speed }: { speed: number }) {
     borderBottomLeftRadius: '0',
     borderBottomRightRadius: '25%',
   };
+  console.log({ speed})
   const speedPercent = Math.min(speed / MAX_SPEED, 1);
 
   return (
