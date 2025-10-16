@@ -9,6 +9,7 @@ export const useCanvasLoader = () => {
   const { MaterialLoaded, setMaterialLoaded } = useGameStore((s) => s);
 
   const [visible, setVisible] = useState(true);
+  const [LoadingIndex] = useState(Math.floor(Math.random() * 2) + 1);
 
   const isLoaderActive = active || !MaterialLoaded;
 
@@ -25,7 +26,7 @@ export const useCanvasLoader = () => {
     isLoaderActive,
     setMaterialLoaded,
     loader: visible && (
-      <div className={`loader-overlay ${!isLoaderActive ? 'hidden' : ''}`}>
+      <div className={`loader-overlay ${!isLoaderActive ? 'hidden' : ''} loading-0${LoadingIndex}`}>
         {active && <p>Loading Scene Assets: {Math.floor(dreiProgress)}%</p>}
         <Spinner />
         {!MaterialLoaded && <p>Compiling Terrain...</p>}

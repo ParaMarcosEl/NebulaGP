@@ -4,7 +4,6 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('/screenshots/loading01.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -23,6 +22,14 @@
 
   transition: opacity 0.3s;
   opacity: 1;
+}
+
+.loading-01 {
+  background-image: url('/screenshots/loading01.png');
+}
+
+.loading-02 {
+  background-image: url('/screenshots/stage2screenshot.png');
 }
 
 .loader-overlay.hidden {

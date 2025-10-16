@@ -1,7 +1,7 @@
 'use client';
 // components/WeaponPad.tsx
 import { useRef } from 'react';
-import { useMinePad } from './MinePadController';
+import { useMinePad } from '@/Components/Pad/usePadController';
 import * as THREE from 'three';
 
 type MinePadProps = {
@@ -17,11 +17,10 @@ export default function MinePad({ position, quaternion, playerRefs }: MinePadPro
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the WeaponPadController logic
-  const WeaponPad = useMinePad({
+  const WeaponPad = useMinePad(
     playerRefs,
-    minePadRef: meshRef as React.RefObject<THREE.Mesh>,
-    cooldownTime: 2,
-  });
+    meshRef as React.RefObject<THREE.Mesh>,
+    2);
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>

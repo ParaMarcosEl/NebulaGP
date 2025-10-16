@@ -1,7 +1,7 @@
 'use client';
 // components/WeaponPad.tsx
 import { useRef } from 'react';
-import { useShieldPadController } from './ShieldPadController';
+import { useShieldPad } from '@/Components/Pad/usePadController';
 import * as THREE from 'three';
 
 type ShieldPadProps = {
@@ -17,11 +17,11 @@ export default function ShieldPad({ position, quaternion, playerRefs }: ShieldPa
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the WeaponPadController logic
-  const WeaponPad = useShieldPadController({
+  const WeaponPad = useShieldPad(
     playerRefs,
-    shieldPadRef: meshRef as React.RefObject<THREE.Mesh>,
-    cooldownTime: 2,
-  });
+    meshRef as React.RefObject<THREE.Mesh>,
+    2
+  );
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>
