@@ -1,7 +1,7 @@
 'use client';
 // components/WeaponPad.tsx
 import { useRef } from 'react';
-import { useWeaponsPad } from './WeaponsPadController';
+import { useWeaponsPad } from '@/Components/Pad/usePadController';
 import * as THREE from 'three';
 
 type WeaponPadProps = {
@@ -17,11 +17,11 @@ export default function WeaponPad({ position, quaternion, playerRefs }: WeaponPa
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the WeaponPadController logic
-  const WeaponPad = useWeaponsPad({
+  const WeaponPad = useWeaponsPad(
     playerRefs,
-    weaponsPadRef: meshRef as React.RefObject<THREE.Mesh>,
-    cooldownTime: 2,
-  });
+    meshRef as React.RefObject<THREE.Mesh>,
+    2
+  );
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>

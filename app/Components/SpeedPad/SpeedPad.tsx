@@ -1,7 +1,7 @@
 'use client';
 // components/SpeedPad.tsx
 import { useRef } from 'react';
-import { useSpeedPadController } from '@/Components/SpeedPad/SpeedPadController';
+import { useSpeedPad } from '@/Components/Pad/usePadController';
 import * as THREE from 'three';
 
 type SpeedPadProps = {
@@ -17,11 +17,11 @@ export default function SpeedPad({ position, quaternion, playerRefs }: SpeedPadP
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the SpeedPadController logic
-  const speedPad = useSpeedPadController({
+  const speedPad = useSpeedPad(
     playerRefs,
-    speedPadRef: meshRef as React.RefObject<THREE.Mesh>,
-    cooldownTime: 2,
-  });
+    meshRef as React.RefObject<THREE.Mesh>,
+    2,
+  );
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>

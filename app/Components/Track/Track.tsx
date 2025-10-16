@@ -37,6 +37,7 @@ const Track = forwardRef<
   });
 
   const particleTexture = useTexture('/textures/particleDot512.png');
+  particleTexture.flipY = false;
 
   // Create tube geometry with BVH acceleration
   const geometry = useMemo(() => {
