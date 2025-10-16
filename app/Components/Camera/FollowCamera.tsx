@@ -16,9 +16,9 @@ export default function FollowCamera({
     const desiredPosition = target.position.clone().add(offset);
 
     // Smooth camera position
-    camera.position.lerp(desiredPosition, 0.2);
+    camera.position.lerp(desiredPosition, 0.3);
 
-    camera.quaternion.slerp(target.quaternion, 0.1);
+    camera.quaternion.slerp(target.quaternion, 0.15);
   });
 
   return null;

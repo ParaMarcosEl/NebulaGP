@@ -1,10 +1,10 @@
 import { CSSProperties } from 'react';
 import { MAX_SPEED } from '@/Constants';
-// import { useGameStore } from '@/Controllers/GameController';
+import { useGameStore } from '@/Controllers/Game/GameController';
 // import { useRaceStandings } from '@/Controllers/useRaceStandings';
 
 export const Speedometer = function ({ speed }: { speed: number }) {
-  // const { playerId, raceData } = useGameStore(s => s);
+  const { playerSpeed, baseSpeed } = useGameStore(s => s);
 
   // const { finished, inProgress } = useRaceStandings();
 
@@ -27,7 +27,7 @@ export const Speedometer = function ({ speed }: { speed: number }) {
     borderBottomRightRadius: '25%',
   };
   console.log({ speed})
-  const speedPercent = Math.min(speed / MAX_SPEED, 1);
+  const speedPercent = Math.min(speed / playerSpeed, 1);
 
   return (
     <div className="speedometer" style={speedometerStyle}>
