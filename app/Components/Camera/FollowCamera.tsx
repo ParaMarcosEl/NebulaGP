@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { useThree } from '@react-three/fiber';
-import { useFixedFrame } from '@/Controllers/Game/useFixedFrame';
+import { useFrame, useThree } from '@react-three/fiber';
+
 export default function FollowCamera({
   targetRef,
 }: {
@@ -8,31 +8,20 @@ export default function FollowCamera({
 }) {
   const { camera } = useThree();
 
-  // Camera offset relative to target orientation
-  const offset = new THREE.Vector3(0, 0.5, 10);
-
-  // Scratch objects (avoid GC churn)
-  const targetPos = new THREE.Vector3();
-  const targetQuat = new THREE.Quaternion();
-  const desiredPos = new THREE.Vector3();
-  const worldOffset = new THREE.Vector3();
-
-  useFixedFrame((dt, alpha) => {
+  useFrame(() => {
     const target = targetRef.current;
     if (!target) return;
 
-    // Grab target world transform
-    target.getWorldPosition(targetPos);
-    target.getWorldQuaternion(targetQuat);
+    const offset = new THREE.Vector3(0, 0, 8).applyQuaternion(target.quaternion);
+    const desiredPosition = target.position.clone().add(offset);
 
-    // Compute desired position based on offset
-    worldOffset.copy(offset).applyQuaternion(targetQuat);
-    desiredPos.copy(targetPos).add(worldOffset);
+    // Smooth camera position
+    camera.position.lerp(desiredPosition, 0.2);
 
-    // Interpolate camera using alpha (between last + current sim step)
-    camera.position.lerpVectors(camera.position, desiredPos, alpha * 12);
-    camera.quaternion.slerp(targetQuat, alpha * 5);
+    camera.quaternion.slerp(target.quaternion, 0.1);
   });
 
   return null;
 }
+
+export { FollowCamera };

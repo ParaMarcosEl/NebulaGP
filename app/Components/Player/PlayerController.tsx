@@ -17,8 +17,8 @@ import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { checkOutOfBoundsSDF } from '@/Utils/SDF';
-import { useFixedFrame } from '@/Controllers/Game/useFixedFrame';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
+import { useFrame } from '@react-three/fiber';
 
 const inputAxisRef = { current: { x: 0, y: 0 } };
 const throttleRef = { current: 0 };
@@ -70,8 +70,8 @@ export function usePlayerController({
   playerRefs,
   playingFieldRef,
   acceleration = 0.001,
-  pitchVelocity = 0.01,
-  rollVelocity = 0.005,
+  pitchVelocity = 0.04,
+  rollVelocity = 0.02,
   damping = 0.5,
   // botSpeed,
   curve,
@@ -175,7 +175,7 @@ export function usePlayerController({
     return () => window.removeEventListener('gamepadconnected', handler);
   }, [enabled]);
 
-  useFixedFrame((_, delta) => {
+  useFrame((_, delta) => {
     if (!enabled) return;
     const ship = aircraftRef.current;
     if (!controlsEnabled || !ship || !ship.userData.velocity) return;
@@ -243,7 +243,7 @@ export function usePlayerController({
         -playerSpeed * 0.5,
         isMobileDevice()
           ? speedRef.current - acceleration * Math.abs(throttle)
-          : speedRef.current - acceleration * 2,
+          : speedRef.current - acceleration,
       );
     }
 
