@@ -33,7 +33,6 @@ import { InitAudio } from '@/Components/Audio/InitAudio';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
 import { useRecords } from '@/Controllers/Records/useRecords';
 import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
-import { MemoryDebugHUD } from '@/Components/UI/HUD/Debug/Debug';
 import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
 
@@ -390,7 +389,6 @@ export default function Stage1() {
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>
-        <MemoryDebugHUD />
       </Canvas>
       <PerformanceOverlay />
     </main>

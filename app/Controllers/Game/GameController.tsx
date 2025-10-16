@@ -399,7 +399,7 @@ export const useGameStore = create(
         ...currentState,
         [id]: {
           ...currentState[id],
-          shieldValue: value,
+          shieldValue: Math.max(0, value),
         },
       };
 
