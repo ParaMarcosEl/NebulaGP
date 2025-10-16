@@ -6,7 +6,7 @@ import { RootState } from '@react-three/fiber';
 
 export function useFixedFrame(
   callback: (state: RootState, fixedStep: number) => void,
-  fixedStep = 1 / 120,
+  fixedStep = 1 / 60,
   maxSteps = 5,
 ) {
   const accumulator = useRef(0);
