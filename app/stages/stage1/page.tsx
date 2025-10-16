@@ -33,7 +33,6 @@ import { InitAudio } from '@/Components/Audio/InitAudio';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
 import { useRecords } from '@/Controllers/Records/useRecords';
 import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
-import { MemoryDebugHUD } from '@/Components/UI/HUD/Debug/Debug';
 import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
 
@@ -170,8 +169,8 @@ export default function Stage1() {
         playingFieldRef={playingFieldRef}
         startPosition={startPositions[id].position}
         startQuaternion={startPositions[id].quaternion}
-        acceleration={.02}
-        damping={0.985}
+        acceleration={.004}
+        damping={0.998}
         onSpeedChange={setSpeed}
         botSpeed={2.2}
       />
@@ -390,7 +389,6 @@ export default function Stage1() {
           {/* Camera */}
           <FollowCamera targetRef={aircraftRef} />
         </Suspense>
-        <MemoryDebugHUD />
       </Canvas>
       <PerformanceOverlay />
     </main>

@@ -176,187 +176,170 @@ export function usePlayerController({
   }, [enabled]);
 
   useFrame((_, delta) => {
-    if (!enabled) return;
-    const ship = aircraftRef.current;
-    if (!controlsEnabled || !ship || !ship.userData.velocity) return;
+  if (!enabled) return;
+  const ship = aircraftRef.current;
+  if (!controlsEnabled || !ship || !ship.userData.velocity) return;
 
-    const nearestT = getNearestCurveT(ship.position, curve);
-    const curvePosition = curve.getPointAt(nearestT);
-    ship.userData.curvePosition = curvePosition.clone();
-    ship.userData.progress = nearestT;
+  const nearestT = getNearestCurveT(ship.position, curve);
+  const curvePosition = curve.getPointAt(nearestT);
+  ship.userData.curvePosition = curvePosition.clone();
+  ship.userData.progress = nearestT;
 
-    const throttle = throttleRef.current;
-    const shouldFire = firingRef.current;
-    const DEAD_ZONE = 0.1;
-    const gamepads = navigator.getGamepads?.();
-    const gp = gamepadIndex.current !== null ? gamepads?.[gamepadIndex.current] : gamepads?.[0];
-    let lx = 0,
-      ly = 0;
+  const throttle = throttleRef.current;
+  const shouldFire = firingRef.current;
+  const DEAD_ZONE = 0.1;
+  const gamepads = navigator.getGamepads?.();
+  const gp = gamepadIndex.current !== null ? gamepads?.[gamepadIndex.current] : gamepads?.[0];
+  let lx = 0,
+    ly = 0;
 
-    const { x: touchX, y: touchY } = inputAxisRef.current;
+  const { x: touchX, y: touchY } = inputAxisRef.current;
 
-    if (Math.abs(touchX) > 0.01 || Math.abs(touchY) > 0.01) {
-      angularVelocity.current.z += touchX * -pitchVelocity;
-      angularVelocity.current.x += touchY * rollVelocity;
-    } else {
-      if (gp && gp.connected) {
-        lx = Math.abs(gp.axes[0]) > DEAD_ZONE ? gp.axes[0] : 0;
-        ly = Math.abs(gp.axes[1]) > DEAD_ZONE ? gp.axes[1] : 0;
-      }
-      angularVelocity.current.z += lx * -pitchVelocity;
-      angularVelocity.current.x += ly * rollVelocity;
-
-      if (keys.current['a']) angularVelocity.current.z += pitchVelocity;
-      if (keys.current['d']) angularVelocity.current.z -= pitchVelocity;
-      if (keys.current['w']) angularVelocity.current.x -= rollVelocity;
-      if (keys.current['s']) angularVelocity.current.x += rollVelocity;
+  // --- ROTATION INPUT (scaled by delta)
+  if (Math.abs(touchX) > 0.01 || Math.abs(touchY) > 0.01) {
+    angularVelocity.current.z += touchX * -pitchVelocity * delta * 60;
+    angularVelocity.current.x += touchY * rollVelocity * delta * 60;
+  } else {
+    if (gp && gp.connected) {
+      lx = Math.abs(gp.axes[0]) > DEAD_ZONE ? gp.axes[0] : 0;
+      ly = Math.abs(gp.axes[1]) > DEAD_ZONE ? gp.axes[1] : 0;
     }
+    angularVelocity.current.z += lx * -pitchVelocity * delta * 60;
+    angularVelocity.current.x += ly * rollVelocity * delta * 60;
 
-    const accelerating = !!(keys.current['i'] || gp?.buttons?.[0]?.pressed || throttle > 0);
-    const braking = !!(keys.current['k'] || gp?.buttons?.[2]?.pressed || throttle < 0);
-    const shooting = !!(keys.current['j'] || gp?.buttons?.[7]?.pressed);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { cannonValue, useMine, shieldValue } = raceData[playerId];
+    if (keys.current['a']) angularVelocity.current.z += pitchVelocity * delta * 60;
+    if (keys.current['d']) angularVelocity.current.z -= pitchVelocity * delta * 60;
+    if (keys.current['w']) angularVelocity.current.x -= rollVelocity * delta * 60;
+    if (keys.current['s']) angularVelocity.current.x += rollVelocity * delta * 60;
+  }
 
-    if (accelerating !== previousInputState.current.accelerating) {
-      onAcceleratingChange?.(accelerating);
-      previousInputState.current.accelerating = accelerating;
-    }
-    if (braking !== previousInputState.current.braking) {
-      onBrakingChange?.(braking);
-      previousInputState.current.braking = braking;
-    }
+  const accelerating = !!(keys.current['i'] || gp?.buttons?.[0]?.pressed || throttle > 0);
+  const braking = !!(keys.current['k'] || gp?.buttons?.[2]?.pressed || throttle < 0);
+  const shooting = !!(keys.current['j'] || gp?.buttons?.[7]?.pressed);
+  const { cannonValue, useMine, shieldValue } = raceData[playerId];
 
-    if (accelerating || throttle > 0) {
-      speedRef.current = Math.min(
-        playerSpeed,
-        isMobileDevice()
-          ? (speedRef.current + acceleration) * Math.abs(throttle)
-          : speedRef.current + acceleration,
-      );
-    } else if (!braking) {
-      speedRef.current *= damping;
-    }
+  if (accelerating !== previousInputState.current.accelerating) {
+    onAcceleratingChange?.(accelerating);
+    previousInputState.current.accelerating = accelerating;
+  }
+  if (braking !== previousInputState.current.braking) {
+    onBrakingChange?.(braking);
+    previousInputState.current.braking = braking;
+  }
 
-    if (braking || throttle < 0) {
-      speedRef.current = Math.max(
-        -playerSpeed * 0.5,
-        isMobileDevice()
-          ? speedRef.current - acceleration * Math.abs(throttle)
-          : speedRef.current - acceleration,
-      );
-    }
-
-    if (Math.abs(speedRef.current) < 0.001) {
-      speedRef.current = 0;
-      ship.userData.velocity.set(0, 0, 0);
-    }
-
-    onSpeedChange?.(speedRef.current);
-
-    const deltaRotation = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(
-        angularVelocity.current.x * invertPitch,
-        angularVelocity.current.y,
-        angularVelocity.current.z,
-        'XYZ',
-      ),
+  // --- ACCELERATION (scaled by delta)
+  if (accelerating || throttle > 0) {
+    speedRef.current = Math.min(
+      playerSpeed,
+      isMobileDevice()
+        ? (speedRef.current + acceleration * delta * 60) * Math.abs(throttle)
+        : speedRef.current + acceleration * delta * 60,
     );
-    ship.quaternion.multiply(deltaRotation);
-    angularVelocity.current.multiplyScalar(0.5);
+  } else if (!braking) {
+    // --- DAMPING (time-scaled)
+    speedRef.current *= Math.pow(damping, delta * 60);
+  }
 
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(ship.quaternion).normalize();
-    const desiredVelocity = forward.multiplyScalar(speedRef.current);
-    const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
-    ship.userData.velocity.lerp(desiredVelocity, lerpFactor);
+  // --- BRAKING (scaled by delta)
+  if (braking || throttle < 0) {
+    speedRef.current = Math.max(
+      -playerSpeed * 0.5,
+      isMobileDevice()
+        ? speedRef.current - acceleration * Math.abs(throttle) * delta * 60
+        : speedRef.current - acceleration * delta * 60,
+    );
+  }
 
-    if (ship.userData.impulseVelocity) {
-      ship.userData.velocity.add(ship.userData.impulseVelocity);
-      ship.userData.impulseVelocity.multiplyScalar(0.9);
-    }
-    ship.position.add(ship.userData.velocity);
+  if (Math.abs(speedRef.current) < 0.001) {
+    speedRef.current = 0;
+    ship.userData.velocity.set(0, 0, 0);
+  }
 
-    // in your collision detection loop
+  onSpeedChange?.(speedRef.current);
 
-    if (planetMeshes.length > 0) {
-      for (const planetMesh of planetMeshes) {
-        const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
-        if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
+  // --- APPLY ROTATION
+  const deltaRotation = new THREE.Quaternion().setFromEuler(
+    new THREE.Euler(
+      angularVelocity.current.x * invertPitch,
+      angularVelocity.current.y,
+      angularVelocity.current.z,
+      'XYZ',
+    ),
+  );
+  ship.quaternion.multiply(deltaRotation);
+  angularVelocity.current.multiplyScalar(0.5);
 
-        const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
+  // --- FORWARD MOVEMENT (velocity lerped toward forward * speed)
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(ship.quaternion).normalize();
+  const desiredVelocity = forward.multiplyScalar(speedRef.current);
+  const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
+  ship.userData.velocity.lerp(desiredVelocity, lerpFactor);
 
-        // Create a new vector for the ship's position in local space
-        const localShipPosition = new THREE.Vector3();
+  // --- APPLY IMPULSE VELOCITY
+  if (ship.userData.impulseVelocity) {
+    ship.userData.velocity.add(ship.userData.impulseVelocity);
+    ship.userData.impulseVelocity.multiplyScalar(Math.pow(0.9, delta * 60));
+  }
 
-        // Get the inverse of the mesh's world matrix
-        const meshMatrixInverse = new THREE.Matrix4();
-        meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
+  // --- UPDATE POSITION (scaled by delta)
+  ship.position.addScaledVector(ship.userData.velocity, delta * 60);
 
-        // Transform the ship's world position to the mesh's local space
-        localShipPosition.copy(ship.position).applyMatrix4(meshMatrixInverse);
+  // --- COLLISIONS / OUT OF BOUNDS (unchanged)
+  if (planetMeshes.length > 0) {
+    for (const planetMesh of planetMeshes) {
+      const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
+      if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
 
-        // Perform the intersection test using the transformed local position
-        if (geometry.boundsTree.closestPointToPoint(localShipPosition, hitInfo)) {
-          // The hitInfo.point is also in local space.
-          // We need to transform it back to world space to calculate the distance.
-          const worldHitPoint = hitInfo.point.clone().applyMatrix4(planetMesh.matrixWorld);
+      const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
+      const localShipPosition = new THREE.Vector3();
+      const meshMatrixInverse = new THREE.Matrix4();
+      meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
+      localShipPosition.copy(ship.position).applyMatrix4(meshMatrixInverse);
 
-          const dist = ship.position.distanceTo(worldHitPoint);
-          const minDistance = 6; // safe distance outside planet surface
-
-          if (dist < minDistance) {
-            // Direction to push the ship outward
-            const pushDir = new THREE.Vector3()
-              .subVectors(ship.position, worldHitPoint)
-              .normalize();
-
-            // Fallback if pushDir is invalid
-            if (pushDir.lengthSq() === 0) {
-              pushDir.copy(ship.position).normalize();
-            }
-
-            // Teleport ship outside mesh boundary
-            ship.position.copy(worldHitPoint.clone().addScaledVector(pushDir, minDistance));
-
-            // Reduce velocity to avoid jitter
-            if (ship.userData.velocity) {
-              ship.userData.velocity.multiplyScalar(0.5);
-              speedRef.current *= 0.99;
-            }
-
-            if (audioEnabled) playSound(buffers['clank04'], ship.position, 1, 3);
-            if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
+      if (geometry.boundsTree.closestPointToPoint(localShipPosition, hitInfo)) {
+        const worldHitPoint = hitInfo.point.clone().applyMatrix4(planetMesh.matrixWorld);
+        const dist = ship.position.distanceTo(worldHitPoint);
+        const minDistance = 6;
+        if (dist < minDistance) {
+          const pushDir = new THREE.Vector3()
+            .subVectors(ship.position, worldHitPoint)
+            .normalize();
+          if (pushDir.lengthSq() === 0) pushDir.copy(ship.position).normalize();
+          ship.position.copy(worldHitPoint.clone().addScaledVector(pushDir, minDistance));
+          if (ship.userData.velocity) {
+            ship.userData.velocity.multiplyScalar(0.5);
+            speedRef.current *= 0.99;
           }
+          if (audioEnabled) playSound(buffers['clank04'], ship.position, 1, 3);
+          if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
         }
       }
     }
+  }
 
-    // call this inside your game loop / update step
-    if (playingFieldRef?.current) {
-      if (!ship) return;
+  if (playingFieldRef?.current) {
+    checkOutOfBoundsSDF(
+      ship,
+      curve,
+      TUBE_RADIUS,
+      [{ t: 0.4, radius: 100 }],
+      playerId,
+      delta,
+      raceData,
+      setOutOfBounds,
+      addOutOfBoundsTime,
+    );
+  }
 
-      checkOutOfBoundsSDF(
-        ship,
-        curve, // the same curve you used for TubeGeometry
-        TUBE_RADIUS, // your base radius
-        [{ t: 0.4, radius: 100 }], // SphereSpec[] for swells
-        playerId,
-        delta,
-        raceData,
-        setOutOfBounds,
-        addOutOfBoundsTime,
-      );
-    }
+  // --- WEAPON FIRE
+  const value = cannonValue || 0;
+  if ((shooting || shouldFire) && value > 0) fire(playerId);
+  if ((shooting || shouldFire) && useMine) {
+    drop();
+    setUseMine(playerId, false);
+  }
 
-    const value = cannonValue || 0;
-    if ((shooting || shouldFire) && value > 0) {
-      fire(playerId);
-    }
-    if ((shooting || shouldFire) && useMine) {
-      drop();
-      setUseMine(playerId, false);
-    }
+  if (ship.userData.recordSimulationState) ship.userData.recordSimulationState();
+}, -1);
 
-    if (ship.userData.recordSimulationState) ship.userData.recordSimulationState();
-  });
 }

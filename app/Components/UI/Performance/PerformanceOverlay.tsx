@@ -1,9 +1,20 @@
-// components/PerformanceOverlay.tsx
+// PerformanceOverlay.tsx
 'use client';
 import { usePerformanceStore } from '@/Controllers/UI/usePerformanceStore';
 
 export function PerformanceOverlay() {
-  const { fps, frameTime, drawCalls, geometries, textures, triangles, materials } = usePerformanceStore();
+  const { 
+    fps, 
+    frameTime, 
+    drawCalls, 
+    geometries, 
+    textures, 
+    triangles, 
+    materials, 
+    heapUsed, 
+    heapTotal, 
+    heapPercent 
+  } = usePerformanceStore();
 
   return (
     <div
@@ -24,7 +35,18 @@ export function PerformanceOverlay() {
       <button
         style={{ all: 'unset' }}
         onClick={() => {
-          console.log({ fps, frameTime, drawCalls, geometries, textures, triangles, materials })
+          console.log({ 
+            fps, 
+            frameTime, 
+            drawCalls, 
+            geometries, 
+            textures, 
+            triangles, 
+            materials, 
+            heapUsed, 
+            heapTotal, 
+            heapPercent 
+          })
         }}
       >
         <div>FPS: {fps.toFixed(1)}</div>
@@ -34,6 +56,7 @@ export function PerformanceOverlay() {
         <div>Textures: {textures}</div>
         <div>Materials: {materials}</div>
         <div>Triangles: {triangles}</div>
+        <div>Heap: {heapUsed.toFixed(0)}/{heapTotal.toFixed(0)}MB: {heapPercent.toFixed(0)}%</div>
       </button>
     </div>
   );
