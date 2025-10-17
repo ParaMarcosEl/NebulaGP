@@ -49,6 +49,8 @@ export function PerformanceOverlay() {
           })
         }}
       >
+        <div>DEVELOPMENT</div>
+        <hr />
         <div>FPS: {fps.toFixed(1)}</div>
         <div>Frame Time: {frameTime.toFixed(2)} ms</div>
         <div>Draw Calls: {drawCalls}</div>
