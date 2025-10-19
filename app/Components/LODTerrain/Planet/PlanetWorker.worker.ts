@@ -5,8 +5,6 @@
 // import { Vector3 } from 'three';
 import { terrainElevationRidged, terrainElevationFBM, FBMParams } from './fbm';
 
-console.log('PlanetWorker loaded');
-
 export type WorkerPayload = {
   posBuffer: SharedArrayBuffer;
   normalBuffer: SharedArrayBuffer;
@@ -198,14 +196,12 @@ const flushQueue = () => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handleMessage = (e: MessageEvent<{ type: string; payload?: any }>) => {
   const { type, payload } = e.data;
-  console.log({ type, payload });
 
   if (type === 'build_chunk' && payload) {
     processBuildChunk(payload);
   }
 
   if (type === 'ping') {
-    console.log('Worker got ping:', payload);
     self.postMessage({ type: 'pong' });
   }
 };
@@ -215,7 +211,6 @@ const handleMessage = (e: MessageEvent<{ type: string; payload?: any }>) => {
 // ----------------------------------------------------------------
 const markReady = () => {
   isReady = true;
-  console.log('PlanetWorker ready');
   self.postMessage({ type: 'ready' });
   flushQueue();
 };

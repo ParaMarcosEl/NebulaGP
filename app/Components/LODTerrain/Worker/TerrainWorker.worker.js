@@ -1,4 +1,3 @@
-console.log('TerrainWorker.worker.js alive.');
 
 function permuteScalar(x) {
   return ((x * 34.0 + 1.0) * x) % 289.0;
@@ -97,7 +96,6 @@ self.onmessage = (e) => {
   const elevations = new Float32Array(positions.length / 3);
   const epsilon = 0.01;
   try {
-    console.log('Worker: Starting terrain calculation loop.');
 
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
@@ -156,16 +154,11 @@ self.onmessage = (e) => {
   // After fill:
 
   self.postMessage({ normals, elevations, positions /* SAB not needed for inputs */ });
-  console.log('finished');
 };
 
-// console.log('Worker loaded');
 
 // self.onmessage = ({ data }) => {
 //   const { positions } = data;
-//   console.log({positions})
-//   console.log('Worker received SAB with length:', positions.length);
-//   console.log('First value:', positions[0]);
 
 //   // Modify the data (optional)
 //   positions[0] = 999;

@@ -109,3 +109,13 @@ button:hover {
 .main {
   overflow: hidden;
 }
+
+* {
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE10+ */
+  -webkit-touch-callout: none; /* Disable callouts on iOS */
+  -webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
+}
+

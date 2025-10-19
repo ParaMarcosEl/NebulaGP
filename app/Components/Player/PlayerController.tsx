@@ -70,8 +70,8 @@ export function usePlayerController({
   playerRefs,
   playingFieldRef,
   acceleration = 0.001,
-  pitchVelocity = 0.04,
-  rollVelocity = 0.02,
+  pitchVelocity = 0.03,
+  rollVelocity = 0.015,
   damping = 0.5,
   // botSpeed,
   curve,
@@ -85,7 +85,7 @@ export function usePlayerController({
   const angularVelocity = useRef(new THREE.Vector3());
   const previousInputState = useRef({ accelerating: false, braking: false });
   const gamepadIndex = useRef<number | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  
   const {
     raceStatus,
     playerSpeed,
@@ -174,7 +174,7 @@ export function usePlayerController({
     window.addEventListener('gamepadconnected', handler);
     return () => window.removeEventListener('gamepadconnected', handler);
   }, [enabled]);
-
+  
   useFrame((_, delta) => {
   if (!enabled) return;
   const ship = aircraftRef.current;
@@ -340,6 +340,6 @@ export function usePlayerController({
   }
 
   if (ship.userData.recordSimulationState) ship.userData.recordSimulationState();
-}, -1);
+});
 
 }

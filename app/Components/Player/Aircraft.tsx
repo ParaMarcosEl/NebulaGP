@@ -53,7 +53,7 @@ export default function Aircraft({
   explosionsRef,
 }: AircraftProps) {
   const ship = useMemo(() => {
-    return SHIPS[`ship0${1}`];
+    return SHIPS[1];
   }, []);
   const { scene: sceneModel } = useGLTF(ship.path);
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);

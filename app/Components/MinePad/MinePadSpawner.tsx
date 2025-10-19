@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import * as THREE from 'three';
 import { curveType } from '@/Constants';
 import MinePad from './MinePad';
@@ -52,11 +52,6 @@ export default function MinePadSpawner({
 
     return padArray;
   });
-
-  useEffect(() => {
-    console.log('MinePads mounted');
-    return () => console.log('MinePads unmounted');
-  }, []);
 
   return (
     <>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import * as THREE from 'three';
 import { curveType } from '@/Constants';
 import ShieldPad from './ShieldPad';
@@ -52,11 +52,6 @@ export default function ShieldPadSpawner({
 
     return padArray;
   });
-
-  useEffect(() => {
-    console.log('ShieldPads mounted');
-    return () => console.log('ShieldPads unmounted');
-  }, []);
 
   return (
     <>

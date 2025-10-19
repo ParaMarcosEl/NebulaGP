@@ -4,14 +4,14 @@ import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { SHIPS } from '@/Constants';
-import { useBotController } from './BotController';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
 import { Mine } from '../Weapons/useMines';
 import { EngineSound } from '../Audio/EngineSound';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
+// import { useBotWorkerController } from './useBotsWorkerController';
 
-type AircraftProps = {
+type BotProps = {
   id: number;
   aircraftRef: React.RefObject<THREE.Group | null>;
   minePoolRef: React.RefObject<Mine[]>;
@@ -26,26 +26,23 @@ type AircraftProps = {
   startPosition?: [number, number, number];
   startQuaternion?: THREE.Quaternion;
   curve: THREE.Curve<THREE.Vector3>;
-  isBot?: boolean;
   botSpeed?: number;
   explosionsRef?: React.RefObject<ExplosionHandle>;
 };
 
 export default function Bot({
   id,
-  playerRefs,
-  minePoolRef,
+  // playerRefs,
+  // minePoolRef,
   aircraftRef,
   startPosition,
   startQuaternion,
-  curve,
-  isBot,
-  botSpeed = 0,
-  explosionsRef,
-}: AircraftProps) {
+  // curve,
+  // explosionsRef,
+}: BotProps) {
   const ship = useMemo(() => {
     const randomNumber = Math.floor(Math.random() * 5) + 1;
-    return SHIPS[`ship0${randomNumber}`];
+    return SHIPS[randomNumber];
   }, []);
 
   const { scene: sceneModel } = useGLTF(ship.path);
@@ -53,16 +50,25 @@ export default function Bot({
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
 
-  useBotController({
-    id,
-    playerRefs,
-    minePoolRef,
-    botRef: aircraftRef as React.RefObject<THREE.Group>,
-    curve,
-    enabled: !!isBot,
-    speed: botSpeed,
-    explosionsRef,
-  });
+  // const trackWaypoints = useMemo(() => {
+  //   const pts: THREE.Vector3[] = [];
+  //   const divisions = 200;
+  //   for (let i = 0; i <= divisions; i++) {
+  //     pts.push(curve.getPoint(i / divisions));
+  //   }
+  //   return pts;
+
+  // }, [curve]);
+
+  // useBotWorkerController({
+  //   id,
+  //   playerRefs,
+  //   minePoolRef,
+  //   botRef: aircraftRef as React.RefObject<THREE.Group>,
+  //   startPosition,
+  //   trackWaypoints,
+  //   explosionsRef,
+  // });
 
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
