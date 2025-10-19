@@ -69,6 +69,13 @@ export function useShips() {
   const ship04 = useGLTF(SHIPS[4].path);
   const ship05 = useGLTF(SHIPS[5].path);
 
+  // Optional preload for performance
+  useGLTF.preload('/models/spaceship.glb');
+  useGLTF.preload('/models/spaceship02.glb');
+  useGLTF.preload('/models/spaceship03.glb');
+  useGLTF.preload('/models/spaceship04.glb');
+  useGLTF.preload('/models/spaceship05.glb');
+
   return ( 
   [
     ship01,
@@ -80,12 +87,17 @@ export function useShips() {
   );
 }
 
-// Optional preload for performance
-useGLTF.preload('/models/spaceship.glb');
-useGLTF.preload('/models/spaceship02.glb');
-useGLTF.preload('/models/spaceship03.glb');
-useGLTF.preload('/models/spaceship04.glb');
-useGLTF.preload('/models/spaceship05.glb');
+
+export interface BotInit {
+  id: number;
+  speed: number;
+  currentT: number;
+  waypointIndex: number;
+  cannonValue: number;
+  useMine: boolean;
+  position: [number, number, number];
+  quaternion: [number, number, number, number];
+}
 
 export const CHUNK_SIZE = 128;
 export const MAX_DEPTH = 4;

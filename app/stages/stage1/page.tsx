@@ -154,53 +154,6 @@ export default function Stage1() {
     };
   }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
 
-  // const players = playerRefs.map((player, id) =>
-  //   id === 0 ? (
-  //     <Aircraft
-  //       key={id}
-  //       id={id}
-  //       trackId={0}
-  //       aircraftRef={player}
-  //       playerRefs={playerRefs}
-  //       minePoolRef={minePoolRef}
-  //       // Correctly pass the typed ref object
-  //       explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
-  //       curve={curve}
-  //       obstacleRefs={obstacleRefs.current}
-  //       playingFieldRef={playingFieldRef}
-  //       startPosition={startPositions[id].position}
-  //       startQuaternion={startPositions[id].quaternion}
-  //       acceleration={.02}
-  //       damping={0.998}
-  //       onSpeedChange={setSpeed}
-  //       botSpeed={.0 + id * 0.1}
-  //     />
-  //   ) : (
-  //     <Bot
-  //       key={id}
-  //       minePoolRef={minePoolRef}
-  //       explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
-  //       id={id}
-  //       aircraftRef={player}
-  //       playerRefs={playerRefs}
-  //       startPosition={startPositions[id].position}
-  //       startQuaternion={startPositions[id].quaternion}
-  //       curve={curve}
-  //       isBot
-  //       obstacleRefs={obstacleRefs.current}
-  //       playingFieldRef={playingFieldRef}
-  //       acceleration={0.01}
-  //       damping={0.99}
-  //       botSpeed={2 + id * 0.1}
-  //     />
-  //   ),
-  // );
-
-  const trackWaypoints = useMemo(() => {
-  const numWaypoints = 100; // or tune based on curve length
-  return curve.getPoints(numWaypoints);
-}, [curve]);
-
 
   const players = (
     <>
@@ -226,7 +179,6 @@ export default function Stage1() {
         curve={curve}
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}
-        trackWaypoints={trackWaypoints}
         startPositions={startPositions}
       />
     </>
