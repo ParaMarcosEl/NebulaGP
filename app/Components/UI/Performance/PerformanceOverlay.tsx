@@ -29,7 +29,7 @@ export function PerformanceOverlay() {
         padding: '0.75rem 1rem',
         borderRadius: '0.5rem',
         lineHeight: 1.4,
-        zIndex: 1000,
+        zIndex: 1,
       }}
     >
       <button
@@ -49,13 +49,11 @@ export function PerformanceOverlay() {
           })
         }}
       >
+        <div>development</div>
+        <hr />
         <div>FPS: {fps.toFixed(1)}</div>
         <div>Frame Time: {frameTime.toFixed(2)} ms</div>
         <div>Draw Calls: {drawCalls}</div>
-        <div>Geometries: {geometries}</div>
-        <div>Textures: {textures}</div>
-        <div>Materials: {materials}</div>
-        <div>Triangles: {triangles}</div>
         <div>Heap: {heapUsed.toFixed(0)}/{heapTotal.toFixed(0)}MB: {heapPercent.toFixed(0)}%</div>
       </button>
     </div>

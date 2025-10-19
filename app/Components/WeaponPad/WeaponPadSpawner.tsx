@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import * as THREE from 'three';
 import { curveType } from '@/Constants';
 import WeaponsPad from './WeaponPad';
@@ -52,11 +52,6 @@ export default function WeaponsPadSpawner({
 
     return padArray;
   });
-
-  useEffect(() => {
-    console.log('WeaponsPads mounted');
-    return () => console.log('WeaponsPads unmounted');
-  }, []);
 
   return (
     <>

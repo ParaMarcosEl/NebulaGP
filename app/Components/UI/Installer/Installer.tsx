@@ -27,7 +27,6 @@ export default function InstallButton() {
     await deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
     setAlert({ type: 'info', message: `Installation ${choice.outcome}` });
-    console.log(`User ${choice.outcome} the installation`);
     setDeferredPrompt(null);
   };
 

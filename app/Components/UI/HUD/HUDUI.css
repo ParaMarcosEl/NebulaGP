@@ -1,6 +1,6 @@
 .hud-audio-toggle {
   z-index: 50;
-  position: absolute;
+  position: fixed;
   top: 1em;
   right: 200;
   display: block;
@@ -8,7 +8,7 @@
 
 .prev-next {
   z-index: 50;
-  position: absolute;
+  position: fixed;
   top: 1em;
   right: 230;
 }

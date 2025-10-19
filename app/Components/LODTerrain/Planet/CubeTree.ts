@@ -161,13 +161,6 @@ class QuadTreeNode {
     try {
       const [bl, , tr] = this.bounds;
       const segments = this.getSegmentsForDistance(projectedScreenSize);
-
-      console.log(
-        'Texture UUIDs:',
-        lowTexture.uuid,
-        midTexture.uuid,
-        highTexture.uuid
-      );
       // Reuse materials from the manager (shared per texture set)
       const material = getPlanetMaterialManager().getMaterial(lowTexture, midTexture, highTexture);
       material.customUniforms.uPlanetSize.value = planetSize;

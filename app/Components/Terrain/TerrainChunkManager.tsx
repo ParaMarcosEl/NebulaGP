@@ -31,9 +31,7 @@ const TerrainChunkManager = () => {
     const leafNodes = root.getLeafNodes();
 
     const newChunks = new Map<ChunkKey, ITerrainChunkProps>();
-    console.log(JSON.stringify({ rootCenter, rootSize }, null, 2));
     for (const node of leafNodes) {
-      console.log(JSON.stringify({ childCenter: node.center, childSize: node.size }, null, 2));
       const key = getChunkKey(node.center, node.size);
       if (!chunks.has(key)) {
         newChunks.set(key, {

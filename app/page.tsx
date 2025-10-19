@@ -25,11 +25,11 @@ import Stars from './Components/World/Stars';
 export default function Home() {
   useFullscreen();
   const [leaderboard1, setLeaderboard1] = useState(false);
-  const [leaderboard2, setLeaderboard2] = useState(false);
-  const [leaderboard3, setLeaderboard3] = useState(false);
+  // const [leaderboard2, setLeaderboard2] = useState(false);
+  // const [leaderboard3, setLeaderboard3] = useState(false);
   const [leaderboard1tt, setLeaderboard1tt] = useState(false);
-  const [leaderboard2tt, setLeaderboard2tt] = useState(false);
-  const [leaderboard3tt, setLeaderboard3tt] = useState(false);
+  // const [leaderboard2tt, setLeaderboard2tt] = useState(false);
+  // const [leaderboard3tt, setLeaderboard3tt] = useState(false);
 
   const uiContainerRef = useRef<HTMLDivElement>(null);
   const stageSelectRef = useRef<HTMLElement>(null);
@@ -197,7 +197,7 @@ export default function Home() {
                 <button onClick={() => setLeaderboard1tt(true)}>Leaderboard</button>
               </div>
 
-              <div>
+              {/* <div>
                 <span>Stage 2</span>
                 <Link href="/stages/stage2" className="stage-select-link">
                   Race
@@ -219,29 +219,29 @@ export default function Home() {
                   Time Trial
                 </Link>
                 <button onClick={() => setLeaderboard3tt(true)}>Leaderboard</button>
-              </div>
+              </div> */}
             </div>
           </section>
 
           <Modal isOpen={leaderboard1} onClose={() => setLeaderboard1(false)}>
             <Leaderboard trackId="/stages/stage1" />
           </Modal>
-          <Modal isOpen={leaderboard2} onClose={() => setLeaderboard2(false)}>
+          {/* <Modal isOpen={leaderboard2} onClose={() => setLeaderboard2(false)}>
             <Leaderboard trackId="/stages/stage2" />
           </Modal>
           <Modal isOpen={leaderboard3} onClose={() => setLeaderboard3(false)}>
             <Leaderboard trackId="/stages/stage3" />
-          </Modal>
+          </Modal> */}
 
           <Modal isOpen={leaderboard1tt} onClose={() => setLeaderboard1tt(false)}>
             <Leaderboard trackId="/stages/stage1/time-trial" />
           </Modal>
-          <Modal isOpen={leaderboard2tt} onClose={() => setLeaderboard2tt(false)}>
+          {/* <Modal isOpen={leaderboard2tt} onClose={() => setLeaderboard2tt(false)}>
             <Leaderboard trackId="/stages/stage2/time-trial" />
           </Modal>
           <Modal isOpen={leaderboard3tt} onClose={() => setLeaderboard3tt(false)}>
             <Leaderboard trackId="/stages/stage3/time-trial" />
-          </Modal>
+          </Modal> */}
         </div>
       </main>
     </>

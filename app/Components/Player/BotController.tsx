@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { ReactElement, useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef } from 'react';
 import {
   getNearestCurveT,
   getWaypointsAlongCurve,
@@ -28,7 +28,6 @@ interface UseBotControllerProps {
   acceleration?: number;
   enabled?: boolean;
   onSpeedChange?: (speed: number) => void;
-
   explosionsRef?: React.RefObject<ExplosionHandle>;
 }
 
@@ -37,7 +36,7 @@ const PITCH_TORQUE = -1;
 
 // Tunables for performance
 const NEAREST_T_INTERVAL = 0.2; // seconds between full nearestT computations
-const FIRE_COOLDOWN_MS = 200; // minimum ms between fires
+const FIRE_COOLDOWN_MS = 200; 
 const MINE_DROP_COOLDOWN_MS = 1500;
 const NORMALIZE_EVERY_N_FRAMES = 10;
 
@@ -47,9 +46,9 @@ export function useBotController({
   playerRefs,
   minePoolRef,
   curve,
-  speed = 0.1,
-  maxSpeed = 2.5,
-  acceleration = 10,
+  speed = 0,
+  maxSpeed = 2.75,
+  acceleration = 5,
   enabled = true,
   onSpeedChange,
   explosionsRef,
@@ -57,13 +56,13 @@ export function useBotController({
   // refs & state-like refs (not React state)
   const currentTRef = useRef(0);
   const waypointsRef = useRef<THREE.Vector3[]>([]);
-  const waypointMeshesRef = useRef<ReactElement[]>([]);
-  const speedRef = useRef(0);
   const waypointIndexRef = useRef(8);
+  const speedRef = useRef(0);
   const lastNearestTTime = useRef(-Infinity);
   const lastFireTime = useRef(0);
   const lastMineTime = useRef(0);
   const frameCounter = useRef(0);
+
 
   const { raceStatus, raceData, setUseMine } = useGameStore((s) => s);
 
@@ -75,6 +74,7 @@ export function useBotController({
   const tmpUp = useRef(new THREE.Vector3());
   const tmpEuler = useRef(new THREE.Euler(0, 0, 0, 'XYZ'));
   const tmpDeltaQuat = useRef(new THREE.Quaternion());
+  const tmpDesiredVelocity = useRef(new THREE.Vector3());
 
   // Projectiles and mines
   const { fire, poolRef } = useProjectiles(
@@ -109,26 +109,14 @@ export function useBotController({
     }
   }, [botRef]);
 
-  // Build waypoints + meshes once (or when curve changes)
+  // Build waypoints once (or when curve changes)
   useEffect(() => {
-    const path = getWaypointsAlongCurve(curve, 0.01, 0.99, 0.01);
-    waypointsRef.current = path;
-
-    // Create meshes once (debugging/visualization). Keep materials shared to avoid recreate costs.
-    const sharedGeom = <sphereGeometry args={[1, 16, 16]} />;
-    // Note: We return ReactElements (created once) — they won't be updated per-frame.
-    waypointMeshesRef.current = path.map((point, index) => (
-      <mesh key={index} position={point}>
-        <sphereGeometry args={[1, 16, 16]} />
-        <meshBasicMaterial color={index === 0 ? 'green' : 'red'} opacity={0} />
-      </mesh>
-    ));
+    waypointsRef.current = getWaypointsAlongCurve(curve, 0.01, 0.99, 0.01);
 
     // seed currentTRef to nearest curve position
     const bot = botRef.current;
     if (bot) {
-      const nearestT = getNearestCurveT(bot.position, curve);
-      currentTRef.current = nearestT;
+      currentTRef.current = getNearestCurveT(bot.position, curve);
     }
   }, [curve, botRef]);
 
@@ -139,86 +127,73 @@ export function useBotController({
     if (!bot || !enabled || raceStatus !== 'racing') return;
 
     frameCounter.current++;
-
-    // Throttle nearestT computations to reduce heavy work
     const now = performance.now() / 1000;
+
+    // === Predictive curve position ===
     if (now - lastNearestTTime.current > NEAREST_T_INTERVAL) {
-      const nearestT = getNearestCurveT(bot.position, curve);
-      currentTRef.current = nearestT;
+      currentTRef.current = getNearestCurveT(bot.position, curve);
       lastNearestTTime.current = now;
+    } else {
+      const step = speedRef.current * delta / 100; // scale for prediction
+      currentTRef.current = (currentTRef.current + step) % 1;
     }
-    // Update curvePosition and progress for external code once per frame
+
     const curvePosition = curve.getPointAt(currentTRef.current);
-    bot.userData.curvePosition = curvePosition.clone();
+    if (!bot.userData.curvePosition) bot.userData.curvePosition = new THREE.Vector3();
+    bot.userData.curvePosition.copy(curvePosition);
     bot.userData.progress = currentTRef.current;
 
-// === Movement logic ===
-const waypoints = waypointsRef.current;
-if (!waypoints || waypoints.length === 0) return;
+    // === Movement logic ===
+    const waypoints = waypointsRef.current;
+    if (!waypoints || waypoints.length === 0) return;
 
-// get current waypoint and direction
-let currentWaypoint = waypoints[waypointIndexRef.current];
-tmpToWaypoint.current.copy(currentWaypoint).sub(bot.position);
-let distance = tmpToWaypoint.current.length();
+    let currentWaypoint = waypoints[waypointIndexRef.current];
+    tmpToWaypoint.current.subVectors(currentWaypoint, bot.position);
+    let distance = tmpToWaypoint.current.length();
 
-// advance waypoint if close enough
-if (distance < 50) {
-  waypointIndexRef.current = (waypointIndexRef.current + 1) % waypoints.length;
-  currentWaypoint = waypoints[waypointIndexRef.current];
-  tmpToWaypoint.current.copy(currentWaypoint).sub(bot.position);
-  distance = tmpToWaypoint.current.length();
-}
+    if (distance < 50) {
+      waypointIndexRef.current = (waypointIndexRef.current + 1) % waypoints.length;
+      currentWaypoint = waypoints[waypointIndexRef.current];
+      tmpToWaypoint.current.subVectors(currentWaypoint, bot.position);
+      distance = tmpToWaypoint.current.length();
+    }
 
-
-    // orientation: compute forward/up based on bot.quaternion WITHOUT mutating cached constants
+    // Orientation
     tmpForward.current.set(0, 0, -1).applyQuaternion(bot.quaternion);
     tmpUp.current.set(0, 1, 0).applyQuaternion(bot.quaternion);
 
-    // angle to waypoint
     const angle = tmpForward.current.angleTo(tmpToWaypoint.current.clone().normalize());
 
     const pitch = computePitchInput(tmpForward.current, tmpToWaypoint.current, tmpUp.current) * PITCH_TORQUE;
     const roll = computeRollInput(tmpForward.current, tmpToWaypoint.current, tmpUp.current) * ROLL_TORQUE;
 
     speedRef.current = angle < 0.4 ? speed : speed * 0.5;
-    const offCourse = angle > 1.0;
-    if (offCourse) {
-      speedRef.current *= 0.5;
-    }
+    if (angle > 1.0) speedRef.current *= 0.5;
 
-    // rotation delta: reuse Euler + Quaternion
     tmpEuler.current.set(pitch * delta, 0, roll * delta, 'XYZ');
     tmpDeltaQuat.current.setFromEuler(tmpEuler.current);
     bot.quaternion.multiply(tmpDeltaQuat.current);
 
-    // don't normalize quaternion every frame (expensive)
-    if ((frameCounter.current % NORMALIZE_EVERY_N_FRAMES) === 0) {
-      bot.quaternion.normalize();
-    }
+    if ((frameCounter.current % NORMALIZE_EVERY_N_FRAMES) === 0) bot.quaternion.normalize();
 
-    // translation: build desired velocity with preallocated vectors
+    // Translation
     tmpDesiredDir.current.copy(tmpToWaypoint.current).normalize();
     tmpAccelerationVec.current.copy(tmpDesiredDir.current).multiplyScalar(acceleration);
 
-    // create forward vector again (based on current updated quaternion)
     tmpForward.current.set(0, 0, -1).applyQuaternion(bot.quaternion);
 
     if (!bot.userData.velocity) bot.userData.velocity = new THREE.Vector3();
     if (!bot.userData.impulseVelocity) bot.userData.impulseVelocity = new THREE.Vector3();
 
-    const desiredVelocity = tmpForward.current.clone().multiplyScalar(speedRef.current); // small allocation — could reuse if needed
-    // lerp existing velocity toward desired
+    tmpDesiredVelocity.current.copy(tmpForward.current).multiplyScalar(speedRef.current);
     const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
-    bot.userData.velocity.lerp(desiredVelocity, lerpFactor);
+    bot.userData.velocity.lerp(tmpDesiredVelocity.current, lerpFactor);
 
-    // apply impulse velocity and decay
     bot.userData.velocity.add(bot.userData.impulseVelocity);
     bot.userData.impulseVelocity.multiplyScalar(0.9);
 
-    // acceleration added
     bot.userData.velocity.add(tmpAccelerationVec.current);
 
-    // clamp speed
     if (bot.userData.velocity.length() > maxSpeed) {
       bot.userData.velocity.normalize().multiplyScalar(maxSpeed);
     }
@@ -227,24 +202,19 @@ if (distance < 50) {
 
     if (onSpeedChange) onSpeedChange(speedRef.current);
 
-    // === Weapons: fire & mines ===
-    // Fire with cooldown
+    // === Weapons ===
     const nowMs = performance.now();
     if (raceData[id].cannonValue > 0 && nowMs - lastFireTime.current > FIRE_COOLDOWN_MS) {
       fire(id);
       lastFireTime.current = nowMs;
     }
 
-    // Mine drop: use cooldown instead of setTimeout calls
     if (raceData[id].useMine && nowMs - lastMineTime.current > MINE_DROP_COOLDOWN_MS) {
       drop();
       setUseMine(id, false);
       lastMineTime.current = nowMs;
     }
   });
-
-  return {
-    // return prebuilt elements for optional debug rendering; consumer can choose to render them
-    waypointMeshes: waypointMeshesRef.current,
-  };
+  
+  return null;
 }

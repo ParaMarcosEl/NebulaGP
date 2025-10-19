@@ -4,7 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
-import Bot from '@/Components/Player/Bot';
+// import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
 import { getStartPoseFromCurve } from '@/Utils';
@@ -35,6 +35,7 @@ import { useRecords } from '@/Controllers/Records/useRecords';
 import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
 import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
+import Bots from '@/Components/Player/Bots';
 
 function RaceProgressTracker({
   playerRefs,
@@ -153,13 +154,13 @@ export default function Stage1() {
     };
   }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
 
-  const players = playerRefs.map((player, id) =>
-    id === 0 ? (
+
+  const players = (
+    <>
       <Aircraft
-        key={id}
-        id={id}
+        id={0}
         trackId={0}
-        aircraftRef={player}
+        aircraftRef={aircraftRef}
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}
         // Correctly pass the typed ref object
@@ -167,32 +168,20 @@ export default function Stage1() {
         curve={curve}
         obstacleRefs={obstacleRefs.current}
         playingFieldRef={playingFieldRef}
-        startPosition={startPositions[id].position}
-        startQuaternion={startPositions[id].quaternion}
-        acceleration={.004}
+        startPosition={startPositions[0].position}
+        startQuaternion={startPositions[0].quaternion}
+        acceleration={.02}
         damping={0.998}
         onSpeedChange={setSpeed}
-        botSpeed={2.2}
+        botSpeed={2}
       />
-    ) : (
-      <Bot
-        key={id}
-        minePoolRef={minePoolRef}
-        explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
-        id={id}
-        aircraftRef={player}
-        playerRefs={playerRefs}
-        startPosition={startPositions[id].position}
-        startQuaternion={startPositions[id].quaternion}
+      <Bots 
         curve={curve}
-        isBot
-        obstacleRefs={obstacleRefs.current}
-        playingFieldRef={playingFieldRef}
-        acceleration={0.01}
-        damping={0.99}
-        botSpeed={2 + id * 0.1}
+        playerRefs={playerRefs}
+        minePoolRef={minePoolRef}
+        startPositions={startPositions}
       />
-    ),
+    </>
   );
 
   const boosters = playerRefs.map((player, id) => (

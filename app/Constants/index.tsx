@@ -1,4 +1,5 @@
 import { QuadtreeNode } from '@/Components/LODTerrain/quadTree';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 
 // curve
@@ -27,35 +28,76 @@ type shipType = {
   path: string;
 };
 
-export const SHIPS: Record<string, shipType> = {
-  ship01: {
+
+
+export const SHIPS: Record<number, shipType> = {
+  1: {
     scale: 1,
     rotation: [0, Math.PI, 0],
     path: '/models/spaceship.glb',
   },
-  ship02: {
+  2: {
     scale: 4,
     rotation: [0, -Math.PI, 0],
     path: '/models/spaceship02.glb',
   },
-  ship03: {
+  3: {
     scale: 4,
     offset: [0, 0.5, 0],
     rotation: [0, 0, 0],
     path: '/models/spaceship03.glb',
   },
-  ship04: {
+  4: {
     scale: 3,
     rotation: [0, Math.PI / 2, 0],
     path: '/models/spaceship04.glb',
   },
-  ship05: {
+  5: {
     scale: 4,
     offset: [0, 0.5, 0],
     rotation: [0, Math.PI, 0],
     path: '/models/spaceship05.glb',
   },
 };
+
+// Hook to preload and return all ships
+export function useShips() {
+  // Call useGLTF at the top level for each ship path
+  const ship01 = useGLTF(SHIPS[1].path);
+  const ship02 = useGLTF(SHIPS[2].path);
+  const ship03 = useGLTF(SHIPS[3].path);
+  const ship04 = useGLTF(SHIPS[4].path);
+  const ship05 = useGLTF(SHIPS[5].path);
+
+  // Optional preload for performance
+  useGLTF.preload('/models/spaceship.glb');
+  useGLTF.preload('/models/spaceship02.glb');
+  useGLTF.preload('/models/spaceship03.glb');
+  useGLTF.preload('/models/spaceship04.glb');
+  useGLTF.preload('/models/spaceship05.glb');
+
+  return ( 
+  [
+    ship01,
+    ship02,
+    ship03,
+    ship04,
+    ship05,
+  ]
+  );
+}
+
+
+export interface BotInit {
+  id: number;
+  speed: number;
+  currentT: number;
+  waypointIndex: number;
+  cannonValue: number;
+  useMine: boolean;
+  position: [number, number, number];
+  quaternion: [number, number, number, number];
+}
 
 export const CHUNK_SIZE = 128;
 export const MAX_DEPTH = 4;

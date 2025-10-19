@@ -125,7 +125,6 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     const worker = new Worker(new URL('./TerrainWorker.worker.js', import.meta.url));
 
     // worker.onmessage = ({ data }) => {
-    //   console.log('Main thread received:', data);
     //   geom.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
     //   geom.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
     //   geom.setAttribute('elevation', new THREE.BufferAttribute(data.elevations, 1));
@@ -138,7 +137,6 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     // };
 
     worker.onmessage = ({ data }) => {
-      console.log('Main thread received:', data);
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const vertexCount = (segments + 1) * (segments + 1);
@@ -162,7 +160,6 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     worker.onmessageerror = (e) => console.error('Message error:', e);
 
     try {
-      console.log({ request });
       worker.postMessage(request);
     } catch (syncError) {
       console.error('Synchronous error:', syncError);
