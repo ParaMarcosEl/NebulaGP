@@ -83,6 +83,24 @@ const MINE_DROP_COOLDOWN_MS = 1500;
 
 const LOCAL_PITCH_AXIS = new Vector3(1, 0, 0);
 const LOCAL_ROLL_AXIS = new Vector3(0, 0, 1);
+interface BotRuntimeState {
+  velocity: Vector3;
+  impulseVelocity: Vector3;
+}
+
+// === Call this during initBots or after bots array is ready ===
+function initBotStates() {
+  bots.forEach(bot => {
+    if (!botStates[bot.id]) {
+      botStates[bot.id] = {
+        velocity: new Vector3(),
+        impulseVelocity: new Vector3(),
+      };
+    }
+  });
+}
+const botStates: Record<number, BotRuntimeState> = {};
+const speedRef: Record<number, number> = {};
 
 // === Types ===
 export interface BotInit {
@@ -155,6 +173,8 @@ function computePitchInput(forward: Vector3, toTarget: Vector3, up: Vector3) {
 const initBots = ({ bots: msgBots, sharedBuffers, waypoints: wpFlat }: BotWorkerPayload) => {
   if (!msgBots || !sharedBuffers) return;
 
+  initBotStates();
+
   bots = msgBots;
   numBots = bots.length;
 
@@ -193,6 +213,7 @@ const updateBots = ({ delta }: BotWorkerPayload) => {
   for (let i = 0; i < numBots; i++) {
     const bot = bots[i];
     const p = i * 3, q = i * 4;
+    const state = botStates[bot.id]; // Get bot state
 
     tmpQuat.set(quaternionArray[q], quaternionArray[q + 1], quaternionArray[q + 2], quaternionArray[q + 3]);
 
@@ -226,7 +247,26 @@ const updateBots = ({ delta }: BotWorkerPayload) => {
     tmpQuat.normalize();
 
     tmpForward.set(0, 0, -1).applyQuaternion(tmpQuat);
-    tmpForward.multiplyScalar(bot.speed * dt);
+
+
+
+    // 4. Speed Adjustment & Punishment Logic
+    const angleDot = tmpForward.x * tmpToWaypoint.x +
+                  tmpForward.y * tmpToWaypoint.y +
+                  tmpForward.z * tmpToWaypoint.z;
+
+    if (!(bot.id in speedRef)) speedRef[bot.id] = bot.speed;
+    
+    // Punishment: Speed is penalized if angleDot is low (bot is facing away)
+    // Interpolate speed between 50% (angleDot = -1) and 100% (angleDot = 1)
+    let speedMultiplier = clamp((angleDot + 1) / 2, 0.5, 1.0); // Minimum 50% speed
+    
+    // Further slow down if extremely misaligned (optional, but good for course correction)
+    if (angleDot < 0) speedMultiplier *= 0.75; 
+    
+    speedRef[bot.id] = bot.speed * speedMultiplier;
+
+    tmpForward.multiplyScalar(speedRef[bot.id] * dt);
 
     positionArray[p] += tmpForward.x;
     positionArray[p + 1] += tmpForward.y;
