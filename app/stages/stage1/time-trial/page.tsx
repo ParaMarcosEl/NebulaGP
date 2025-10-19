@@ -1,37 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Canvas } from '@react-three/fiber';
 import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
-import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
-import HUD from '@/Components/UI/HUD/HUD/HUD';
 import { onShipCollision } from '@/Utils/collisions';
 import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
-import MiniMap from '@/Components/UI/MiniMap/MiniMap';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
-import { StandingsUI } from '@/Components/UI/Standings/StandingsUI';
-import { RaceOver } from '@/Components/UI/RaceOver/RaceOver';
-import { Speedometer } from '@/Components/UI/Speedometer/Speedometer';
 import Link from 'next/link';
-import { StartCountdown } from '@/Controllers/Game/StartTimer';
 import Planet from '@/Components/World/Planet/WorldPlanet';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
-import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
 import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
-import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
 import { GhostShip } from '@/Components/Player/GhostRecorder/GhostShip';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
-import { ControlButtons } from '@/Components/UI/TouchControls/ControlButtons';
 
 import { useAudioBuffers } from '@/Controllers/Audio/useAudioBuffers';
 import { useAudioListener } from '@/Controllers/Audio/AudioSystem';
@@ -74,7 +63,6 @@ export default function Stage1() {
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
   const minePoolRef = useRef<Mine[]>([]);
   const { loader } = useCanvasLoader();
-  const thrusterOffset = new THREE.Vector3(0, 0.31, 1.6);
 
   const playerRefs = useMemo(
     () => [
@@ -138,6 +126,7 @@ export default function Stage1() {
   // HUD state
   const [speed, setSpeed] = useState(0);
   const startPositions = useMemo(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01)),
     [curve, playerRefs],
   );
@@ -224,6 +213,7 @@ export default function Stage1() {
         speed={speed}
       />
       {/* Scene */}
+      {loader}
       <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
         <Suspense fallback={null}>
           <InitAudio />
