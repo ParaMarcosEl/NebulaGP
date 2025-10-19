@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { BotInit } from '@/Workers/BotWorker.worker';
+import { BotInit } from '@/Constants';
 
 type UseBotsWorkerControllerProps = {
   botsInit: BotInit[];
