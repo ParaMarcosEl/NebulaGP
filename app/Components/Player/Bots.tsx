@@ -6,7 +6,7 @@ import * as THREE from 'three';
 // import Bot from './Bot';
 import { SHIPS, useShips } from '@/Constants';
 import { useBotsWorkerController } from './useBotsWorkerController';
-import type { BotInit } from '@/Workers/BotWorker.worker';
+import { BotInit } from '@/Workers/BotWorker.worker';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { Mine } from '../Weapons/useMines';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
