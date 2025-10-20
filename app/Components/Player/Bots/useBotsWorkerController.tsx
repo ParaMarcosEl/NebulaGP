@@ -28,6 +28,12 @@ export function useBotsWorkerController({
   const positionBufferRef = useRef<Float32Array | null>(null);
   const quaternionBufferRef = useRef<Float32Array | null>(null);
 
+  function triggerImpulseFromMain(botId: number, impulse: [number, number, number]) {
+    const worker = workerRef.current;
+    if (!worker || !readyRef.current) return;
+    worker.postMessage({ type: 'triggerImpulse', botId, impulse });
+  }
+
   // --- Setup worker once ---
   useEffect(() => {
     if (workerRef.current) return;
@@ -109,4 +115,8 @@ export function useBotsWorkerController({
       ref.quaternion.set(quatArray[q], quatArray[q + 1], quatArray[q + 2], quatArray[q + 3]);
     }
   });
+  
+  return {
+    triggerImpulseFromMain
+  }
 }

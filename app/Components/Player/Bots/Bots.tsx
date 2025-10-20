@@ -1,17 +1,16 @@
 // Bots.tsx
 'use client';
 
-import React, { useMemo, createRef, useEffect } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 // import Bot from './Bot';
 import { SHIPS, useShips } from '@/Constants';
 import { useBotsWorkerController } from './useBotsWorkerController';
 import { BotInit } from '@/Constants';
 import { useGameStore } from '@/Controllers/Game/GameController';
-import { Mine } from '../Weapons/useMines';
-import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
-import { EngineSound } from '../Audio/EngineSound';
-import { Shield } from '../Shield/Shield';
+import { Mine } from '../../Weapons/useMines';
+import { ExplosionHandle } from '../../Particles/ExplosionParticles/ExplosionParticles';
+import { Bot } from './Bot';
 
 export type StartPositions = {
     position: [number, number, number];
@@ -27,7 +26,7 @@ type BotsProps = {
 };
 
 export default function Bots({
-  // playerRefs,
+  playerRefs,
   startPositions,
 //   minePoolRef,
 //   explosionsRef,
@@ -35,7 +34,6 @@ export default function Bots({
 }: BotsProps) {
   const { raceData } = useGameStore((s) => s);
   const shipModels = useShips();
-  const BOT_COUNT = 7; // adjust to your race size
 
   useEffect(() => {
     console.log('mounting');
@@ -46,8 +44,8 @@ export default function Bots({
 
 // stable botRefs for all bots (created once)
 const botRefs = useMemo(
-  () => Array.from({ length: BOT_COUNT }, () => createRef<THREE.Group | null>()),
-  [] // 👈 empty deps → created only once
+  () => playerRefs.slice(1),
+  [] 
 );
 
 // stable botsInit for worker (also created once)
@@ -68,9 +66,8 @@ const botsInit = useMemo<BotInit[]>(
         startPositions[idx + 1].quaternion.w
       ],
     })),
-  [] // 👈 no dependencies, created once
+  [] 
 );
-
 
   // Handlers invoked when worker requests actions:
   const handleBotFire = (botId: number) => {
@@ -86,7 +83,7 @@ const botsInit = useMemo<BotInit[]>(
   };
   
   // attach the global worker controller
-  useBotsWorkerController({
+  const { triggerImpulseFromMain } = useBotsWorkerController({
     botsInit,
     botRefs,
     curve,
@@ -104,21 +101,15 @@ const botsInit = useMemo<BotInit[]>(
         const ship = SHIPS[shipId];
 
         return (
-          <group key={botId} ref={ref}>
-            <group
-              scale={ship.scale}
-              rotation={ship.rotation}
-              position={ship.offset}
-            >
-              <primitive object={shipModels[shipId - 1].scene.clone()} scale={0.5} />
-              <object3D position={[0, 0.31, 1.8]} />
-              <EngineSound volume={1} />
-            </group>
-            <Shield
-              target={ref as React.RefObject<THREE.Object3D>}
-              shieldValue={raceData[botId]?.shieldValue ?? 100}
-            />
-          </group>
+          <Bot 
+            key={i}
+            aircraftRef={ref as React.RefObject<THREE.Group>} 
+            ship={ship}
+            model={shipModels[shipId - 1].scene.clone()}
+            raceData={raceData}
+            id={botId}
+            trailTarget={ref as React.RefObject<THREE.Object3D>}
+          />
         );
       })}
     </>

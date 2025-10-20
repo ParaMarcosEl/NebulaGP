@@ -12,7 +12,7 @@ export function useShipCollisions({
   onCollide,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
-  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
+  onCollide: (a: THREE.Object3D | THREE.Mesh, b: THREE.Object3D | THREE.Mesh) => void;
 }) {
   const box = new THREE.Box3();
   const center = new THREE.Vector3();
@@ -79,7 +79,7 @@ export function useShipCollisions({
             if (tempDataB && tempDataB.shieldValue > 0) {
               setShieldValue(tempDataB.shieldValue - 0.2, obbB.ref.userData.id);
             }
-            onCollide(obbA.ref, obbB.ref);
+            onCollide(obbA.ref, obbB.ref, );
             playSound(buffers['clank04'], obbA.ref.position, 1);
             playSound(buffers['clank07'], obbB.ref.position, 1);
           }
