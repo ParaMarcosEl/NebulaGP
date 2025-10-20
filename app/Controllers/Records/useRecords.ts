@@ -15,31 +15,31 @@ export function useRecords() {
    * @returns A promise that resolves with the fetched records.
    */
   const fetchRecords = useCallback(async (userId?: string, trackId?: string) => {
-    // setLoading(true);
-    // setError(null);
-    // try {
-    //   const queryParams = new URLSearchParams();
-    //   if (userId) queryParams.append('userId', userId);
-    //   if (trackId) queryParams.append('trackId', trackId);
+    setLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams();
+      if (userId) queryParams.append('userId', userId);
+      if (trackId) queryParams.append('trackId', trackId);
 
-    //   const res = await fetch(`/api/records?${queryParams.toString()}`);
-    //   console.debug('api hit');
-    //   if (!res.ok) {
-    //     setAlert({ type: 'error', message: 'No record found.' });
-    //     throw new Error(`Failed to fetch records: ${res.statusText}`);
-    //   }
-    //   const data: Record[] = await res.json();
-    //   setRecords(data);
-    //   setAlert({ type: 'info', message: `${data.length} records found.` });
+      const res = await fetch(`/api/records?${queryParams.toString()}`);
+      console.debug('api hit');
+      if (!res.ok) {
+        setAlert({ type: 'error', message: 'No record found.' });
+        throw new Error(`Failed to fetch records: ${res.statusText}`);
+      }
+      const data: Record[] = await res.json();
+      setRecords(data);
+      setAlert({ type: 'info', message: `${data.length} records found.` });
 
-    //   return data;
-    //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // } catch (err: any) {
-    //   setError(err.message || 'Failed to fetch records');
-    //   throw err;
-    // } finally {
-    //   setLoading(false);
-    // }
+      return data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch records');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   /**
@@ -48,33 +48,33 @@ export function useRecords() {
    * @returns A promise that resolves with the new record's ID.
    */
   const createRecord = useCallback(async (newRecord: Omit<Record, 'id' | 'createdAt'>) => {
-    // setLoading(true);
-    // setError(null);
-    // try {
-    //   const res = await fetch('/api/records', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(newRecord),
-    //   });
-    //   if (!res.ok) {
-    //     const err = await res.json();
-    //     console.error({ err });
-    //     setAlert({ type: 'error', message: 'Failed to save record.' });
-    //     throw new Error(err.error || 'Failed to create record');
-    //   }
-    //   const data: { message: string; recordId: string } = await res.json();
-    //   // Optionally refetch records to update the list
-    //   // await fetchRecords(newRecord.userId, newRecord.trackId);
-    //   setAlert({ type: 'info', message: 'Record saved.' });
-    //   return data;
-    //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // } catch (err: any) {
-    //   setAlert({ type: 'error', message: 'Failed to save record.' });
-    //   setError(err.message || 'Failed to create record');
-    //   throw err;
-    // } finally {
-    //   setLoading(false);
-    // }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRecord),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        console.error({ err });
+        setAlert({ type: 'error', message: 'Failed to save record.' });
+        throw new Error(err.error || 'Failed to create record');
+      }
+      const data: { message: string; recordId: string } = await res.json();
+      // Optionally refetch records to update the list
+      // await fetchRecords(newRecord.userId, newRecord.trackId);
+      setAlert({ type: 'info', message: 'Record saved.' });
+      return data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setAlert({ type: 'error', message: 'Failed to save record.' });
+      setError(err.message || 'Failed to create record');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   /**
@@ -84,32 +84,32 @@ export function useRecords() {
    * @returns A promise that resolves with a success message.
    */
   const updateRecord = useCallback(async (recordId: string, updates: Partial<Record>) => {
-    // setLoading(true);
-    // setError(null);
-    // try {
-    //   const res = await fetch(`/api/records?id=${recordId}`, {
-    //     method: 'PUT',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(updates),
-    //   });
-    //   if (!res.ok) {
-    //     const err = await res.json();
-    //     setAlert({ type: 'error', message: 'Failed to save record.' });
-    //     throw new Error(err.error || 'Failed to update record');
-    //   }
-    //   const data: { message: string } = await res.json();
-    //   setAlert({ type: 'info', message: `Race time saved to leaderboard.` });
-    //   // Optionally refetch to update local state
-    //   // This is a good place to optimistically update the state before refetching.
-    //   return data;
-    //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // } catch (err: any) {
-    //   setAlert({ type: 'error', message: 'Failed to save record.' });
-    //   setError(err.message || 'Failed to update record');
-    //   throw err;
-    // } finally {
-    //   setLoading(false);
-    // }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/records?id=${recordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setAlert({ type: 'error', message: 'Failed to save record.' });
+        throw new Error(err.error || 'Failed to update record');
+      }
+      const data: { message: string } = await res.json();
+      setAlert({ type: 'info', message: `Race time saved to leaderboard.` });
+      // Optionally refetch to update local state
+      // This is a good place to optimistically update the state before refetching.
+      return data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setAlert({ type: 'error', message: 'Failed to save record.' });
+      setError(err.message || 'Failed to update record');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   /**
@@ -118,26 +118,26 @@ export function useRecords() {
    * @returns A promise that resolves with a success message.
    */
   const deleteRecord = useCallback(async (recordId: string) => {
-    // setLoading(true);
-    // setError(null);
-    // try {
-    //   const res = await fetch(`/api/records?id=${recordId}`, { method: 'DELETE' });
-    //   if (!res.ok) {
-    //     const err = await res.json();
-    //     throw new Error(err.error || 'Failed to delete record');
-    //   }
-    //   // Update state to remove the deleted record
-    //   setRecords((prevRecords) => (prevRecords || []).filter((record) => record.id !== recordId));
-    //   const data: { message: string } = await res.json();
-    //   setAlert({ type: 'info', message: 'Record deleted.' });
-    //   return data;
-    //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // } catch (err: any) {
-    //   setError(err.message || 'Failed to delete record');
-    //   throw err;
-    // } finally {
-    //   setLoading(false);
-    // }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/records?id=${recordId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to delete record');
+      }
+      // Update state to remove the deleted record
+      setRecords((prevRecords) => (prevRecords || []).filter((record) => record.id !== recordId));
+      const data: { message: string } = await res.json();
+      setAlert({ type: 'info', message: 'Record deleted.' });
+      return data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete record');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   return {
