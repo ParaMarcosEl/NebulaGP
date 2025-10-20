@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+// app/Workers/BotWorker.worker.ts
 'use client';
 /// <reference lib="webworker" />
 
-console.log('@/workers/BotWorker loaded -- min math');
+console.log('@/workers/BotWorker loaded -- with acceleration + impulse trigger');
+
 
 // --- Minimal math classes ---
 class Vector3 {
@@ -17,7 +18,18 @@ class Vector3 {
   multiplyScalar(s: number) { this.x *= s; this.y *= s; this.z *= s; return this; }
   length() { return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z); }
   normalize() { const l = this.length(); if (l > 0) this.multiplyScalar(1 / l); return this; }
-  
+
+  // ADDED: Simple copy method
+  copy(v: Vector3) { this.x = v.x; this.y = v.y; this.z = v.z; return this; }
+
+  // ADDED: Lerp method for smooth velocity transitions (acceleration)
+  lerp(v: Vector3, alpha: number) {
+    this.x += (v.x - this.x) * alpha;
+    this.y += (v.y - this.y) * alpha;
+    this.z += (v.z - this.z) * alpha;
+    return this;
+  }
+
   applyQuaternion(q: Quaternion) {
     const x = this.x, y = this.y, z = this.z;
     const qx = q.x, qy = q.y, qz = q.z, qw = q.w;
@@ -78,11 +90,16 @@ class Quaternion {
 const PITCH_TORQUE = -1.5;
 const ROLL_TORQUE = 6;
 const WAYPOINT_RADIUS = 50;
-const FIRE_COOLDOWN_MS = 200;
-const MINE_DROP_COOLDOWN_MS = 1500;
 
 const LOCAL_PITCH_AXIS = new Vector3(1, 0, 0);
 const LOCAL_ROLL_AXIS = new Vector3(0, 0, 1);
+const ACCELERATION_FACTOR = 5;  // how quickly bots accelerate toward desired velocity
+const DAMPING = 0.98;           // drag factor to prevent endless acceleration
+
+// Impulse fade factor per-update (you already used 0.9 previously)
+const IMPULSE_FADE = 0.9;
+
+// === Runtime state interfaces ===
 interface BotRuntimeState {
   velocity: Vector3;
   impulseVelocity: Vector3;
@@ -90,14 +107,14 @@ interface BotRuntimeState {
 
 // === Call this during initBots or after bots array is ready ===
 function initBotStates() {
-  bots.forEach(bot => {
-    if (!botStates[bot.id]) {
-      botStates[bot.id] = {
-        velocity: new Vector3(),
-        impulseVelocity: new Vector3(),
-      };
-    }
-  });
+  bots.forEach(bot => {
+    if (!botStates[bot.id]) {
+      botStates[bot.id] = {
+        velocity: new Vector3(),
+        impulseVelocity: new Vector3(),
+      };
+    }
+  });
 }
 const botStates: Record<number, BotRuntimeState> = {};
 const speedRef: Record<number, number> = {};
@@ -105,19 +122,20 @@ const speedRef: Record<number, number> = {};
 // === Types ===
 export interface BotInit {
   id: number;
-  speed: number;
+  speed: number; // max speed
   currentT: number;
   waypointIndex: number;
   cannonValue: number;
   useMine: boolean;
   position: [number, number, number];
   quaternion: [number, number, number, number];
+  acceleration: [number, number, number]; // newly added (kept)
 }
 
 export interface BotUpdate { id: number; fire?: boolean; dropMine?: boolean; }
 
 export interface BotWorkerPayload {
-  type: 'init' | 'update';
+  type: 'init' | 'update' | 'triggerImpulse';
   bots?: BotInit[];
   sharedBuffers?: {
     position: SharedArrayBuffer;
@@ -125,6 +143,9 @@ export interface BotWorkerPayload {
   };
   waypoints?: number[];
   delta?: number;
+  // for triggerImpulse messages:
+  botId?: number;
+  impulse?: [number, number, number];
 }
 
 // === State ===
@@ -137,15 +158,14 @@ let waypoints: Vector3[] = [];
 
 const messageQueue: MessageEvent<BotWorkerPayload>[] = [];
 
-const lastFireTime: Record<number, number> = {};
-const lastMineTime: Record<number, number> = {};
-
 // === Temp vectors ===
 const tmpForward = new Vector3();
 const tmpUp = new Vector3();
 const tmpToWaypoint = new Vector3();
 const tmpQuat = new Quaternion();
 const tmpDeltaQuat = new Quaternion();
+const tmpDesiredVelocity = new Vector3();
+const tmpAcceleration = new Vector3();
 
 // --- Utility ---
 function clamp(val: number, min: number, max: number) { return Math.max(min, Math.min(max, val)); }
@@ -169,13 +189,22 @@ function computePitchInput(forward: Vector3, toTarget: Vector3, up: Vector3) {
   return clamp(dot, -1, 1);
 }
 
+// clamp a vector's length to max (in-place)
+function clampVectorLength(v: Vector3, max: number) {
+  const len = v.length();
+  if (len > max && len > 0) {
+    v.multiplyScalar(max / len);
+  }
+  return v;
+}
+
 // === Initialization ===
 const initBots = ({ bots: msgBots, sharedBuffers, waypoints: wpFlat }: BotWorkerPayload) => {
   if (!msgBots || !sharedBuffers) return;
 
-  initBotStates();
-
   bots = msgBots;
+  initBotStates(); // after bots assigned
+
   numBots = bots.length;
 
   positionArray = new Float32Array(sharedBuffers.position);
@@ -206,6 +235,23 @@ const initBots = ({ bots: msgBots, sharedBuffers, waypoints: wpFlat }: BotWorker
   console.log(`BotWorker initialized with ${numBots} bots and ${waypoints.length} waypoints`);
 };
 
+// === Apply impulse (new) ===
+function applyImpulse(botId: number, impulseArr: [number, number, number]) {
+  const state = botStates[botId];
+  if (!state) return;
+  // Add impulse vector to impulseVelocity
+  state.impulseVelocity.x += impulseArr[0];
+  state.impulseVelocity.y += impulseArr[1];
+  state.impulseVelocity.z += impulseArr[2];
+
+  // Optional: clamp impulse velocity so impulses don't instantly exceed max speed by a huge margin
+  // Here we clamp impulseVelocity magnitude to bot.speed * 0.75 if bot exists in bots list
+  const bot = bots.find(b => b.id === botId);
+  if (bot) {
+    clampVectorLength(state.impulseVelocity, bot.speed * 0.75);
+  }
+}
+
 // === Update ===
 const updateBots = ({ delta }: BotWorkerPayload) => {
   const dt = delta ?? 0.016;
@@ -213,23 +259,19 @@ const updateBots = ({ delta }: BotWorkerPayload) => {
   for (let i = 0; i < numBots; i++) {
     const bot = bots[i];
     const p = i * 3, q = i * 4;
-    const state = botStates[bot.id]; // Get bot state
+    const state = botStates[bot.id];
 
     tmpQuat.set(quaternionArray[q], quaternionArray[q + 1], quaternionArray[q + 2], quaternionArray[q + 3]);
 
     tmpForward.set(0, 0, -1).applyQuaternion(tmpQuat);
     tmpUp.set(0, 1, 0).applyQuaternion(tmpQuat);
 
-    // ✅ Corrected: compute direction TO the waypoint (target - position)
     const wp = waypoints[bot.waypointIndex];
     tmpToWaypoint.set(wp.x - positionArray[p], wp.y - positionArray[p + 1], wp.z - positionArray[p + 2]);
 
     if (tmpToWaypoint.length() < WAYPOINT_RADIUS) {
       bot.waypointIndex++;
-      
-      // If we've reached the final checkpoint, reset to start
-      if (bot.waypointIndex >= waypoints.length) bot.waypointIndex = 5;
-
+      if (bot.waypointIndex >= waypoints.length) bot.waypointIndex = 0;
       const next = waypoints[bot.waypointIndex];
       tmpToWaypoint.set(next.x - positionArray[p], next.y - positionArray[p + 1], next.z - positionArray[p + 2]);
     }
@@ -241,36 +283,42 @@ const updateBots = ({ delta }: BotWorkerPayload) => {
 
     tmpDeltaQuat.setFromAxisAngle(LOCAL_PITCH_AXIS, pitchInput * dt);
     tmpQuat.multiply(tmpDeltaQuat);
-
     tmpDeltaQuat.setFromAxisAngle(LOCAL_ROLL_AXIS, rollInput * dt);
     tmpQuat.multiply(tmpDeltaQuat);
     tmpQuat.normalize();
 
     tmpForward.set(0, 0, -1).applyQuaternion(tmpQuat);
 
+    // Speed adjustment based on facing
+    const angleDot = tmpForward.x * tmpToWaypoint.x + tmpForward.y * tmpToWaypoint.y + tmpForward.z * tmpToWaypoint.z;
+    if (!(bot.id in speedRef)) speedRef[bot.id] = bot.speed;
+    let speedMultiplier = clamp((angleDot + 1) / 2, 0.5, 1.0);
+    if (angleDot < 0) speedMultiplier *= 0.75;
+    const targetSpeed = bot.speed * speedMultiplier;
 
+    // === Acceleration Integration (your existing logic) ===
+    tmpDesiredVelocity.copy(tmpForward).multiplyScalar(targetSpeed);
+    tmpAcceleration.set(
+      tmpDesiredVelocity.x - state.velocity.x,
+      tmpDesiredVelocity.y - state.velocity.y,
+      tmpDesiredVelocity.z - state.velocity.z
+    ).multiplyScalar(ACCELERATION_FACTOR * dt);
 
-    // 4. Speed Adjustment & Punishment Logic
-    const angleDot = tmpForward.x * tmpToWaypoint.x +
-                  tmpForward.y * tmpToWaypoint.y +
-                  tmpForward.z * tmpToWaypoint.z;
+    state.velocity.add(tmpAcceleration);
 
-    if (!(bot.id in speedRef)) speedRef[bot.id] = bot.speed;
-    
-    // Punishment: Speed is penalized if angleDot is low (bot is facing away)
-    // Interpolate speed between 50% (angleDot = -1) and 100% (angleDot = 1)
-    let speedMultiplier = clamp((angleDot + 1) / 2, 0.5, 1.0); // Minimum 50% speed
-    
-    // Further slow down if extremely misaligned (optional, but good for course correction)
-    if (angleDot < 0) speedMultiplier *= 0.75; 
-    
-    speedRef[bot.id] = bot.speed * speedMultiplier;
+    // Add impulseVelocity contribution, then fade impulses
+    state.velocity.add(state.impulseVelocity);
 
-    tmpForward.multiplyScalar(speedRef[bot.id] * dt);
+    // Enforce max speed: clamp the *total* velocity to bot.speed (this ensures bot.speed truly is a cap)
+    clampVectorLength(state.velocity, bot.speed);
 
-    positionArray[p] += tmpForward.x;
-    positionArray[p + 1] += tmpForward.y;
-    positionArray[p + 2] += tmpForward.z;
+    state.velocity.multiplyScalar(DAMPING);    // simple drag
+    state.impulseVelocity.multiplyScalar(IMPULSE_FADE); // impulse fade (preserves your 0.9 behavior)
+
+    // Apply velocity to position (note dt already applied to acceleration factor above)
+    positionArray[p] += state.velocity.x * dt;
+    positionArray[p + 1] += state.velocity.y * dt;
+    positionArray[p + 2] += state.velocity.z * dt;
 
     quaternionArray[q] = tmpQuat.x;
     quaternionArray[q + 1] = tmpQuat.y;
@@ -283,7 +331,15 @@ const updateBots = ({ delta }: BotWorkerPayload) => {
 const handleMessage = (e: MessageEvent<BotWorkerPayload>) => {
   const { type } = e.data;
   if (type === 'init') initBots(e.data);
-  if (type === 'update') updateBots(e.data);
+  else if (type === 'update') updateBots(e.data);
+  else if (type === 'triggerImpulse') {
+    // New message type: expect e.data.botId and e.data.impulse
+    const botId = e.data.botId;
+    const impulse = e.data.impulse;
+    if (typeof botId === 'number' && impulse && impulse.length === 3) {
+      applyImpulse(botId, impulse as [number, number, number]);
+    }
+  }
 };
 
 const flushQueue = () => { while (messageQueue.length) handleMessage(messageQueue.shift()!); };

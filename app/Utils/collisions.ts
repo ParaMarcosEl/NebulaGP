@@ -15,6 +15,54 @@ export const onBulletCollision = (mesh2: THREE.Object3D, restitution = 0.2, mult
   mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-impulseMagnitude));
 };
 
+export const onShipCollisionWorker = (
+  mesh1: THREE.Object3D,
+  mesh2: THREE.Object3D,
+  triggerImpulseFromMain: (botId: number, impulse: [number, number, number]) => void,
+  botRefToId: Map<THREE.Object3D, number>
+) => {
+  // Both meshes must have positions
+  const position1 = mesh1.position;
+  const position2 = mesh2.position;
+
+  // Collision normal
+  const collisionNormal = new THREE.Vector3().subVectors(position1, position2).normalize();
+
+  // Approximate relative velocity if available, fallback to zero
+  const velocity1 = mesh1.userData.velocity ?? new THREE.Vector3();
+  const velocity2 = mesh2.userData.velocity ?? new THREE.Vector3();
+  const relativeVelocity = new THREE.Vector3().subVectors(velocity1, velocity2);
+
+  const speedOfImpact = relativeVelocity.dot(collisionNormal);
+  if (speedOfImpact > 0) return; // moving apart
+
+  const restitution = 0.5;
+  const impulseMagnitude = -(1 + restitution) * speedOfImpact;
+  const impulseVector = collisionNormal.clone().multiplyScalar(impulseMagnitude);
+
+  // Apply to bots via worker
+  const botId1 = botRefToId.get(mesh1);
+  const botId2 = botRefToId.get(mesh2);
+
+  if (botId1 !== undefined) {
+    triggerImpulseFromMain(botId1, impulseVector.toArray() as [number, number, number]);
+  }
+
+  if (botId2 !== undefined) {
+    // Flip the impulse for the other bot
+    triggerImpulseFromMain(botId2, impulseVector.clone().multiplyScalar(-1).toArray() as [number, number, number]);
+  }
+
+  // Optional: apply to main-thread player if needed
+  if (!botId1 && mesh1.userData.impulseVelocity) {
+    mesh1.userData.impulseVelocity.add(impulseVector.clone());
+  }
+  if (!botId2 && mesh2.userData.impulseVelocity) {
+    mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-1));
+  }
+};
+
+
 export const onShipCollision = (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => {
   // Check if both meshes have a velocity vector
   if (!mesh1.userData.velocity || !mesh2.userData.velocity) {

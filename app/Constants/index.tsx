@@ -18,7 +18,7 @@ export const keyboardControlsMap = [
   { name: 'shoot', keys: ['KeyJ'] },
 ];
 
-type shipType = {
+export type shipType = {
   scale: number;
   offset?: [number, number, number] | THREE.Vector3;
   rotation:

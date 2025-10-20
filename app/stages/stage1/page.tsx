@@ -8,16 +8,12 @@ import Aircraft from '@/Components/Player/Aircraft';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
 import { getStartPoseFromCurve } from '@/Utils';
-import { onShipCollision } from '@/Utils/collisions';
 import { tracks } from '@/Lib/flightPath';
-import { curveType } from '@/Constants';
 import { Skybox } from '@/Components/Skybox/Skybox';
 import { useGameStore } from '@/Controllers/Game/GameController';
-import { useRaceProgress } from '@/Controllers/Game/RaceProgressController';
 import Link from 'next/link';
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
 import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
-import { useShipCollisions } from '@/Controllers/Collision/useShipCollisions';
 import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
 import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
@@ -35,31 +31,9 @@ import { useRecords } from '@/Controllers/Records/useRecords';
 import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
 import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
-import Bots from '@/Components/Player/Bots';
+import Bots from '@/Components/Player/Bots/Bots';
+import { ShipTracker } from '@/Components/ShipTracker/ShipTracker';
 
-function RaceProgressTracker({
-  playerRefs,
-}: {
-  playerRefs: React.RefObject<THREE.Group>[];
-  curve: curveType;
-}) {
-  useRaceProgress({ playerRefs: playerRefs as React.RefObject<THREE.Group>[] });
-  return null;
-}
-
-function ShipCollisionTracker({
-  playerRefs,
-  onCollide,
-}: {
-  playerRefs: React.RefObject<THREE.Object3D>[];
-  onCollide: (a: THREE.Object3D, b: THREE.Object3D) => void;
-}) {
-  useShipCollisions({
-    playerRefs,
-    onCollide,
-  });
-  return null;
-}
 
 export default function Stage1() {
   const aircraftRef = useRef<THREE.Group | null>(null);
@@ -153,6 +127,7 @@ export default function Stage1() {
       setPlanetMeshes([]);
     };
   }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
+  
 
 
   const players = (
@@ -251,13 +226,10 @@ export default function Stage1() {
         <Suspense fallback={null}>
           <InitAudio />
           <PerformanceTracker />
-          <RaceProgressTracker
+          <ShipTracker
             playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
             curve={curve}
-          />
-          <ShipCollisionTracker
-            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
-            onCollide={onShipCollision}
+            startPositions={startPositions}
           />
           {/* Lighting */}
           <ambientLight intensity={0.5} />
