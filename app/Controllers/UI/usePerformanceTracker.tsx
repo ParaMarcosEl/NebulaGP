@@ -9,11 +9,11 @@ export function usePerformanceTracker() {
   const { updateMetrics } = usePerformanceStore((s) => s);
   const lastTime = useRef(performance.now());
   const frames = useRef(0);
-  
+
   useFrame(() => {
     const now = performance.now();
     frames.current++;
-    
+
     // Update every ~1s to reduce overhead
     if (now - lastTime.current >= 1000) {
       const fps = (frames.current * 1000) / (now - lastTime.current);
@@ -69,12 +69,10 @@ export function usePerformanceTracker() {
         heapUsed: heapUsedMB || 0,
         heapTotal: heapTotalMB || 0,
         heapPercent: heapPercent || 0,
-
       });
-        
+
       frames.current = 0;
       lastTime.current = now;
     }
   });
 }
-

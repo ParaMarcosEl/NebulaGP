@@ -5,11 +5,9 @@ import { useEffect, useRef } from 'react';
 import { MeshBVH } from 'three-mesh-bvh';
 import { useGameStore } from '@/Controllers/Game/GameController';
 import { getNearestCurveT, isMobileDevice } from '@/Utils';
-// import { useBotController } from '@/Components/Player/BotController';
 import { Mine, useMines } from '../Weapons/useMines';
 import { useProjectileCollisions } from '@/Controllers/Collision/useProjectileCollisions';
 import { onBulletCollision } from '@/Utils/collisions';
-// import { useGhostRecorder } from './GhostRecorder/useGhostRecorder';
 import { TUBE_RADIUS } from '@/Constants';
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { useProjectiles } from '../Weapons/useProjectiles';
@@ -63,7 +61,6 @@ type PlayerSystemOptions = {
 
 export function usePlayerController({
   id: playerId,
-  // trackId,
   minePoolRef,
   explosionsRef,
   aircraftRef,
@@ -73,19 +70,19 @@ export function usePlayerController({
   pitchVelocity = 0.03,
   rollVelocity = 0.015,
   damping = 0.5,
-  // botSpeed,
   curve,
   enabled,
   onSpeedChange,
   onAcceleratingChange,
   onBrakingChange,
 }: PlayerSystemOptions) {
+  // runtime refs
   const keys = useRef<Record<string, boolean>>({});
   const speedRef = useRef(0);
   const angularVelocity = useRef(new THREE.Vector3());
   const previousInputState = useRef({ accelerating: false, braking: false });
   const gamepadIndex = useRef<number | null>(null);
-  
+
   const {
     raceStatus,
     playerSpeed,
@@ -102,13 +99,7 @@ export function usePlayerController({
 
   const controlsEnabled = raceStatus === 'racing';
 
-  // const { stopRecording } = useGhostRecorder({
-  //   trackId,
-  //   mode: 'record',
-  //   targetRef: aircraftRef as React.RefObject<THREE.Object3D>,
-  //   onRecordingComplete: () => {},
-  // });
-
+  // weapons + collisions (unchanged API)
   const { fire, poolRef } = useProjectiles(
     aircraftRef as React.RefObject<THREE.Object3D>,
     explosionsRef as React.RefObject<ExplosionHandle>,
@@ -122,7 +113,6 @@ export function usePlayerController({
   const { drop } = useMines(
     aircraftRef as React.RefObject<THREE.Object3D>,
     minePoolRef,
-    // Pass the ref directly, without .current, as useMines expects a RefObject
     explosionsRef as React.RefObject<ExplosionHandle>,
     {
       maxMines: 16,
@@ -135,35 +125,33 @@ export function usePlayerController({
     playerRefs,
     explosionsRef: explosionsRef as React.RefObject<ExplosionHandle>,
     onCollide: onBulletCollision,
-    owner: aircraftRef,
   });
-  // const playerHistory = raceData[0].history;
 
-  // useEffect(() => {
-  //   if (playerHistory.length < TOTAL_LAPS) return;
-  //   // stopRecording();
-  // }, [playerHistory.length, playerId, stopRecording]);
-
+  // Initialize ship userData once
   useEffect(() => {
     const ship = aircraftRef.current;
     if (!ship) return;
     ship.userData.velocity = new THREE.Vector3(0, 0, 0);
     ship.userData.impulseVelocity = new THREE.Vector3();
+    // keep a curvePosition vector to avoid cloning per-frame
+    ship.userData.curvePosition = ship.userData.curvePosition ?? new THREE.Vector3();
+    ship.userData.progress = ship.userData.progress ?? 0;
   }, [aircraftRef]);
 
+  // keyboard listeners (unchanged)
   useEffect(() => {
     if (!enabled) return;
     const handleKeyDown = (e: KeyboardEvent) => (keys.current[e.key.toLowerCase()] = true);
     const handleKeyUp = (e: KeyboardEvent) => (keys.current[e.key.toLowerCase()] = false);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [enabled]);
 
+  // gamepad connect
   useEffect(() => {
     if (!enabled) return;
     const handler = (e: GamepadEvent) => {
@@ -174,172 +162,302 @@ export function usePlayerController({
     window.addEventListener('gamepadconnected', handler);
     return () => window.removeEventListener('gamepadconnected', handler);
   }, [enabled]);
-  
-  useFrame((_, delta) => {
-  if (!enabled) return;
-  const ship = aircraftRef.current;
-  if (!controlsEnabled || !ship || !ship.userData.velocity) return;
 
-  const nearestT = getNearestCurveT(ship.position, curve);
-  const curvePosition = curve.getPointAt(nearestT);
-  ship.userData.curvePosition = curvePosition.clone();
-  ship.userData.progress = nearestT;
-
-  const throttle = throttleRef.current;
-  const shouldFire = firingRef.current;
-  const DEAD_ZONE = 0.1;
-  const gamepads = navigator.getGamepads?.();
-  const gp = gamepadIndex.current !== null ? gamepads?.[gamepadIndex.current] : gamepads?.[0];
-  let lx = 0,
-    ly = 0;
-
-  const { x: touchX, y: touchY } = inputAxisRef.current;
-
-  // --- ROTATION INPUT (scaled by delta)
-  if (Math.abs(touchX) > 0.01 || Math.abs(touchY) > 0.01) {
-    angularVelocity.current.z += touchX * -pitchVelocity * delta * 60;
-    angularVelocity.current.x += touchY * rollVelocity * delta * 60;
-  } else {
-    if (gp && gp.connected) {
-      lx = Math.abs(gp.axes[0]) > DEAD_ZONE ? gp.axes[0] : 0;
-      ly = Math.abs(gp.axes[1]) > DEAD_ZONE ? gp.axes[1] : 0;
+  // -----------------------------
+  // PREBUILD BVH FOR PLANETS (once or when planetMeshes changes)
+  // -----------------------------
+  useEffect(() => {
+    // Build boundsTree at load time to avoid building inside the frame loop
+    for (const planetMesh of planetMeshes) {
+      if (!planetMesh) continue;
+      const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
+      if (geometry && !geometry.boundsTree) {
+        try {
+          geometry.boundsTree = new MeshBVH(geometry);
+        } catch (err) {
+          // some geometries might not support BVH; skip gracefully
+          // eslint-disable-next-line no-console
+          console.warn('Failed to build BVH for planet mesh', err);
+        }
+      }
     }
-    angularVelocity.current.z += lx * -pitchVelocity * delta * 60;
-    angularVelocity.current.x += ly * rollVelocity * delta * 60;
+  }, [planetMeshes]);
 
-    if (keys.current['a']) angularVelocity.current.z += pitchVelocity * delta * 60;
-    if (keys.current['d']) angularVelocity.current.z -= pitchVelocity * delta * 60;
-    if (keys.current['w']) angularVelocity.current.x -= rollVelocity * delta * 60;
-    if (keys.current['s']) angularVelocity.current.x += rollVelocity * delta * 60;
-  }
+  // -----------------------------
+  // TEMP OBJECTS (GC-free): use refs to persist across frames
+  // -----------------------------
+  const tmp = useRef({
+    // math
+    euler: new THREE.Euler(),
+    quat: new THREE.Quaternion(),
+    forward: new THREE.Vector3(),
+    desiredVel: new THREE.Vector3(),
+    localShipPos: new THREE.Vector3(),
+    meshMatrixInverse: new THREE.Matrix4(),
+    pushDir: new THREE.Vector3(),
+    worldHitPoint: new THREE.Vector3(),
+    // hit info (reuse same object; .point is a Vector3)
+    hitInfo: { point: new THREE.Vector3(), distance: 0, faceIndex: -1 } as {
+      point: THREE.Vector3;
+      distance: number;
+      faceIndex: number;
+    },
+  }).current;
 
-  const accelerating = !!(keys.current['i'] || gp?.buttons?.[0]?.pressed || throttle > 0);
-  const braking = !!(keys.current['k'] || gp?.buttons?.[2]?.pressed || throttle < 0);
-  const shooting = !!(keys.current['j'] || gp?.buttons?.[7]?.pressed);
-  const { cannonValue, useMine, shieldValue } = raceData[playerId];
+  // throttle counters to reduce expensive calls frequency
+  const frameCounterRef = useRef(0);
+  const gamepadPollCounterRef = useRef(0);
+  const lastNearestTRef = useRef({ t: 0, pos: new THREE.Vector3() });
+  const lastCollisionAudioTimeRef = useRef(0);
+  const lastShieldUpdateTimeRef = useRef(0);
+  const onSpeedLastRef = useRef(0);
+  const nearestTThrottleFrames = 3; // compute nearestT every N frames
+  const gamepadPollFrames = 5; // poll actual gamepads every N frames
+  const collisionAudioCooldownMs = 120; // don't spam sounds more frequent than this
+  const shieldUpdateMs = 100; // throttle shield set calls
 
-  if (accelerating !== previousInputState.current.accelerating) {
-    onAcceleratingChange?.(accelerating);
-    previousInputState.current.accelerating = accelerating;
-  }
-  if (braking !== previousInputState.current.braking) {
-    onBrakingChange?.(braking);
-    previousInputState.current.braking = braking;
-  }
+  // small helper: only call onSpeedChange when delta meaningful
+  const maybeEmitSpeed = (val: number) => {
+    const last = onSpeedLastRef.current;
+    if (Math.abs(val - last) > 0.005) {
+      onSpeedChange?.(val);
+      onSpeedLastRef.current = val;
+    }
+  };
 
-  // --- ACCELERATION (scaled by delta)
-  if (accelerating || throttle > 0) {
-    speedRef.current = Math.min(
-      playerSpeed,
-      isMobileDevice()
-        ? (speedRef.current + acceleration * delta * 60) * Math.abs(throttle)
-        : speedRef.current + acceleration * delta * 60,
-    );
-  } else if (!braking) {
-    // --- DAMPING (time-scaled)
-    speedRef.current *= Math.pow(damping, delta * 60);
-  }
+  // -----------------------------
+  // MAIN LOOP (useFrame)
+  // -----------------------------
+  useFrame((_, delta) => {
+    if (!enabled) return;
+    const ship = aircraftRef.current;
+    if (!controlsEnabled || !ship || !ship.userData || !ship.userData.velocity) return;
 
-  // --- BRAKING (scaled by delta)
-  if (braking || throttle < 0) {
-    speedRef.current = Math.max(
-      -playerSpeed * 0.5,
-      isMobileDevice()
-        ? speedRef.current - acceleration * Math.abs(throttle) * delta * 60
-        : speedRef.current - acceleration * delta * 60,
-    );
-  }
+    // increment counters
+    frameCounterRef.current += 1;
+    gamepadPollCounterRef.current = (gamepadPollCounterRef.current + 1) % gamepadPollFrames;
 
-  if (Math.abs(speedRef.current) < 0.001) {
-    speedRef.current = 0;
-    ship.userData.velocity.set(0, 0, 0);
-  }
+    // --- THROTTLED: nearest curve t
+    let nearestT = lastNearestTRef.current.t;
+    if (frameCounterRef.current % nearestTThrottleFrames === 0) {
+      // Only recompute when moved a bit or on throttle frame
+      const lastPos = lastNearestTRef.current.pos;
+      if (lastPos.distanceToSquared(ship.position) > 0.25 /* 0.5m movement squared */) {
+        nearestT = getNearestCurveT(ship.position, curve);
+        lastNearestTRef.current.t = nearestT;
+        curve.getPointAt(nearestT, lastNearestTRef.current.pos);
+      } else {
+        // keep previous nearestT and lastPos
+        nearestT = lastNearestTRef.current.t;
+      }
+    }
+    // write into ship.userData.curvePosition without cloning
+    curve.getPointAt(nearestT, ship.userData.curvePosition);
+    ship.userData.progress = nearestT;
 
-  onSpeedChange?.(speedRef.current);
+    // cached inputs
+    const throttle = throttleRef.current;
+    const shouldFire = firingRef.current;
+    const DEAD_ZONE = 0.1;
 
-  // --- APPLY ROTATION
-  const deltaRotation = new THREE.Quaternion().setFromEuler(
-    new THREE.Euler(
+    // GAMEPAD POLLING: only poll navigator.getGamepads occasionally
+    let gp: Gamepad | undefined;
+    if (gamepadPollCounterRef.current === 0 && typeof navigator.getGamepads === 'function') {
+      const gamepads = navigator.getGamepads();
+      gp =
+        gamepadIndex.current !== null
+          ? (gamepads?.[gamepadIndex.current] ?? undefined)
+          : gamepads?.[0] || undefined;
+    } else {
+      // reuse previous poll if available
+      gp = undefined;
+    }
+
+    const { x: touchX, y: touchY } = inputAxisRef.current;
+
+    // --- ROTATION INPUT (scaled by delta) - reuse temp vectors & objects
+    if (Math.abs(touchX) > 0.01 || Math.abs(touchY) > 0.01) {
+      angularVelocity.current.z += touchX * -pitchVelocity * delta * 60;
+      angularVelocity.current.x += touchY * rollVelocity * delta * 60;
+    } else {
+      let lx = 0,
+        ly = 0;
+      if (gp && gp.connected) {
+        lx = Math.abs(gp.axes[0]) > DEAD_ZONE ? gp.axes[0] : 0;
+        ly = Math.abs(gp.axes[1]) > DEAD_ZONE ? gp.axes[1] : 0;
+      }
+      angularVelocity.current.z += lx * -pitchVelocity * delta * 60;
+      angularVelocity.current.x += ly * rollVelocity * delta * 60;
+
+      if (keys.current['a']) angularVelocity.current.z += pitchVelocity * delta * 60;
+      if (keys.current['d']) angularVelocity.current.z -= pitchVelocity * delta * 60;
+      if (keys.current['w']) angularVelocity.current.x -= rollVelocity * delta * 60;
+      if (keys.current['s']) angularVelocity.current.x += rollVelocity * delta * 60;
+    }
+
+    // determine actions
+    // if gp is undefined because we didn't poll this frame, we still allow keyboard and throttle
+    const gamepadButtons = gp?.buttons;
+    const accelerating = !!(keys.current['i'] || gamepadButtons?.[0]?.pressed || throttle > 0);
+    const braking = !!(keys.current['k'] || gamepadButtons?.[2]?.pressed || throttle < 0);
+    const shooting = !!(keys.current['j'] || gamepadButtons?.[7]?.pressed);
+    const { cannonValue, useMine, shieldValue } = raceData[playerId] ?? {
+      cannonValue: 0,
+      useMine: false,
+      shieldValue: 0,
+    };
+
+    // only emit these callbacks on change
+    if (accelerating !== previousInputState.current.accelerating) {
+      onAcceleratingChange?.(accelerating);
+      previousInputState.current.accelerating = accelerating;
+    }
+    if (braking !== previousInputState.current.braking) {
+      onBrakingChange?.(braking);
+      previousInputState.current.braking = braking;
+    }
+
+    // --- ACCELERATION & BRAKING (scaled by delta)
+    if (accelerating || throttle > 0) {
+      speedRef.current = Math.min(
+        playerSpeed,
+        isMobileDevice()
+          ? (speedRef.current + acceleration * delta * 60) * Math.abs(throttle)
+          : speedRef.current + acceleration * delta * 60,
+      );
+    } else if (!braking) {
+      speedRef.current *= Math.pow(damping, delta * 60);
+    }
+
+    if (braking || throttle < 0) {
+      speedRef.current = Math.max(
+        -playerSpeed * 0.5,
+        isMobileDevice()
+          ? speedRef.current - acceleration * Math.abs(throttle) * delta * 60
+          : speedRef.current - acceleration * delta * 60,
+      );
+    }
+
+    if (Math.abs(speedRef.current) < 0.001) {
+      speedRef.current = 0;
+      ship.userData.velocity.set(0, 0, 0);
+    }
+
+    // only call onSpeedChange if meaningful change
+    maybeEmitSpeed(speedRef.current);
+
+    // --- APPLY ROTATION (GC-free)
+    // reuse tmp.euler & tmp.quat
+    tmp.euler.set(
       angularVelocity.current.x * invertPitch,
       angularVelocity.current.y,
       angularVelocity.current.z,
       'XYZ',
-    ),
-  );
-  ship.quaternion.multiply(deltaRotation);
-  angularVelocity.current.multiplyScalar(0.5);
+    );
+    tmp.quat.setFromEuler(tmp.euler);
+    ship.quaternion.multiply(tmp.quat);
+    angularVelocity.current.multiplyScalar(0.5);
 
-  // --- FORWARD MOVEMENT (velocity lerped toward forward * speed)
-  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(ship.quaternion).normalize();
-  const desiredVelocity = forward.multiplyScalar(speedRef.current);
-  const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
-  ship.userData.velocity.lerp(desiredVelocity, lerpFactor);
+    // --- FORWARD MOVEMENT (gc-free)
+    tmp.forward.set(0, 0, -1).applyQuaternion(ship.quaternion).normalize();
+    tmp.desiredVel.copy(tmp.forward).multiplyScalar(speedRef.current);
+    const lerpFactor = Math.max(0.05, Math.min(1, Math.abs(speedRef.current)));
+    ship.userData.velocity.lerp(tmp.desiredVel, lerpFactor);
 
-  // --- APPLY IMPULSE VELOCITY
-  if (ship.userData.impulseVelocity) {
-    ship.userData.velocity.add(ship.userData.impulseVelocity);
-    ship.userData.impulseVelocity.multiplyScalar(Math.pow(0.9, delta * 60));
-  }
+    // --- APPLY IMPULSE VELOCITY (mutating existing vectors)
+    if (ship.userData.impulseVelocity) {
+      ship.userData.velocity.add(ship.userData.impulseVelocity);
+      ship.userData.impulseVelocity.multiplyScalar(Math.pow(0.9, delta * 60));
+    }
 
-  // --- UPDATE POSITION (scaled by delta)
-  ship.position.addScaledVector(ship.userData.velocity, delta * 60);
+    // --- UPDATE POSITION (scaled by delta)
+    ship.position.addScaledVector(ship.userData.velocity, delta * 60);
 
-  // --- COLLISIONS / OUT OF BOUNDS (unchanged)
-  if (planetMeshes.length > 0) {
-    for (const planetMesh of planetMeshes) {
-      const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
-      if (!geometry.boundsTree) geometry.boundsTree = new MeshBVH(geometry);
+    // --- COLLISIONS / OUT OF BOUNDS
+    if (planetMeshes.length > 0) {
+      // iterate planets, use prebuilt BVH, and reuse tmp objects
+      for (const planetMesh of planetMeshes) {
+        if (!planetMesh) continue;
+        const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
 
-      const hitInfo = { point: new THREE.Vector3(), distance: 0, faceIndex: -1 };
-      const localShipPosition = new THREE.Vector3();
-      const meshMatrixInverse = new THREE.Matrix4();
-      meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
-      localShipPosition.copy(ship.position).applyMatrix4(meshMatrixInverse);
+        // skip if no BVH
+        if (!geometry?.boundsTree) continue;
 
-      if (geometry.boundsTree.closestPointToPoint(localShipPosition, hitInfo)) {
-        const worldHitPoint = hitInfo.point.clone().applyMatrix4(planetMesh.matrixWorld);
-        const dist = ship.position.distanceTo(worldHitPoint);
-        const minDistance = 6;
-        if (dist < minDistance) {
-          const pushDir = new THREE.Vector3()
-            .subVectors(ship.position, worldHitPoint)
-            .normalize();
-          if (pushDir.lengthSq() === 0) pushDir.copy(ship.position).normalize();
-          ship.position.copy(worldHitPoint.clone().addScaledVector(pushDir, minDistance));
-          if (ship.userData.velocity) {
-            ship.userData.velocity.multiplyScalar(0.5);
-            speedRef.current *= 0.99;
+        // copy inverse matrix into tmp
+        tmp.meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
+        tmp.localShipPos.copy(ship.position).applyMatrix4(tmp.meshMatrixInverse);
+
+        // perform closest point query (reuses hitInfo.point)
+        const hit = tmp.hitInfo;
+        // reset hit distance to avoid stale values
+        hit.distance = 0;
+        hit.faceIndex = -1;
+
+        if (geometry.boundsTree.closestPointToPoint(tmp.localShipPos, hit)) {
+          // compute world hit point in reusable tmp.worldHitPoint
+          tmp.worldHitPoint.copy(hit.point).applyMatrix4(planetMesh.matrixWorld);
+          const dist = ship.position.distanceTo(tmp.worldHitPoint);
+          const minDistance = 6;
+          if (dist < minDistance) {
+            // compute pushDir in-place
+            tmp.pushDir.subVectors(ship.position, tmp.worldHitPoint).normalize();
+            if (tmp.pushDir.lengthSq() === 0) tmp.pushDir.copy(ship.position).normalize();
+
+            // reposition ship relative to worldHitPoint using tmp vectors
+            ship.position.copy(tmp.worldHitPoint).addScaledVector(tmp.pushDir, minDistance);
+
+            if (ship.userData.velocity) {
+              ship.userData.velocity.multiplyScalar(0.5);
+              speedRef.current *= 0.99;
+            }
+
+            // play sound with cooldown to avoid audio spam
+            const now = performance.now();
+            if (
+              audioEnabled &&
+              now - lastCollisionAudioTimeRef.current > collisionAudioCooldownMs
+            ) {
+              playSound?.(buffers['clank04'], ship.position, 1, 3);
+              lastCollisionAudioTimeRef.current = now;
+            }
+
+            // throttle shield updates (don't call setShieldValue every frame)
+            if (
+              shieldValue > 0 &&
+              performance.now() - lastShieldUpdateTimeRef.current > shieldUpdateMs
+            ) {
+              setShieldValue(shieldValue - 0.5, playerId);
+              lastShieldUpdateTimeRef.current = performance.now();
+            }
           }
-          if (audioEnabled) playSound(buffers['clank04'], ship.position, 1, 3);
-          if (shieldValue > 0) setShieldValue(shieldValue - 0.5, playerId);
         }
       }
     }
-  }
 
-  if (playingFieldRef?.current) {
-    checkOutOfBoundsSDF(
-      ship,
-      curve,
-      TUBE_RADIUS,
-      [{ t: 0.4, radius: 100 }],
-      playerId,
-      delta,
-      raceData,
-      setOutOfBounds,
-      addOutOfBoundsTime,
-    );
-  }
+    // --- OUT OF BOUNDS SDF (unchanged but called each frame)
+    if (playingFieldRef?.current) {
+      checkOutOfBoundsSDF(
+        ship,
+        curve,
+        TUBE_RADIUS,
+        [{ t: 0.4, radius: 100 }],
+        playerId,
+        delta,
+        raceData,
+        setOutOfBounds,
+        addOutOfBoundsTime,
+      );
+    }
 
-  // --- WEAPON FIRE
-  const value = cannonValue || 0;
-  if ((shooting || shouldFire) && value > 0) fire(playerId);
-  if ((shooting || shouldFire) && useMine) {
-    drop();
-    setUseMine(playerId, false);
-  }
+    // --- WEAPON FIRE (unchanged, but firingRef + throttles used above)
+    const value = cannonValue || 0;
+    if ((shooting || shouldFire) && value > 0) fire(playerId);
+    if ((shooting || shouldFire) && useMine) {
+      drop();
+      setUseMine(playerId, false);
+    }
 
-  if (ship.userData.recordSimulationState) ship.userData.recordSimulationState();
-});
-
+    // optional hook for recording simulation state (left as-is)
+    if (ship.userData.recordSimulationState) ship.userData.recordSimulationState();
+  });
 }

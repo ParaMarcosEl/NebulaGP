@@ -11,12 +11,12 @@ import { ExplosionHandle } from '../../Particles/ExplosionParticles/ExplosionPar
 import { Bot } from './Bot';
 
 export type StartPositions = {
-    position: [number, number, number];
-    quaternion: THREE.Quaternion;
+  position: THREE.Vector3 | [number, number, number];
+  quaternion: THREE.Quaternion;
 }[];
 
 type BotsProps = {
-    curve: THREE.Curve<THREE.Vector3>;
+  curve: THREE.Curve<THREE.Vector3>;
   playerRefs: React.RefObject<THREE.Group | null>[]; // first is human player
   minePoolRef: React.RefObject<Mine[]>;
   explosionsRef?: React.RefObject<ExplosionHandle>;
@@ -25,8 +25,8 @@ type BotsProps = {
 
 export default function Bots({
   playerRefs,
-//   minePoolRef,
-//   explosionsRef,
+  //   minePoolRef,
+  //   explosionsRef,
 }: BotsProps) {
   const { raceData } = useGameStore((s) => s);
   const shipModels = useShips();
@@ -36,13 +36,9 @@ export default function Bots({
 
     return () => console.log('unmounting');
   }, []);
-  
 
-// stable botRefs for all bots (created once)
-const botRefs = useMemo(
-  () => playerRefs.slice(1),
-  [] 
-);
+  // stable botRefs for all bots (created once)
+  const botRefs = useMemo(() => playerRefs.slice(1), []);
   // render Bot components (they may mount and rely on the controller to drive transforms)
   return (
     <>
@@ -52,9 +48,9 @@ const botRefs = useMemo(
         const ship = SHIPS[shipId];
 
         return (
-          <Bot 
+          <Bot
             key={i}
-            aircraftRef={ref as React.RefObject<THREE.Group>} 
+            aircraftRef={ref as React.RefObject<THREE.Group>}
             ship={ship}
             model={shipModels[shipId - 1].scene.clone()}
             raceData={raceData}

@@ -17,11 +17,7 @@ export default function WeaponPad({ position, quaternion, playerRefs }: WeaponPa
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the WeaponPadController logic
-  const WeaponPad = useWeaponsPad(
-    playerRefs,
-    meshRef as React.RefObject<THREE.Mesh>,
-    2
-  );
+  const WeaponPad = useWeaponsPad(playerRefs, meshRef as React.RefObject<THREE.Mesh>, 2);
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>

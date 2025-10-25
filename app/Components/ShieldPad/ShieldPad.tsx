@@ -17,11 +17,7 @@ export default function ShieldPad({ position, quaternion, playerRefs }: ShieldPa
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the WeaponPadController logic
-  const WeaponPad = useShieldPad(
-    playerRefs,
-    meshRef as React.RefObject<THREE.Mesh>,
-    2
-  );
+  const WeaponPad = useShieldPad(playerRefs, meshRef as React.RefObject<THREE.Mesh>, 2);
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>

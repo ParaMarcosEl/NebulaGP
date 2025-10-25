@@ -5,15 +5,7 @@ import { useGameStore } from '../Game/GameController';
 import { usePlaySound } from '../Audio/usePlaySounds';
 import { useAudioStore } from '../Audio/useAudioStore';
 import { ExplosionHandle } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
-
-type Projectile = {
-  mesh: THREE.Object3D;
-  direction: THREE.Vector3;
-  velocity: number;
-  age: number;
-  active: boolean;
-  owner: React.RefObject<THREE.Object3D | null>;
-};
+import { Projectile } from '@/Components/Weapons/useCannon';
 
 type CollisionCallback = (player: THREE.Object3D) => void;
 
@@ -21,14 +13,12 @@ export function useProjectileCollisions({
   projectiles,
   playerRefs,
   onCollide,
-  owner,
   explosionsRef,
 }: {
   projectiles: Projectile[];
   playerRefs: React.RefObject<THREE.Object3D | null>[];
   explosionsRef: React.RefObject<ExplosionHandle>;
   onCollide: CollisionCallback;
-  owner: React.RefObject<THREE.Object3D | null>;
 }) {
   const tempBox = new THREE.Box3();
   const tempOBB = new OBB();
@@ -49,7 +39,7 @@ export function useProjectileCollisions({
 
       for (const ref of playerRefs) {
         const player = ref.current;
-        if (!player || player === owner.current) continue;
+        if (!player || player === proj.owner?.current) continue;
 
         playerBox.setFromObject(player);
         playerBox.getCenter(playerOBB.center);

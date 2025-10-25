@@ -1,5 +1,36 @@
 import * as THREE from 'three';
 
+export type onBulletCollision = (
+  mesh: THREE.Object3D<THREE.Object3DEventMap>,
+  restitution: number | undefined,
+  multiplier: number | undefined,
+  triggerImpulseFromMain: (botId: number, impulse: [number, number, number]) => void,
+  botRefToId: Map<THREE.Object3D, number>,
+) => void;
+
+export const onBulletCollisionWorker = (
+  mesh: THREE.Object3D,
+  restitution = 0.2,
+  multiplier = 1,
+  triggerImpulseFromMain: (botId: number, impulse: [number, number, number]) => void,
+  botRefToId: Map<THREE.Object3D, number>,
+) => {
+  // Calculate the impulse magnitude
+  const impulseMagnitude = -(1 + restitution) * multiplier;
+
+  // The impulse vector for each mesh
+  const impulseVector = mesh.userData.velocity.clone().multiplyScalar(impulseMagnitude);
+  const botId1 = botRefToId.get(mesh);
+
+  if (botId1 !== undefined) {
+    triggerImpulseFromMain(botId1, impulseVector.toArray() as [number, number, number]);
+  }
+
+  if (!botId1 && mesh.userData.impulseVelocity) {
+    mesh.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-impulseMagnitude));
+  }
+};
+
 export const onBulletCollision = (mesh2: THREE.Object3D, restitution = 0.2, multiplier = 1) => {
   // Check if both meshes have a velocity vector
   if (!mesh2.userData.velocity) {
@@ -15,11 +46,18 @@ export const onBulletCollision = (mesh2: THREE.Object3D, restitution = 0.2, mult
   mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-impulseMagnitude));
 };
 
+export type OnShipCollision = (
+  mesh1: THREE.Object3D,
+  mesh2: THREE.Object3D,
+  triggerImpulseFromMain: (botId: number, impulse: [number, number, number]) => void,
+  botRefToId: Map<THREE.Object3D, number>,
+) => void;
+
 export const onShipCollisionWorker = (
   mesh1: THREE.Object3D,
   mesh2: THREE.Object3D,
   triggerImpulseFromMain: (botId: number, impulse: [number, number, number]) => void,
-  botRefToId: Map<THREE.Object3D, number>
+  botRefToId: Map<THREE.Object3D, number>,
 ) => {
   // Both meshes must have positions
   const position1 = mesh1.position;
@@ -50,10 +88,12 @@ export const onShipCollisionWorker = (
 
   if (botId2 !== undefined) {
     // Flip the impulse for the other bot
-    triggerImpulseFromMain(botId2, impulseVector.clone().multiplyScalar(-1).toArray() as [number, number, number]);
+    triggerImpulseFromMain(
+      botId2,
+      impulseVector.clone().multiplyScalar(-1).toArray() as [number, number, number],
+    );
   }
 
-  // Optional: apply to main-thread player if needed
   if (!botId1 && mesh1.userData.impulseVelocity) {
     mesh1.userData.impulseVelocity.add(impulseVector.clone());
   }
@@ -61,7 +101,6 @@ export const onShipCollisionWorker = (
     mesh2.userData.impulseVelocity.add(impulseVector.clone().multiplyScalar(-1));
   }
 };
-
 
 export const onShipCollision = (mesh1: THREE.Object3D, mesh2: THREE.Object3D) => {
   // Check if both meshes have a velocity vector

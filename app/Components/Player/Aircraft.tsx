@@ -2,7 +2,8 @@
 
 import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
-import { usePlayerController } from '@/Components/Player/PlayerController';
+// import { usePlayerController } from '@/Components/Player/PlayerController';
+import { usePlayerWorkerController } from './SABWorkerController';
 import * as THREE from 'three';
 import { SHIPS } from '@/Constants';
 import { Shield } from '../Shield/Shield';
@@ -60,6 +61,13 @@ export default function Aircraft({
   const trailTarget = useRef<THREE.Object3D | null>(null);
   const { raceData } = useGameStore((s) => s);
 
+
+
+  useEffect(() => {
+    console.log('mounting.');
+    return () => console.log('unmounting');
+  }, []);
+
   useEffect(() => {
     if (aircraftRef.current && startPosition && startQuaternion) {
       aircraftRef.current.position.set(...startPosition);
@@ -68,7 +76,7 @@ export default function Aircraft({
     }
   }, [startPosition, startQuaternion, aircraftRef, id]);
 
-  usePlayerController({
+  usePlayerWorkerController({
     id,
     trackId,
     minePoolRef,

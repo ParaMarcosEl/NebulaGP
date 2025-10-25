@@ -3,7 +3,7 @@ import { useGameStore } from '@/Controllers/Game/GameController';
 // import { useRaceStandings } from '@/Controllers/useRaceStandings';
 
 export const Speedometer = function ({ speed }: { speed: number }) {
-  const { baseSpeed } = useGameStore(s => s);
+  const { baseSpeed } = useGameStore((s) => s);
 
   // const { finished, inProgress } = useRaceStandings();
 

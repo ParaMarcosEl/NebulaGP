@@ -28,8 +28,6 @@ export type shipType = {
   path: string;
 };
 
-
-
 export const SHIPS: Record<number, shipType> = {
   1: {
     scale: 1,
@@ -76,28 +74,46 @@ export function useShips() {
   useGLTF.preload('/models/spaceship04.glb');
   useGLTF.preload('/models/spaceship05.glb');
 
-  return ( 
-  [
-    ship01,
-    ship02,
-    ship03,
-    ship04,
-    ship05,
-  ]
-  );
+  return [ship01, ship02, ship03, ship04, ship05];
 }
 
+export interface WorkerPayload {
+  type: 'init' | 'update' | 'input' | 'config';
+  sharedBuffer?: SharedArrayBuffer;
+  delta?: number;
+  // Input/Config data from the main thread
+  inputAxis?: { x: number; y: number }; // x=Roll/Yaw, y=Pitch
+  throttle?: number;
+  playerSpeed?: number; // Max speed setting
+  invertPitch?: number; // Setting
+  acceleration?: number;
+  pitchVelocity?: number;
+  rollVelocity?: number;
+  damping?: number;
+}
 
 export interface BotInit {
   id: number;
-  speed: number;
+  speed: number; // max speed
   currentT: number;
   waypointIndex: number;
   cannonValue: number;
   useMine: boolean;
   position: [number, number, number];
   quaternion: [number, number, number, number];
+  pitchTorque: number;
+  rollTorque: number;
+  acceleration: number;
+  damping: number;
+  impulseFade: number;
 }
+
+
+// Constants for
+export const CONTROL_INDEX_OFFSET = 0; // Int32: 0 or 1
+export const BUFFER_A_OFFSET = 1;      // Float32 indices 1-13
+export const BUFFER_B_OFFSET = 14;     // Float32 indices 14-26
+export const BUFFER_LENGTH = 13;       // 3 pos + 4 quat + 6 velocity
 
 export const CHUNK_SIZE = 128;
 export const MAX_DEPTH = 4;

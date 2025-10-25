@@ -1,177 +1,286 @@
 'use client';
 
+import React, { useRef, useMemo, useState, useEffect, useCallback, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useRef, useMemo, useState, createRef, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
-// import Bot from '@/Components/Player/Bot';
 import Track from '@/Components/Track/Track';
 import FollowCamera from '@/Components/Camera/FollowCamera';
 import { getStartPoseFromCurve } from '@/Utils';
 import { tracks } from '@/Lib/flightPath';
 import { Skybox } from '@/Components/Skybox/Skybox';
 import { useGameStore } from '@/Controllers/Game/GameController';
-import Link from 'next/link';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import SpeedPadSpawner from '@/Components/SpeedPad/speedPadSpawner';
-import WeaponsPadSpawner from '@/Components/WeaponPad/WeaponPadSpawner';
-import ShieldPadSpawner from '@/Components/ShieldPad/ShieldPadSpawner';
-import MinePadSpawner from '@/Components/MinePad/MinePadSpawner';
 import { Mine } from '@/Components/Weapons/useMines';
 import { useCanvasLoader } from '@/Components/UI/Loader/CanvasLoader';
 import ParticleSystem from '@/Components/Particles/ParticleSystem';
 import Planet from '@/Components/World/Planet/WorldPlanet';
 import { HUDUI } from '@/Components/UI/HUD/HUDUI';
-import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import ExplosionParticles, {
   ExplosionHandle,
 } from '@/Components/Particles/ExplosionParticles/ExplosionParticles';
 import { InitAudio } from '@/Components/Audio/InitAudio';
-import { useUserStore } from '@/Controllers/Users/useUserStore';
-import { useRecords } from '@/Controllers/Records/useRecords';
-import { useAlertStore } from '@/Controllers/Alert/useAlertStore';
+// import Bots from '@/Components/Player/Bots/Bots';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { ShipTracker } from '@/Components/ShipTracker/ShipTracker';
 import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
-import Bots from '@/Components/Player/Bots/Bots';
-import { ShipTracker } from '@/Components/ShipTracker/ShipTracker';
+import { curveType } from '@/Constants';
+import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 
-
-export default function Stage1() {
-  const aircraftRef = useRef<THREE.Group | null>(null);
-  const playingFieldRef = useRef<THREE.Mesh | null>(null);
-  const botRef1 = useRef<THREE.Group | null>(null);
-  const botRef2 = useRef<THREE.Group | null>(null);
-  const botRef3 = useRef<THREE.Group | null>(null);
-  const botRef4 = useRef<THREE.Group | null>(null);
-  const botRef5 = useRef<THREE.Group | null>(null);
-  const botRef6 = useRef<THREE.Group | null>(null);
-  const botRef7 = useRef<THREE.Group | null>(null);
-  const minePoolRef = useRef<Mine[]>([]);
-  const { loader } = useCanvasLoader();
-  const { setPlanetMeshes } = usePlanetStore((s) => s);
-  const { user } = useUserStore((s) => s);
-  const { fetchRecords, updateRecord, createRecord, records } = useRecords();
-  const { setAlert } = useAlertStore((s) => s);
-
+// -------------------------
+// Helper: throttle hook for values that update fast
+// This returns a stable value that only updates at most `fps` times per second
+// -------------------------
+function useThrottledValue<T>(value: T, fps = 10) {
+  const [throttled, setThrottled] = useState(value);
+  const last = useRef(value);
+  useEffect(() => {
+    last.current = value;
+  }, [value]);
 
   useEffect(() => {
-    const stageId = window.location.pathname;
-    console.debug({ records });
-    if (records) return;
-    fetchRecords(user?.id, stageId);
-  }, [records]);
+    let mounted = true;
+    const interval = 1000 / fps;
+    const id = setInterval(() => {
+      if (!mounted) return;
+      // shallow compare reference -- replace with custom comparator if needed
+      if (last.current !== throttled) setThrottled(last.current as T);
+    }, interval);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [fps, throttled]);
 
-  const playerRefs = useMemo(
-    () => [aircraftRef, botRef1, botRef2, botRef3, botRef4, botRef5, botRef6, botRef7],
-    [],
+  return throttled;
+}
+
+// -------------------------
+// Scene: heavy 3D content — memoized so it doesn't re-render when UI updates
+// Scene should avoid subscribing to fast-changing stores; let children subscribe individually
+// -------------------------
+const Scene = React.memo(function Scene({
+  playerRefs,
+  minePoolRef,
+  explosionsRef,
+  curve,
+  startPositions,
+  onSpeedChange,
+}: {
+  playerRefs: React.RefObject<THREE.Group | null>[];
+  minePoolRef: React.RefObject<Mine[]>;
+  explosionsRef: React.RefObject<ExplosionHandle>;
+  curve: curveType;
+  startPositions: {
+    position: THREE.Vector3 | [number, number, number];
+    quaternion: THREE.Quaternion;
+  }[];
+  onSpeedChange: (s: number) => void;
+}) {
+  // local refs that only Scene owns
+  const playingFieldRef = useRef<THREE.Mesh | null>(null);
+
+  // create boosters once
+  const boosters = useMemo(
+    () =>
+      playerRefs.map((player, id) => (
+        <ParticleSystem
+          lifetime={0.2}
+          maxDistance={1}
+          texturePath="/textures/exploded128.png"
+          key={id + 'booster'}
+          speed={10}
+          startSize={20}
+          endSize={3}
+          target={player as React.RefObject<THREE.Object3D>}
+          emissionRate={200}
+        />
+      )),
+    [playerRefs], // only recreated if refs array identity changes
   );
 
+  return (
+    <Canvas
+      style={{ position: 'fixed', top: 0, left: 0, zIndex: -1, width: '100%', height: '100%' }}
+      camera={{ position: [0, 5, 15], fov: 60 }}
+      dpr={[1, 2]}
+      onCreated={({ gl }) => {
+        gl.sortObjects = true;
+      }}
+    >
+      <Suspense fallback={null}>
+        <InitAudio />
+        <PerformanceTracker />
+
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[150, 0, 0]} intensity={0.5} />
+        <pointLight position={[-10, 5, -10]} intensity={0.3} />
+
+        <Skybox stageName="stageI" />
+
+        <Track
+          playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
+          ref={playingFieldRef}
+          curve={curve}
+          spheres={[{ t: 0.4, radius: 100 }]}
+          onRaceComplete={() => {
+            // keep heavy completion logic out of rerenders — you can dispatch/store updates here
+          }}
+        />
+
+        <Planet
+          position={new THREE.Vector3(0, 0, 0)}
+          size={320}
+          maxHeight={80}
+          lacunarity={1.1}
+          frequency={4}
+          exponentiation={6}
+          lowTextPath="/textures/granite_ground128.png"
+          midTextPath="/textures/gold_ground128.png"
+          highTextPath="/textures/ruby_ground128.png"
+        />
+
+        <Aircraft
+          id={0}
+          trackId={0}
+          aircraftRef={playerRefs[0]}
+          playerRefs={playerRefs}
+          minePoolRef={minePoolRef}
+          explosionsRef={explosionsRef}
+          curve={curve}
+          playingFieldRef={playingFieldRef}
+          startPosition={startPositions[0].position as [number, number, number]}
+          startQuaternion={startPositions[0].quaternion}
+          acceleration={0.01}
+          damping={0.998}
+          onSpeedChange={onSpeedChange}
+          botSpeed={2}
+        />
+
+        {/* <Bots curve={curve} playerRefs={playerRefs} minePoolRef={minePoolRef} startPositions={startPositions} /> */}
+
+        {boosters}
+
+        <ExplosionParticles ref={explosionsRef} />
+        <FollowCamera targetRef={playerRefs[0]} />
+      </Suspense>
+    </Canvas>
+  );
+});
+
+// -------------------------
+// HUD wrapper — subscribes to just the slices it needs and receives throttled props
+// -------------------------
+const HUD = React.memo(function HUD({
+  playerRefs,
+  trackId,
+  curve,
+}: {
+  playerRefs: React.RefObject<THREE.Group | null>[];
+  trackId: number;
+  curve: THREE.Curve<THREE.Vector3>;
+}) {
+  // subscribe only to raceData (selector) — avoid grabbing the whole store object
+  const raceData = useGameStore((s) => s.raceData);
+
+  // compute positions but throttle them to e.g. 12 fps to avoid React churn
+  const positions = useMemo(() => {
+    return Object.entries(raceData)
+      .map(([id, player]) => ({ isPlayer: player.isPlayer, v: player.position, id: parseInt(id) }))
+      .filter((p) => p.id >= 0);
+  }, [raceData]);
+
+  const throttledPositions = useThrottledValue(positions, 12);
+
+  // speed comes from Aircraft via callback/prop on the Scene — but HUD may accept it as prop from parent
+  // Here: HUD is lightweight and only re-renders when throttledPositions changes
+  return (
+    <HUDUI
+      playerRefs={playerRefs}
+      trackId={trackId}
+      positions={throttledPositions}
+      curve={curve}
+      speed={0}
+    />
+  );
+});
+
+// -------------------------
+// Top-level Stage (thin) — orchestrates and mounts Scene and HUD separately
+// -------------------------
+export default function Stage1Optimized() {
+  // stable refs for players
+  const aircraftRef = useRef<THREE.Group | null>(null);
+  const botRefs = useRef<Array<React.RefObject<THREE.Group | null>>>([]);
+  // ensure fixed length refs
+  if (botRefs.current.length === 0) {
+    for (let i = 0; i < 7; i++) botRefs.current.push(React.createRef<THREE.Group>());
+  }
+  const playerRefs = useMemo(() => [aircraftRef, ...botRefs.current], []);
+
+  const minePoolRef = useRef<Mine[]>([]);
   const explosionsRef = useRef<ExplosionHandle>(null);
 
-  const bounds = { x: 500, y: 250, z: 500 };
-  const {
-    raceData,
-    reset,
-    track: curve,
-    setTrack,
-    setMaterialLoaded,
-    setRaceComplete,
-    setTouchEnabled,
-  } = useGameStore((state) => state);
+  const { loader } = useCanvasLoader();
 
-  useEffect(() => {
-    if ('ontouchstart' in window) {
-      setTouchEnabled(true);
-    }
-    return () => {
-      setTouchEnabled(false);
-    };
-  }, [setTouchEnabled]);
+  // subscribe only to the small parts of the store this top-level needs
+  const curve = useGameStore((s) => s.track);
+  const setTrack = useGameStore((s) => s.setTrack);
+  const setMaterialLoaded = useGameStore((s) => s.setMaterialLoaded);
+  const reset = useGameStore((s) => s.reset);
+  const setRaceComplete = useGameStore((s) => s.setRaceComplete);
+  const setPlanetMeshes = usePlanetStore((s) => s.setPlanetMeshes);
+  const setTouchEnabled = useGameStore((s) => s.setTouchEnabled);
 
-  const positions = Object.entries(raceData)
-    .map(([id, player]) => ({
-      isPlayer: player.isPlayer,
-      v: player.position,
-      id: parseInt(id),
-    }))
-    .filter((pos) => pos.id >= 0);
-
-  const obstaclePositions = useMemo(() => {
-    const positions: [number, number, number][] = [];
-    for (let i = 0; i < 500; i++) {
-      positions.push([
-        (Math.random() * 2 - 1) * bounds.x,
-        (Math.random() * 2 - 1) * bounds.y,
-        (Math.random() * 2 - 1) * bounds.z,
-      ]);
-    }
-    return positions;
-  }, [bounds.x, bounds.y, bounds.z]);
-
-  const obstacleRefs = useRef<React.RefObject<THREE.Mesh | null>[]>([]);
-  if (obstacleRefs.current.length !== obstaclePositions.length) {
-    obstacleRefs.current = obstaclePositions.map(() => createRef<THREE.Mesh>());
-  }
-
+  // local UI state that is safe to update occasionally
   const [speed, setSpeed] = useState(0);
-  const startPositions = useMemo(
-    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
-    [curve, playerRefs],
-  );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const throttledSpeed = useThrottledValue(speed, 12);
 
   useEffect(() => {
     setTrack(tracks[0]);
+    setMaterialLoaded(true);
     reset();
     return () => {
       setMaterialLoaded(false);
       setRaceComplete(false);
       setPlanetMeshes([]);
     };
-  }, [reset, setTrack, setMaterialLoaded, setRaceComplete]);
-  
+  }, [reset, setTrack, setMaterialLoaded, setRaceComplete, setPlanetMeshes]);
 
+  useEffect(() => {
+    if ('ontouchstart' in window) setTouchEnabled(true);
+    return () => setTouchEnabled(false);
+  }, [setTouchEnabled]);
 
-  const players = (
-    <>
-      <Aircraft
-        id={0}
-        trackId={0}
-        aircraftRef={aircraftRef}
-        playerRefs={playerRefs}
-        minePoolRef={minePoolRef}
-        // Correctly pass the typed ref object
-        explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
-        curve={curve}
-        obstacleRefs={obstacleRefs.current}
-        playingFieldRef={playingFieldRef}
-        startPosition={startPositions[0].position}
-        startQuaternion={startPositions[0].quaternion}
-        acceleration={.02}
-        damping={0.998}
-        onSpeedChange={setSpeed}
-        botSpeed={2}
-      />
-      <Bots 
-        curve={curve}
-        playerRefs={playerRefs}
-        minePoolRef={minePoolRef}
-        startPositions={startPositions}
-      />
-    </>
+  // start positions memoized from curve
+  const startPositions = useMemo(
+    () => playerRefs.map((ref, i) => getStartPoseFromCurve(curve, 0.01 + i * 0.01)),
+    [curve, playerRefs],
   );
 
-  const boosters = playerRefs.map((player, id) => (
-    <ParticleSystem
-      lifetime={0.2}
-      maxDistance={1}
-      texturePath="/textures/exploded128.png"
-      key={id + 'booster'}
-      speed={10}
-      startSize={20}
-      endSize={3}
-      target={player as React.RefObject<THREE.Object3D>}
-      emissionRate={200}
-    />
-  ));
+  // obstacle positions memoized
+  const bounds = useMemo(() => ({ x: 500, y: 250, z: 500 }), []);
+  const obstaclePositions = useMemo(() => {
+    const positions: [number, number, number][] = [];
+    for (let i = 0; i < 500; i++)
+      positions.push([
+        (Math.random() * 2 - 1) * bounds.x,
+        (Math.random() * 2 - 1) * bounds.y,
+        (Math.random() * 2 - 1) * bounds.z,
+      ]);
+    return positions;
+  }, [bounds.x, bounds.y, bounds.z]);
+
+  // build obstacle refs once
+  const obstacleRefs = useRef<React.RefObject<THREE.Mesh | null>[]>([]);
+  if (obstacleRefs.current.length !== obstaclePositions.length)
+    obstacleRefs.current = obstaclePositions.map(() => React.createRef<THREE.Mesh>());
+
+  // callback passed into Scene (stable)
+  const handleSpeedChange = useCallback((s: number) => setSpeed(s), []);
 
   return (
     <main
@@ -182,175 +291,22 @@ export default function Stage1() {
         padding: 0,
         overflow: 'hidden',
         touchAction: 'none',
-        overscrollBehavior: 'none',
-        WebkitOverflowScrolling: 'auto',
       }}
     >
-      {/* UI */}
-      <Link
-        style={{
-          zIndex: 1,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
-        href={'/'}
-      >
-        EXIT RACE
-      </Link>
-
-      <HUDUI
-        playerRefs={playerRefs}
-        trackId={0}
-        positions={positions}
-        curve={curve}
-        speed={speed}
-      />
+      {/* UI — keep outside of the Canvas so UI updates don't force Canvas children to re-evaluate */}
+      <HUD playerRefs={playerRefs} trackId={0} curve={curve} />
       {loader}
-      {/* Scene */}
-      <Canvas
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: -1,
-          width: '100%',
-          height: '100%',
-        }}
-        camera={{ position: [0, 5, 15], fov: 60 }}
-        dpr={[1, 2]}
-        onCreated={({ gl }) => {
-          gl.sortObjects = true;
-        }}
-      >
-        <Suspense fallback={null}>
-          <InitAudio />
-          <PerformanceTracker />
-          <ShipTracker
-            playerRefs={playerRefs as React.RefObject<THREE.Group>[]}
-            curve={curve}
-            startPositions={startPositions}
-          />
-          {/* Lighting */}
-          <ambientLight intensity={0.5} />
-          <directionalLight
-            position={[150, 0, 0]}
-            intensity={0.5}
-            castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
-            shadow-camera-near={0.5}
-            shadow-camera-far={500}
-          />
-          <pointLight position={[-10, 5, -10]} intensity={0.3} />
-          {/* World */}
-          <Skybox stageName="stageI" />
-          <Track
-            playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
-            ref={playingFieldRef}
-            curve={curve}
-            spheres={[{ t: 0.4, radius: 100 }]}
-            onRaceComplete={async () => {
-              if (!user || !records) return;
-              // if user data found
-              const userRecord = records.find((record) => record.userId === user?.uid);
-              const playerRaceData = raceData[0];
-              const totalTime = playerRaceData.raceTime + playerRaceData.penaltyTime;
 
-              if (userRecord) {
-                const newBestTime = totalTime < userRecord.raceTime + userRecord.penalty;
+      {/* Scene is memoized and will not remount/re-render on every UI change */}
+      <Scene
+        playerRefs={playerRefs}
+        minePoolRef={minePoolRef}
+        explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
+        curve={curve}
+        startPositions={startPositions}
+        onSpeedChange={handleSpeedChange}
+      />
 
-                if (newBestTime) {
-                  setAlert({
-                    type: 'info',
-                    message: `New best time recorded for ${userRecord.name}!`,
-                  });
-                  updateRecord(userRecord.id, {
-                    ...userRecord,
-                    raceTime: userRecord.raceTime,
-                    penalty: userRecord.penalty,
-                    totalTime,
-                  });
-                } else {
-                  setAlert({ type: 'info', message: `Try Again.` });
-                }
-              } else {
-                const recordData = {
-                  userId: user?.uid || '-undefined-',
-                  name: user?.displayName || '-undefined-',
-                  trackId: window.location.pathname,
-                  totalTime,
-                  raceTime: playerRaceData.raceTime,
-                  lapTimes: [playerRaceData.history[0].time, playerRaceData.lapTime],
-                  penalty: playerRaceData.penaltyTime,
-                };
-                createRecord(recordData);
-
-                const newBestTime = !records[0].totalTime || totalTime < records[0].totalTime;
-                if (newBestTime) {
-                  setAlert({ type: 'success', message: `New Best Time!` });
-                }
-              }
-            }}
-          />
-          <MinePadSpawner
-            curve={curve}
-            padCount={5}
-            startT={0.1}
-            endT={0.85}
-            playerRefs={playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>,
-            }))}
-          />
-          <SpeedPadSpawner
-            curve={curve}
-            padCount={16}
-            startT={0.16}
-            playerRefs={playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>,
-            }))}
-          />
-          <WeaponsPadSpawner
-            curve={curve}
-            padCount={8}
-            startT={0.2}
-            endT={0.9}
-            playerRefs={playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>,
-            }))}
-          />
-          <ShieldPadSpawner
-            curve={curve}
-            padCount={2}
-            startT={0.5}
-            endT={0.8}
-            playerRefs={playerRefs.map((ref, id) => ({
-              id,
-              ref: ref as React.RefObject<THREE.Group>,
-            }))}
-          />
-          <Planet
-            position={new THREE.Vector3(0, 0, 0)}
-            size={320}
-            maxHeight={80}
-            lacunarity={1.1}
-            frequency={4}
-            exponentiation={6}
-            lowTextPath="/textures/granite_ground128.png"
-            midTextPath="/textures/gold_ground128.png"
-            highTextPath="/textures/ruby_ground128.png"
-          />
-          {/* Players */}
-          {players}
-          {boosters}
-          <ExplosionParticles ref={explosionsRef} />
-          {/* Camera */}
-          <FollowCamera targetRef={aircraftRef} />
-        </Suspense>
-      </Canvas>
       <PerformanceOverlay />
     </main>
   );

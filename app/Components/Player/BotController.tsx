@@ -36,7 +36,7 @@ const PITCH_TORQUE = -1;
 
 // Tunables for performance
 const NEAREST_T_INTERVAL = 0.2; // seconds between full nearestT computations
-const FIRE_COOLDOWN_MS = 200; 
+const FIRE_COOLDOWN_MS = 200;
 const MINE_DROP_COOLDOWN_MS = 1500;
 const NORMALIZE_EVERY_N_FRAMES = 10;
 
@@ -62,7 +62,6 @@ export function useBotController({
   const lastFireTime = useRef(0);
   const lastMineTime = useRef(0);
   const frameCounter = useRef(0);
-
 
   const { raceStatus, raceData, setUseMine } = useGameStore((s) => s);
 
@@ -97,7 +96,6 @@ export function useBotController({
     projectiles: poolRef.current,
     playerRefs,
     onCollide: onBulletCollision,
-    owner: botRef,
     explosionsRef: explosionsRef as React.RefObject<ExplosionHandle>,
   });
 
@@ -134,7 +132,7 @@ export function useBotController({
       currentTRef.current = getNearestCurveT(bot.position, curve);
       lastNearestTTime.current = now;
     } else {
-      const step = speedRef.current * delta / 100; // scale for prediction
+      const step = (speedRef.current * delta) / 100; // scale for prediction
       currentTRef.current = (currentTRef.current + step) % 1;
     }
 
@@ -164,8 +162,10 @@ export function useBotController({
 
     const angle = tmpForward.current.angleTo(tmpToWaypoint.current.clone().normalize());
 
-    const pitch = computePitchInput(tmpForward.current, tmpToWaypoint.current, tmpUp.current) * PITCH_TORQUE;
-    const roll = computeRollInput(tmpForward.current, tmpToWaypoint.current, tmpUp.current) * ROLL_TORQUE;
+    const pitch =
+      computePitchInput(tmpForward.current, tmpToWaypoint.current, tmpUp.current) * PITCH_TORQUE;
+    const roll =
+      computeRollInput(tmpForward.current, tmpToWaypoint.current, tmpUp.current) * ROLL_TORQUE;
 
     speedRef.current = angle < 0.4 ? speed : speed * 0.5;
     if (angle > 1.0) speedRef.current *= 0.5;
@@ -174,7 +174,7 @@ export function useBotController({
     tmpDeltaQuat.current.setFromEuler(tmpEuler.current);
     bot.quaternion.multiply(tmpDeltaQuat.current);
 
-    if ((frameCounter.current % NORMALIZE_EVERY_N_FRAMES) === 0) bot.quaternion.normalize();
+    if (frameCounter.current % NORMALIZE_EVERY_N_FRAMES === 0) bot.quaternion.normalize();
 
     // Translation
     tmpDesiredDir.current.copy(tmpToWaypoint.current).normalize();
@@ -215,6 +215,6 @@ export function useBotController({
       lastMineTime.current = nowMs;
     }
   });
-  
+
   return null;
 }
