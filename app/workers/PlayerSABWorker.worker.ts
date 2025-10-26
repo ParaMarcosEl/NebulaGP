@@ -238,6 +238,10 @@ function isFinite(x: number) {
     return Number.isFinite(x);
 }
 
+function clamp(val: number, minV: number, maxV: number) {
+  return Math.max(minV, Math.min(maxV, val));
+}
+
 // === Initialization (Modified to include Int32Array for the counter) ===
 const init = (data: WorkerPayload) => {
     if (!data.sharedBuffer) return;
@@ -332,99 +336,123 @@ const handleCollision = ({ position = [0, 0, 0], dampingFactor = 0.98 }: WorkerP
 };
 
 // --- Core Update Logic with Stability Checks ---
+
+
 function update({ delta }: WorkerPayload) {
+  if (!sabInt32) return;
 
-    if (!sabInt32) return; 
-    console.log({sabFloat32})
-    // --- 1. State/Buffer Management ---
-    const activeBufferIndex = Atomics.load(sabInt32, CONTROL_INDEX_OFFSET);
-    const inactiveBufferIndex = 1 - activeBufferIndex;
-    const inactiveOffset = inactiveBufferIndex === 0 ? BUFFER_A_OFFSET : BUFFER_B_OFFSET;
+  // --- 1. State/Buffer Management ---
+  const activeBufferIndex = Atomics.load(sabInt32, CONTROL_INDEX_OFFSET);
+  const inactiveBufferIndex = 1 - activeBufferIndex;
+  const inactiveOffset = inactiveBufferIndex === 0 ? BUFFER_A_OFFSET : BUFFER_B_OFFSET;
 
-    // --- 2. Read Inputs/Constants from CONFIG_OFFSET ---
-    const accel = sabFloat32[CONFIG_OFFSET + 0];
-    const pitchVel = sabFloat32[CONFIG_OFFSET + 1];
-    const rollVel = sabFloat32[CONFIG_OFFSET + 2];
-    const damping = sabFloat32[CONFIG_OFFSET + 3];
-    const throttle = sabFloat32[CONFIG_OFFSET + 4]; // INPUT
-    const inputX = sabFloat32[CONFIG_OFFSET + 5];   // INPUT
-    const inputY = sabFloat32[CONFIG_OFFSET + 6];   // INPUT
+  // --- 2. Read Inputs/Constants from CONFIG_OFFSET ---
+  const accel = sabFloat32[CONFIG_OFFSET + 0] || 0;
+  const pitchVel = sabFloat32[CONFIG_OFFSET + 1] || 0;
+  const rollVel = sabFloat32[CONFIG_OFFSET + 2] || 0;
+  const damping = sabFloat32[CONFIG_OFFSET + 3] ?? 0.98;
+  const throttle = sabFloat32[CONFIG_OFFSET + 4] ?? 0;
+  const inputX = sabFloat32[CONFIG_OFFSET + 5] ?? 0;
+  const inputY = sabFloat32[CONFIG_OFFSET + 6] ?? 0;
 
-    // --- 3. Physics Step (Using local state) ---
-    const rawDelta = delta || (1 / 60);
-    const dt = rawDelta * 60; // Scale delta for frame rate independence (dt is 1.0 at 60fps)
+  // --- 3. Delta / numerical safety ---
+  // rawDelta expected to be seconds (e.g. 1/60). Clamp to reasonable range.
+  const rawDelta = Number(delta) || (1 / 60);
+  const clampedRawDelta = clamp(rawDelta, 1 / 1000, 0.1); // between 1ms and 100ms
+  const dt = clampedRawDelta * 60; // 1.0 == 60fps
+  // also provide a small safe scalar for interpolation smoothing
+  const SMOOTHING_RATE = 8.0; // bigger -> faster converge to desired velocity
 
-    // Rotation
-    angularVelocity.x = inputY * pitchVel;
-    angularVelocity.z = inputX * rollVel;
+  // --- 4. Rotation (angular velocities from input) ---
+  angularVelocity.x = inputY * pitchVel;
+  angularVelocity.z = inputX * rollVel;
 
-    // Apply Damping
-    angularVelocity.multiplyScalar(Math.pow(damping, dt));
+  // damping on angular velocity
+  angularVelocity.multiplyScalar(Math.pow(damping, dt));
 
-    // Update Speed (Thrust)
-    let speed = velocity.length();
-    const maxSpeed = currentPlayerSpeed;
-    const maxBrakeSpeed = -maxSpeed * 0.5;
+  // --- 5. Update Speed (Thrust) ---
+  let speed = velocity.length();
+  const maxSpeed = Math.max(0.0001, currentPlayerSpeed || 1);
+  const maxBrakeSpeed = -maxSpeed * 0.5;
 
-    if (throttle > 0) {
-        speed = Math.min(speed + accel * throttle * dt, maxSpeed);
-    } else if (throttle < 0) {
-        speed = Math.max(speed + accel * throttle * dt, maxBrakeSpeed);
-    } else {
-        speed *= Math.pow(0.98, dt); // Drag
-    }
+  if (throttle > 0) {
+    speed = Math.min(speed + accel * throttle * dt, maxSpeed);
+  } else if (throttle < 0) {
+    speed = Math.max(speed + accel * throttle * dt, maxBrakeSpeed);
+  } else {
+    // drag, use a stable decay independent of speed magnitude
+    speed *= Math.pow(0.98, dt);
+  }
 
-    // Apply Rotation to Position (Calculates local axes)
-    tmpRight.set(1, 0, 0).applyQuaternion(rot);
-    tmpForward.set(0, 0, 1).applyQuaternion(rot);
+  // clamp to prevent runaway
+  const ABS_SPEED_LIMIT = maxSpeed * 4; // safety margin
+  speed = clamp(speed, -ABS_SPEED_LIMIT, ABS_SPEED_LIMIT);
 
-    // 🛑 FIX 1: Normalize local axes before quaternion math 🛑
-    tmpRight.normalize();
-    tmpForward.normalize();
-    
-    // Calculate and apply rotation deltas
-    tmpPitchQuat.setFromAxisAngle(tmpRight, angularVelocity.x * dt);
-    tmpRollQuat.setFromAxisAngle(tmpForward, angularVelocity.z * dt);
-    rot.premultiply(tmpRollQuat).premultiply(tmpPitchQuat).normalize(); // Final normalize is crucial
+  // --- 6. Apply Rotation to Position (Calculates local axes) ---
+  tmpRight.set(1, 0, 0).applyQuaternion(rot).normalize();
+  tmpForward.set(0, 0, 1).applyQuaternion(rot).normalize();
 
-    // Update Velocity Vector
-    tmpForward.set(0, 0, -1).applyQuaternion(rot);
-    tmpDesiredVel.copy(tmpForward).multiplyScalar(speed);
-    
-    // Use scaled DT for lerp factor to maintain frame rate independence
-    velocity.lerp(tmpDesiredVel, Math.max(0.05, Math.abs(speed)) * dt);
+  tmpPitchQuat.setFromAxisAngle(tmpRight, angularVelocity.x * dt);
+  tmpRollQuat.setFromAxisAngle(tmpForward, angularVelocity.z * dt);
+  rot.premultiply(tmpRollQuat).premultiply(tmpPitchQuat).normalize();
 
-    // Integrate Position
-    tmpDesiredVel.copy(velocity).multiplyScalar(rawDelta);
-    pos.add(tmpDesiredVel);
+  // --- 7. Update Velocity Vector (safe lerp) ---
+  tmpForward.set(0, 0, -1).applyQuaternion(rot);
+  tmpDesiredVel.copy(tmpForward).multiplyScalar(speed);
 
-    // 🛑 FIX 2: CRITICAL NUMERICAL STABILITY WATCHDOG 🛑
-    // Check if any critical state value has become non-finite (NaN or Infinity)
-    if (
-        !isFinite(pos.x) || !isFinite(rot.x) || 
-        !isFinite(velocity.x) || rot.length() > 1.01 
-    ) {
-        console.error("NUMERICAL INSTABILITY DETECTED: pos/rot/vel", {
-          posX: pos.x, posY: pos.y, posZ: pos.z,
-          rotX: rot.x, rotY: rot.y, rotZ: rot.z, rotW: rot.w,
-          velX: velocity.x, velY: velocity.y, velZ: velocity.z,
-          dt, rawDelta
-        });
-        // Reset local state to a safe identity position
-        pos.set(0, 0, 0);
-        rot.set(0, 0, 0, 1);
-        velocity.set(0, 0, 0);
-        angularVelocity.set(0, 0, 0);
-        // Force the reset into the inactive buffer before the flip
-        writePhysicsState(inactiveOffset);
-        // Do not proceed with writing the corrupted state
-    } else {
-        // Write back to INACTIVE buffer ONLY if state is stable
-        writePhysicsState(inactiveOffset);
-    }
-    
-    // --- 5. Atomically flip the control index ---
-    Atomics.store(sabInt32, CONTROL_INDEX_OFFSET, inactiveBufferIndex);
+  // compute a bounded lerp alpha in [0,1]
+  // using exponential smoothing: alpha = 1 - exp(-k * dt)
+  const lerpAlpha = Math.min(1, 1 - Math.exp(-SMOOTHING_RATE * Math.min(dt, 2)));
+  // ensure alpha is never > 1
+  const safeAlpha = clamp(lerpAlpha, 0, 1);
+
+  // perform lerp with safeAlpha
+  velocity.lerp(tmpDesiredVel, safeAlpha);
+
+  // additional clamp on velocity magnitude (sanity)
+  const velLen = velocity.length();
+  if (!isFinite(velLen) || velLen > ABS_SPEED_LIMIT * 10) {
+    // If velocity is non-finite or absurd, reset
+    velocity.set(0, 0, 0);
+  } else if (velLen > ABS_SPEED_LIMIT) {
+    // scale back to limit
+    velocity.multiplyScalar(ABS_SPEED_LIMIT / velLen);
+  }
+
+  // --- 8. Integrate Position (use clampedRawDelta)
+  tmpDesiredVel.copy(velocity).multiplyScalar(clampedRawDelta);
+  pos.add(tmpDesiredVel);
+
+  // --- 9. Numerical stability watchdog ---
+  const rotIsFinite = isFinite(rot.x) && isFinite(rot.y) && isFinite(rot.z) && isFinite(rot.w);
+  if (
+    !isFinite(pos.x) || !isFinite(pos.y) || !isFinite(pos.z) ||
+    !rotIsFinite || !isFinite(velocity.x) || !isFinite(velocity.y) || !isFinite(velocity.z) ||
+    Math.abs(rot.x) > 1e6 || Math.abs(pos.x) > 1e6 || Math.abs(velocity.x) > 1e6
+  ) {
+    // log for debug
+    console.error('NUMERICAL INSTABILITY DETECTED: resetting state', {
+      pos: { x: pos.x, y: pos.y, z: pos.z },
+      rot: { x: rot.x, y: rot.y, z: rot.z, w: rot.w },
+      vel: { x: velocity.x, y: velocity.y, z: velocity.z },
+      dt: clampedRawDelta
+    });
+
+    // safe reset
+    pos.set(0, 0, 0);
+    rot.set(0, 0, 0, 1);
+    velocity.set(0, 0, 0);
+    angularVelocity.set(0, 0, 0);
+
+    // Write safe reset to inactive buffer and flip
+    writePhysicsState(inactiveOffset);
+    Atomics.store(sabInt32, CONTROL_INDEX_OFFSET, inactiveBufferIndex);
+    return;
+  }
+
+  // --- 10. Write back to INACTIVE buffer and flip atomically ---
+  writePhysicsState(inactiveOffset);
+  Atomics.store(sabInt32, CONTROL_INDEX_OFFSET, inactiveBufferIndex);
 }
 
 // === Dispatcher ===
