@@ -152,7 +152,6 @@ const HUD = React.memo(function HUD({
 }: {
   playerRefs: React.RefObject<THREE.Group | null>[];
   trackId: number;
-  curve: THREE.Curve<THREE.Vector3>;
 }) {
   return (
     <HUDUI
@@ -237,7 +236,7 @@ export default function Stage1TTOptimized() {
       }}
     >
       {/* UI — keep outside of the Canvas so UI updates don't force Canvas children to re-evaluate */}
-      <HUD playerRefs={playerRefs} trackId={0} curve={curve} />
+      <HUD playerRefs={playerRefs} trackId={0} />
       {loader}
 
       {/* Scene is memoized and will not remount/re-render on every UI change */}
