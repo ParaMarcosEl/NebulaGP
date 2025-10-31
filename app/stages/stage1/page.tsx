@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useMemo, useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useRef, useMemo, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import Aircraft from '@/Components/Player/Aircraft';
@@ -31,34 +31,6 @@ import Bots from '@/Components/Player/Bots/Bots';
 import { FBMParams } from '@/Components/LODTerrain/Planet/fbm';
 
 // -------------------------
-// Helper: throttle hook for values that update fast
-// This returns a stable value that only updates at most `fps` times per second
-// -------------------------
-export function useThrottledValue<T>(value: T, fps = 10) {
-  const [throttled, setThrottled] = useState(value);
-  const last = useRef(value);
-  useEffect(() => {
-    last.current = value;
-  }, [value]);
-
-  useEffect(() => {
-    let mounted = true;
-    const interval = 1000 / fps;
-    const id = setInterval(() => {
-      if (!mounted) return;
-      // shallow compare reference -- replace with custom comparator if needed
-      if (last.current !== throttled) setThrottled(last.current as T);
-    }, interval);
-    return () => {
-      mounted = false;
-      clearInterval(id);
-    };
-  }, [fps, throttled]);
-
-  return throttled;
-}
-
-// -------------------------
 // Scene: heavy 3D content — memoized so it doesn't re-render when UI updates
 // Scene should avoid subscribing to fast-changing stores; let children subscribe individually
 // -------------------------
@@ -67,7 +39,6 @@ const Scene = React.memo(function Scene({
   minePoolRef,
   explosionsRef,
   startPositions,
-  onSpeedChange,
 }: {
   playerRefs: React.RefObject<THREE.Group | null>[];
   minePoolRef: React.RefObject<Mine[]>;
@@ -76,7 +47,6 @@ const Scene = React.memo(function Scene({
     position: THREE.Vector3 | [number, number, number];
     quaternion: THREE.Quaternion;
   }[];
-  onSpeedChange: (s: number) => void;
 }) {
   // local refs that only Scene owns
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
@@ -167,7 +137,6 @@ const Scene = React.memo(function Scene({
           startQuaternion={startPositions[0].quaternion}
           acceleration={0.1}
           damping={0.99}
-          onSpeedChange={onSpeedChange}
           botSpeed={2}
         />
 
@@ -232,10 +201,6 @@ export default function Stage1Optimized() {
   const setPlanetMeshes = usePlanetStore((s) => s.setPlanetMeshes);
   const setTouchEnabled = useGameStore((s) => s.setTouchEnabled);
 
-  // local UI state that is safe to update occasionally
-  const [speed, setSpeed] = useState(0);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const throttledSpeed = useThrottledValue(speed, 12);
 
   useEffect(() => {
     setTrack(tracks[0]);
@@ -277,9 +242,6 @@ export default function Stage1Optimized() {
   if (obstacleRefs.current.length !== obstaclePositions.length)
     obstacleRefs.current = obstaclePositions.map(() => React.createRef<THREE.Mesh>());
 
-  // callback passed into Scene (stable)
-  const handleSpeedChange = useCallback((s: number) => setSpeed(s), []);
-
   return (
     <main
       style={{
@@ -301,7 +263,6 @@ export default function Stage1Optimized() {
         minePoolRef={minePoolRef}
         explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
         startPositions={startPositions}
-        onSpeedChange={handleSpeedChange}
       />
 
       <PerformanceOverlay />

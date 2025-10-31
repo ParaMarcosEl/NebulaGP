@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import MiniMapSvg from './MiniMapSVG';
 import * as THREE from 'three';
 import { useGameStore } from '@/Controllers/Game/GameController';
-import { useThrottledValue } from '@/stages/stage1/page';
+import { useThrottledValue } from '@/Controllers/UI/useThrottleValue';
 
 export function MiniMapWrapper() {
   const raceData = useGameStore((s) => s.raceData);
