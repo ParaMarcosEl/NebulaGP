@@ -4,11 +4,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { BotInit } from '@/Constants';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 type UseBotsWorkerControllerProps = {
   botsInit: BotInit[];
   botRefs: React.RefObject<THREE.Group | null>[];
-  curve: THREE.Curve<THREE.Vector3>;
   onBotFire: (botId: number) => void;
   onBotDropMine: (botId: number) => void;
 };
@@ -18,12 +18,11 @@ export type TriggerImpulse = (botId: number, impulse: [number, number, number]) 
 export function useBotsWorkerController({
   botsInit,
   botRefs,
-  curve,
   onBotFire,
   onBotDropMine,
 }: UseBotsWorkerControllerProps) {
+  const curve = useGameStore(s => s.track);
   const trackWaypoints = useMemo(() => curve.getPoints(100), [curve]);
-
   const workerRef = useRef<Worker | null>(null);
   const readyRef = useRef(false);
 

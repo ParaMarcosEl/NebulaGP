@@ -26,14 +26,15 @@ import { InitAudio } from '@/Components/Audio/InitAudio';
 import { ShipTracker } from '@/Components/ShipTracker/ShipTracker';
 import { PerformanceOverlay } from '@/Components/UI/Performance/PerformanceOverlay';
 import { PerformanceTracker } from '@/Components/UI/Performance/PerformanceTracker';
-import { curveType } from '@/Constants';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
+import Bots from '@/Components/Player/Bots/Bots';
+import { FBMParams } from '@/Components/LODTerrain/Planet/fbm';
 
 // -------------------------
 // Helper: throttle hook for values that update fast
 // This returns a stable value that only updates at most `fps` times per second
 // -------------------------
-function useThrottledValue<T>(value: T, fps = 10) {
+export function useThrottledValue<T>(value: T, fps = 10) {
   const [throttled, setThrottled] = useState(value);
   const last = useRef(value);
   useEffect(() => {
@@ -65,14 +66,12 @@ const Scene = React.memo(function Scene({
   playerRefs,
   minePoolRef,
   explosionsRef,
-  curve,
   startPositions,
   onSpeedChange,
 }: {
   playerRefs: React.RefObject<THREE.Group | null>[];
   minePoolRef: React.RefObject<Mine[]>;
   explosionsRef: React.RefObject<ExplosionHandle>;
-  curve: curveType;
   startPositions: {
     position: THREE.Vector3 | [number, number, number];
     quaternion: THREE.Quaternion;
@@ -81,6 +80,17 @@ const Scene = React.memo(function Scene({
 }) {
   // local refs that only Scene owns
   const playingFieldRef = useRef<THREE.Mesh | null>(null);
+  const fbmParams: FBMParams = {
+    uTime: 0.0,
+    uFrequency: 4,
+    uAmplitude: .1,
+    uOctaves: 2,
+    uLacunarity: 1.1,
+    uPersistence: .7,
+    uExponentiation: 6,
+    uMaxHeight: 80,
+    useRidged: true,
+  }
 
   // create boosters once
   const boosters = useMemo(
@@ -123,43 +133,49 @@ const Scene = React.memo(function Scene({
         <Track
           playerRefs={playerRefs as React.RefObject<THREE.Object3D>[]}
           ref={playingFieldRef}
-          curve={curve}
           spheres={[{ t: 0.4, radius: 100 }]}
           onRaceComplete={() => {
             // keep heavy completion logic out of rerenders — you can dispatch/store updates here
           }}
         />
-
         <Planet
           position={new THREE.Vector3(0, 0, 0)}
           size={320}
-          maxHeight={80}
-          lacunarity={1.1}
-          frequency={4}
-          exponentiation={6}
+          octaves={fbmParams.uOctaves}
+          persistence={fbmParams.uPersistence}
+          amplitude={fbmParams.uAmplitude}
+          maxHeight={fbmParams.uMaxHeight}
+          lacunarity={fbmParams.uLacunarity}
+          frequency={fbmParams.uFrequency}
+          exponentiation={fbmParams.uExponentiation}
           lowTextPath="/textures/granite_ground128.png"
           midTextPath="/textures/gold_ground128.png"
           highTextPath="/textures/ruby_ground128.png"
         />
 
         <Aircraft
+          fbmParams={fbmParams}
+          planetSize={320}
           id={0}
           trackId={0}
           aircraftRef={playerRefs[0]}
           playerRefs={playerRefs}
           minePoolRef={minePoolRef}
           explosionsRef={explosionsRef}
-          curve={curve}
           playingFieldRef={playingFieldRef}
           startPosition={startPositions[0].position as [number, number, number]}
           startQuaternion={startPositions[0].quaternion}
-          acceleration={0.01}
-          damping={0.998}
+          acceleration={0.1}
+          damping={0.99}
           onSpeedChange={onSpeedChange}
           botSpeed={2}
         />
 
-        {/* <Bots curve={curve} playerRefs={playerRefs} minePoolRef={minePoolRef} startPositions={startPositions} /> */}
+        <Bots
+          playerRefs={playerRefs}
+          minePoolRef={minePoolRef}
+          startPositions={startPositions}
+        />
 
         {boosters}
 
@@ -176,33 +192,15 @@ const Scene = React.memo(function Scene({
 const HUD = React.memo(function HUD({
   playerRefs,
   trackId,
-  curve,
 }: {
   playerRefs: React.RefObject<THREE.Group | null>[];
   trackId: number;
   curve: THREE.Curve<THREE.Vector3>;
 }) {
-  // subscribe only to raceData (selector) — avoid grabbing the whole store object
-  const raceData = useGameStore((s) => s.raceData);
-
-  // compute positions but throttle them to e.g. 12 fps to avoid React churn
-  const positions = useMemo(() => {
-    return Object.entries(raceData)
-      .map(([id, player]) => ({ isPlayer: player.isPlayer, v: player.position, id: parseInt(id) }))
-      .filter((p) => p.id >= 0);
-  }, [raceData]);
-
-  const throttledPositions = useThrottledValue(positions, 12);
-
-  // speed comes from Aircraft via callback/prop on the Scene — but HUD may accept it as prop from parent
-  // Here: HUD is lightweight and only re-renders when throttledPositions changes
   return (
     <HUDUI
       playerRefs={playerRefs}
       trackId={trackId}
-      positions={throttledPositions}
-      curve={curve}
-      speed={0}
     />
   );
 });
@@ -302,7 +300,6 @@ export default function Stage1Optimized() {
         playerRefs={playerRefs}
         minePoolRef={minePoolRef}
         explosionsRef={explosionsRef as React.RefObject<ExplosionHandle>}
-        curve={curve}
         startPositions={startPositions}
         onSpeedChange={handleSpeedChange}
       />

@@ -14,7 +14,6 @@ export function ShipTracker({
   playerRefs,
   startPositions,
   explosionsRef,
-  curve,
 }: {
   playerRefs: React.RefObject<THREE.Object3D>[];
   explosionsRef: React.RefObject<ExplosionHandle>;
@@ -77,7 +76,6 @@ export function ShipTracker({
   const { triggerImpulseFromMain, setWorkerCannon } = useBotsWorkerController({
     botsInit,
     botRefs: botRefs as React.RefObject<THREE.Group>[],
-    curve,
     onBotFire: handleBotFire,
     onBotDropMine: handleBotDropMine,
   });

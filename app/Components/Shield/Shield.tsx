@@ -3,16 +3,18 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 import { ShieldMaterial } from './ShieldMaterial';
 import { ShieldSound } from '../Audio/ShieldSound';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 extend({ ShieldMaterial });
 
 export function Shield({
-  shieldValue,
   target,
+  playerId,
 }: {
-  shieldValue: number;
   target?: React.RefObject<THREE.Object3D>;
+  playerId: number;
 }) {
+  const shieldValue = useGameStore((s) => s.raceData[playerId].shieldValue);
   const meshRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<ShieldMaterial>(null);
 

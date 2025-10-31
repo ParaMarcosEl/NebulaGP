@@ -1,3 +1,4 @@
+import { FBMParams } from '@/Components/LODTerrain/Planet/fbm';
 import { QuadtreeNode } from '@/Components/LODTerrain/quadTree';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -22,9 +23,9 @@ export type shipType = {
   scale: number;
   offset?: [number, number, number] | THREE.Vector3;
   rotation:
-    | number
-    | THREE.Euler
-    | [x: number, y: number, z: number, order?: THREE.EulerOrder | undefined];
+  | number
+  | THREE.Euler
+  | [x: number, y: number, z: number, order?: THREE.EulerOrder | undefined];
   path: string;
 };
 
@@ -81,6 +82,8 @@ export interface WorkerPayload {
   type: 'init' | 'update' | 'input' | 'config';
   sharedBuffer?: SharedArrayBuffer;
   delta?: number;
+  planetSize: number;
+  fbmParams?: FBMParams;
   // Input/Config data from the main thread
   inputAxis?: { x: number; y: number }; // x=Roll/Yaw, y=Pitch
   throttle?: number;

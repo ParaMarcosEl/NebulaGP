@@ -1,12 +1,9 @@
 import { CSSProperties } from 'react';
 import { MAX_SPEED } from '@/Constants';
-// import { useGameStore } from '@/Controllers/GameController';
-// import { useRaceStandings } from '@/Controllers/useRaceStandings';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
-export const Speedometer = function ({ speed }: { speed: number }) {
-  // const { playerId, raceData } = useGameStore(s => s);
-
-  // const { finished, inProgress } = useRaceStandings();
+export const Speedometer = function () {
+  const playerSpeed = useGameStore(s => s.playerSpeed);
 
   const speedometerStyle: CSSProperties = {
     zIndex: 1,
@@ -26,11 +23,11 @@ export const Speedometer = function ({ speed }: { speed: number }) {
     borderBottomLeftRadius: '0',
     borderBottomRightRadius: '25%',
   };
-  const speedPercent = Math.min(speed / MAX_SPEED, 1);
+  const speedPercent = Math.min(playerSpeed / MAX_SPEED, 1);
 
   return (
     <div className="speedometer" style={speedometerStyle}>
-      <div>Speed: {(Math.abs(speed) * Math.PI * 200).toFixed(2)} m/s</div>
+      <div>Speed: {(Math.abs(playerSpeed) * Math.PI * 200).toFixed(2)} m/s</div>
       <div className="meter-wrapper" style={meterWrapper}>
         <div
           className="meter"

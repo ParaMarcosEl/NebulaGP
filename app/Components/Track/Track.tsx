@@ -10,6 +10,7 @@ import { useLapTimer } from '@/Controllers/Game/LapTimer';
 import { getShortestFlightPath } from '@/Lib/flightPath';
 import CurveParticles from '../Particles/CurveParticles/CurveParticles';
 import { modifyTubeGeometrySDF, SphereSpec } from '@/Utils/SDF';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 // Setup BVH on BufferGeometry and raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -19,14 +20,13 @@ const Track = forwardRef<
   THREE.Mesh,
   {
     playerRefs: React.RefObject<THREE.Object3D>[];
-    curve: THREE.Curve<THREE.Vector3>;
     spheres?: SphereSpec[];
     onRaceComplete?: () => void;
     onLapComplete?: () => void;
   }
->(({ playerRefs, curve, spheres = [], onRaceComplete, onLapComplete }, ref) => {
+>(({ playerRefs, spheres = [], onRaceComplete, onLapComplete }, ref) => {
   const checkpointMeshRef = useRef<THREE.Mesh | null>(null);
-
+  const curve = useGameStore(s => s.track)
   useLapTimer();
 
   const checkpoint = useCheckpointController({

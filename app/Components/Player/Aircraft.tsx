@@ -3,14 +3,14 @@
 import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
 // import { usePlayerController } from '@/Components/Player/PlayerController';
-import { usePlayerWorkerController } from './SABWorkerController';
 import * as THREE from 'three';
 import { SHIPS } from '@/Constants';
 import { Shield } from '../Shield/Shield';
-import { useGameStore } from '@/Controllers/Game/GameController';
 import { Mine } from '../Weapons/useMines';
 import { EngineSound } from '../Audio/EngineSound';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
+import { usePlayerSABController } from './PlayerSABController';
+import { FBMParams } from '../LODTerrain/Planet/fbm';
 
 type AircraftProps = {
   id: number;
@@ -18,7 +18,6 @@ type AircraftProps = {
   minePoolRef: React.RefObject<Mine[]>;
   aircraftRef: React.RefObject<THREE.Group | null>;
   playerRefs: React.RefObject<THREE.Group | null>[];
-  obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
   playingFieldRef?: React.RefObject<THREE.Mesh | null>;
   acceleration?: number;
   damping?: number;
@@ -27,9 +26,10 @@ type AircraftProps = {
   onBrakingChange?: (state: boolean) => void;
   startPosition?: [number, number, number];
   startQuaternion?: THREE.Quaternion;
-  curve: THREE.Curve<THREE.Vector3>;
   isBot?: boolean;
   botSpeed?: number;
+  fbmParams?: FBMParams;
+  planetSize?: number;
   explosionsRef?: React.RefObject<ExplosionHandle>;
 };
 
@@ -41,14 +41,14 @@ export default function Aircraft({
   playerRefs,
   startPosition,
   startQuaternion,
-  obstacleRefs,
   playingFieldRef,
   acceleration,
   damping,
+  fbmParams,
+  planetSize,
   onSpeedChange,
   onAcceleratingChange,
   onBrakingChange,
-  curve,
   isBot,
   botSpeed = 1,
   explosionsRef,
@@ -59,7 +59,6 @@ export default function Aircraft({
   const { scene: sceneModel } = useGLTF(ship.path);
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
-  const { raceData } = useGameStore((s) => s);
 
 
 
@@ -76,21 +75,21 @@ export default function Aircraft({
     }
   }, [startPosition, startQuaternion, aircraftRef, id]);
 
-  usePlayerWorkerController({
+  usePlayerSABController({
+    fbmParams,
+    planetSize,
     id,
     trackId,
     minePoolRef,
     explosionsRef,
     aircraftRef,
     playerRefs,
-    obstacleRefs,
     playingFieldRef,
     acceleration,
     damping,
     onSpeedChange,
     onAcceleratingChange,
     onBrakingChange,
-    curve,
     botSpeed,
     enabled: !isBot,
   });
@@ -106,8 +105,8 @@ export default function Aircraft({
         </group>
       </group>
       <Shield
+        playerId={id}
         target={aircraftRef as React.RefObject<THREE.Object3D>}
-        shieldValue={raceData[id].shieldValue}
       />
     </>
   );

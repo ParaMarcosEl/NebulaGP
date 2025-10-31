@@ -12,13 +12,16 @@ import { onBulletCollision } from '@/Utils/collisions';
 import { TUBE_RADIUS } from '@/Constants';
 import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { useProjectiles } from '../Weapons/useProjectiles';
-import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
-import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
+// import { usePlaySound } from '@/Controllers/Audio/usePlaySounds';
+// import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
 import { usePlanetStore } from '@/Controllers/Game/usePlanetStore';
 import { checkOutOfBoundsSDF } from '@/Utils/SDF';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
 import { WorkerPayload } from '@/Constants'; // Import the payload interface
-
+import { sabBuffer, sabInt32, sabFloat32 } from '@/Components/Player/PlayerSABConfig';
+import {
+    FBMParams,
+} from '@/Components/LODTerrain/Planet/fbm';
 // Import Atomics for read verification
 const { Atomics } = globalThis;
 
@@ -54,6 +57,8 @@ type PlayerSystemOptions = {
     playerRefs: React.RefObject<THREE.Group | null>[];
     obstacleRefs?: React.RefObject<THREE.Mesh | null>[];
     playingFieldRef?: React.RefObject<THREE.Mesh | null>;
+    fbmParams?: FBMParams;
+    planetSize?: number;
     pitchVelocity?: number;
     rollVelocity?: number;
     acceleration?: number;
@@ -62,7 +67,6 @@ type PlayerSystemOptions = {
     noiseFrequency?: number;
     botSpeed: number; // Max speed setting (renamed to avoid conflict)
     enabled: boolean;
-    curve: THREE.Curve<THREE.Vector3>;
     onSpeedChange?: (speed: number) => void;
     onAcceleratingChange?: (state: boolean) => void;
     onBrakingChange?: (state: boolean) => void;
@@ -92,18 +96,8 @@ const CONFIG_OFFSET = BUFFER_B_OFFSET + STATE_BUFFER_INT32_LENGTH; // Index 14 +
 // Note: We use the existing indices 17-19 (and a new 20) for throttle/axis, 
 // so the layout must be adapted in the worker to match this.
 
-// Total elements: 1 (Control) + 13 (A) + 13 (B) + 7 (Input/Config) = 34 elements
-const SAB_TOTAL_INT32_LENGTH = 34;
 
-// SAB creation: We use 4 bytes per element (Int32 or Float32), so 31 * 4 bytes total
-const sabBuffer = new SharedArrayBuffer(SAB_TOTAL_INT32_LENGTH * 4);
-
-// Views (Note: We primarily use the Int32Array view for all access, even floats)
-const sabInt32 = new Int32Array(sabBuffer);
-// We keep the sabFloat32 view for clarity if needed, but it's not strictly necessary for the atomic logic
-const sabFloat32 = new Float32Array(sabBuffer);
-
-export function usePlayerWorkerController({
+export function usePlayerSABController({
     id: playerId,
     minePoolRef,
     explosionsRef,
@@ -111,12 +105,15 @@ export function usePlayerWorkerController({
     playerRefs,
     playingFieldRef,
     acceleration = 10,
-    pitchVelocity = 0.03,
-    rollVelocity = 0.06,
+    pitchVelocity = 1.5,
+    rollVelocity = 3,
     damping = 0.5,
-    curve,
     enabled,
+    fbmParams,
+    planetSize = 0,
 }: PlayerSystemOptions) {
+
+    const curve = useGameStore(s => s.track);
 
     // --- Worker Refs: Refactored ---
     const workerRef = useRef<Worker | null>(null);
@@ -140,11 +137,11 @@ export function usePlayerWorkerController({
         setOutOfBounds,
         addOutOfBoundsTime,
         setUseMine,
-        setShieldValue,
+        // setShieldValue,
     } = useGameStore((s) => s);
     const { invertPitch } = useSettingsStore((s) => s);
-    const playSound = usePlaySound();
-    const { buffers, audioEnabled } = useAudioStore((s) => s);
+    // const playSound = usePlaySound();
+    // const { buffers, audioEnabled } = useAudioStore((s) => s);
     const { planetMeshes } = usePlanetStore((s) => s);
 
     const controlsEnabled = raceStatus === 'racing'; // --- Weapons and Collisions Hooks (Unchanged) ---
@@ -232,6 +229,8 @@ export function usePlayerWorkerController({
             sharedBuffer: sabBuffer,
             playerSpeed: maxPlayerSpeed,
             invertPitch: invertPitch ? -1 : 1,
+            fbmParams,
+            planetSize
         };
         // Transfer ownership of the SAB to the worker
         worker.postMessage(initialPayload);
@@ -252,6 +251,8 @@ export function usePlayerWorkerController({
         pitchVelocity,
         rollVelocity,
         damping,
+        planetSize,
+        fbmParams
     ]);
 
     useEffect(() => {
@@ -355,20 +356,21 @@ export function usePlayerWorkerController({
     const frameCounterRef = useRef(0);
     const gamepadPollCounterRef = useRef(0);
     //   const lastNearestTRef = useRef({ t: 0, pos: new THREE.Vector3() });
-    const lastCollisionAudioTimeRef = useRef(0);
-    const lastShieldUpdateTimeRef = useRef(0);
+    // const lastCollisionAudioTimeRef = useRef(0);
+    // const lastShieldUpdateTimeRef = useRef(0);
     //   const onSpeedLastRef = useRef(0);
     //   const nearestTThrottleFrames = 3;
     const gamepadPollFrames = 5;
-    const collisionAudioCooldownMs = 120;
-    const shieldUpdateMs = 100;
+    // const collisionAudioCooldownMs = 120;
+    // const shieldUpdateMs = 100;
 
     // Interpolation accumulator for physics -> render
     const accumulatorRef = useRef(0);
     const fixedStep = 1 / 60; // physics step size
 
-    const interpolationAlpha = 0.9; // visual lerp toward predicted state (kept)
-    //   const predictionScale = 1.0; // predict one frame ahead
+    // const interpolationAlpha = 0.3; // visual lerp toward predicted state (kept)
+    const VISUAL_LAG_TIME = .05; // 50ms of lag for smoothing
+
     // Smoothed camera target kept here
     const smoothedCameraTargetRef = useRef<THREE.Object3D>(new THREE.Object3D());
     //   const smoothedCameraTarget = smoothedCameraTargetRef.current;
@@ -385,6 +387,7 @@ export function usePlayerWorkerController({
 
     // ---------- MAIN LOOP (useFrame) ----------
     useFrame((_, delta) => {
+        //#region 
         const worker = workerRef.current;
         const ship = aircraftRef.current;
         const int32View = sabInt32; // Use the Int32 view for atomics (control index)
@@ -398,8 +401,9 @@ export function usePlayerWorkerController({
 
         frameCounterRef.current += 1;
         gamepadPollCounterRef.current = (gamepadPollCounterRef.current + 1) % gamepadPollFrames;
+        //#endregion
 
-        // === Input gathering (unchanged) ===
+        //#region === Input gathering ===
         const throttle = throttleRef.current;
         const shouldFire = firingRef.current;
 
@@ -439,18 +443,20 @@ export function usePlayerWorkerController({
         let finalThrottle = throttle;
         if (keysAccelerating) finalThrottle = Math.max(finalThrottle, 1);
         if (keysBraking) finalThrottle = Math.min(finalThrottle, -1);
+        //#endregion
 
+        //#region === Write to SAB for update ===
         // Write inputs into CONFIG_OFFSET (using floatView for convenience)
         // NOTE: These indices must match the worker's expected input location
         floatView[CONFIG_OFFSET + 4] = finalThrottle; // Throttle is the 5th element in config (index 4)
         floatView[CONFIG_OFFSET + 5] = finalRollAxis; // Roll Axis (index 5)
         floatView[CONFIG_OFFSET + 6] = finalPitchAxis; // Pitch Axis (index 6)
-        console.log({ finalThrottle })
         // Tell worker to run one physics update (it will write into SAB)
-        worker.postMessage({ type: 'update', delta });
+        // worker.postMessage({ type: 'update', delta });
+        //#endregion
 
         // --------------------------
-        // Interpolate between physics steps (accumulator approach)
+        //#region Interpolate between physics steps (accumulator approach)
         // --------------------------
         // We sample SAB at fixedStep boundaries: whenever fixedStep elapses we shift prev<-curr and read new curr.
         accumulatorRef.current += delta;
@@ -498,9 +504,17 @@ export function usePlayerWorkerController({
         // slerp from curr toward curr*delta by alpha to get predictedQuat (works as extrapolation)
         predictedQuat.current.copy(currSabQuat.current).slerp(tmp.currTimesDeltaQuat, alpha);
 
+        // --- LERP visuals toward predicted state (this gives smoothing/visual blending) ---
+
+        // 🆕 Calculate the framerate-independent smoothing alpha
+        // This ensures that the LERP rate is consistent whether delta is large or small.
+        const visualAlpha = 1 - Math.exp(-delta / VISUAL_LAG_TIME);
+        // Clamp to prevent overshooting if delta is huge
+        const safeVisualAlpha = Math.min(visualAlpha, 1);
+
         // LERP visuals toward predicted state (this gives smoothing/visual blending)
-        ship.position.lerp(predictedPos.current, interpolationAlpha);
-        ship.quaternion.slerp(predictedQuat.current, interpolationAlpha);
+        ship.position.lerp(predictedPos.current, safeVisualAlpha);
+        ship.quaternion.slerp(predictedQuat.current, safeVisualAlpha);
 
         if (
             !isFinite(ship.position.x) ||
@@ -513,68 +527,71 @@ export function usePlayerWorkerController({
             debugger;
         }
 
-        // --- COLLISIONS / OUT OF BOUNDS (Uses ship.position/quaternion LERPed) ---
-        if (planetMeshes.length > 0) {
-            for (let i = 0; i < planetMeshes.length; i++) {
-                const planetMesh = planetMeshes[i];
-                if (!planetMesh) continue;
-                const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
-                if (!geometry?.boundsTree) continue;
+        //#endregion
 
-                tmp.meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
-                tmp.localShipPos.copy(ship.position).applyMatrix4(tmp.meshMatrixInverse);
+        //#region --- COLLISIONS / OUT OF BOUNDS (Uses ship.position/quaternion LERPed) ---
+        // if (planetMeshes.length > 0) {
+        //     for (let i = 0; i < planetMeshes.length; i++) {
+        //         const planetMesh = planetMeshes[i];
+        //         if (!planetMesh) continue;
+        //         const geometry = planetMesh.geometry as THREE.BufferGeometry & { boundsTree?: MeshBVH };
+        //         if (!geometry?.boundsTree) continue;
 
-                const hit = tmp.hitInfo;
-                hit.distance = 0;
-                hit.faceIndex = -1;
+        //         tmp.meshMatrixInverse.copy(planetMesh.matrixWorld).invert();
+        //         tmp.localShipPos.copy(ship.position).applyMatrix4(tmp.meshMatrixInverse);
 
-                if (geometry.boundsTree.closestPointToPoint(tmp.localShipPos, hit)) {
-                    tmp.worldHitPoint.copy(hit.point).applyMatrix4(planetMesh.matrixWorld);
-                    const dist = ship.position.distanceTo(tmp.worldHitPoint);
-                    const minDistance = 6;
-                    if (dist < minDistance) {
-                        // 🆕 CRITICAL CHANGE: NO DIRECT MAIN-THREAD WRITE TO SAB POS
-                        tmp.pushDir.subVectors(ship.position, tmp.worldHitPoint).normalize();
-                        if (tmp.pushDir.lengthSq() === 0) tmp.pushDir.copy(ship.position).normalize();
+        //         const hit = tmp.hitInfo;
+        //         hit.distance = 0;
+        //         hit.faceIndex = -1;
+
+        //         if (geometry.boundsTree.closestPointToPoint(tmp.localShipPos, hit)) {
+        //             tmp.worldHitPoint.copy(hit.point).applyMatrix4(planetMesh.matrixWorld);
+        //             const dist = ship.position.distanceTo(tmp.worldHitPoint);
+        //             const minDistance = 10;
+        //             if (dist < minDistance) {
+        //                 // 🆕 CRITICAL CHANGE: NO DIRECT MAIN-THREAD WRITE TO SAB POS
+        //                 tmp.pushDir.subVectors(ship.position, tmp.worldHitPoint).normalize();
+        //                 if (tmp.pushDir.lengthSq() === 0) tmp.pushDir.copy(ship.position).normalize();
 
 
-                        // ⚠️ CRITICAL: write back corrected position to the single SAB view
-                        // 1. Calculate the *target* corrected position
-                        const correctedPos = tmp.worldHitPoint.addScaledVector(tmp.pushDir, minDistance);
-                        // 2. Send correction to worker (Worker is the single source of truth for physics)
-                        worker.postMessage({
-                            type: 'collision',
-                            position: [correctedPos.x, correctedPos.y, correctedPos.z],
-                            dampingFactor: 0.5
-                        });
+        //                 // ⚠️ CRITICAL: write back corrected position to the single SAB view
+        //                 // 1. Calculate the *target* corrected position
+        //                 const correctedPos = tmp.worldHitPoint.addScaledVector(tmp.pushDir, minDistance);
+        //                 // 2. Send correction to worker (Worker is the single source of truth for physics)
+        //                 worker.postMessage({
+        //                     type: 'collision',
+        //                     position: [correctedPos.x, correctedPos.y, correctedPos.z],
+        //                     dampingFactor: 0.5
+        //                 });
 
-                        ship.position.copy(correctedPos);
+        //                 ship.position.copy(correctedPos);
 
-                        // notify worker to apply impulse/damping logic on next frame
-                        worker.postMessage({ type: 'impulse', dampingFactor: 0.5 });
+        //                 // notify worker to apply impulse/damping logic on next frame
+        //                 worker.postMessage({ type: 'impulse', dampingFactor: 0.5 });
 
-                        // play sound + shield            
-                        const now = performance.now();
-                        if (
-                            audioEnabled &&
-                            now - lastCollisionAudioTimeRef.current > collisionAudioCooldownMs
-                        ) {
-                            playSound?.(buffers['clank04'], ship.position, 1, 3);
-                            lastCollisionAudioTimeRef.current = now;
-                        }
-                        if (
-                            raceData[playerId]?.shieldValue > 0 &&
-                            performance.now() - lastShieldUpdateTimeRef.current > shieldUpdateMs
-                        ) {
-                            setShieldValue(raceData[playerId].shieldValue - 0.5, playerId);
-                            lastShieldUpdateTimeRef.current = performance.now();
-                        }
-                    }
-                }
-            }
-        }
+        //                 // play sound + shield            
+        //                 const now = performance.now();
+        //                 if (
+        //                     audioEnabled &&
+        //                     now - lastCollisionAudioTimeRef.current > collisionAudioCooldownMs
+        //                 ) {
+        //                     playSound?.(buffers['clank04'], ship.position, 1, 3);
+        //                     lastCollisionAudioTimeRef.current = now;
+        //                 }
+        //                 if (
+        //                     raceData[playerId]?.shieldValue > 0 &&
+        //                     performance.now() - lastShieldUpdateTimeRef.current > shieldUpdateMs
+        //                 ) {
+        //                     setShieldValue(raceData[playerId].shieldValue - 0.5, playerId);
+        //                     lastShieldUpdateTimeRef.current = performance.now();
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+        //#endregion
 
-        // --- OUT OF BOUNDS SDF (Unchanged) ---
+        //#region --- OUT OF BOUNDS SDF (Unchanged) ---
         if (playingFieldRef?.current) {
             checkOutOfBoundsSDF(
                 ship,
@@ -588,8 +605,9 @@ export function usePlayerWorkerController({
                 addOutOfBoundsTime,
             );
         }
+        //#endregion
 
-        // --- WEAPON FIRE (Unchanged) ---
+        //#region --- WEAPON FIRE (Unchanged) ---
         const shooting = !!keys.current['j'];
         const value = raceData[playerId]?.cannonValue || 0;
         if ((shooting || shouldFire) && value > 0) fire(playerId);
@@ -597,8 +615,9 @@ export function usePlayerWorkerController({
             drop();
             setUseMine(playerId, false);
         }
+        //#endregion
 
-        // --- Camera Target Smoothing (Single smoothing layer, controller only) ---
+        //#region --- Camera Target Smoothing (Single smoothing layer, controller only) ---
         const cameraTarget = smoothedCameraTargetRef.current;
 
         // Exponential smoothing logic
@@ -616,7 +635,7 @@ export function usePlayerWorkerController({
 
         // Update the camera target ref for the camera component to use
         ship.userData.smoothedCameraTarget = cameraTarget;
-
+        //#endregion
         // optional hook for recording simulation state (left as-is)
         if (ship.userData.recordSimulationState) ship.userData.recordSimulationState();
     });

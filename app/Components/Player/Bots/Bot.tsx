@@ -1,7 +1,6 @@
 import { EngineSound } from '@/Components/Audio/EngineSound';
 import { Shield } from '@/Components/Shield/Shield';
 import { shipType } from '@/Constants';
-import { RaceDataType } from '@/Controllers/Game/GameController';
 import * as THREE from 'three';
 
 export const Bot = ({
@@ -9,14 +8,12 @@ export const Bot = ({
   ship,
   model,
   trailTarget,
-  raceData,
   id,
 }: {
   aircraftRef: React.RefObject<THREE.Group>;
   ship: shipType;
   model: THREE.Group;
   trailTarget: React.RefObject<THREE.Object3D>;
-  raceData: RaceDataType;
   id: number;
 }) => {
   return (
@@ -30,7 +27,7 @@ export const Bot = ({
       </group>
       <Shield
         target={aircraftRef as React.RefObject<THREE.Object3D>}
-        shieldValue={raceData[id].shieldValue}
+        playerId={id}
       />
     </>
   );
