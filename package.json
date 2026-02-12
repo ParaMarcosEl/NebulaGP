@@ -17,7 +17,7 @@
     "alea": "^1.0.1",
     "babel-plugin-glsl": "^1.0.0",
     "comlink": "^4.4.2",
-    "next": "15.3.5",
+    "next": "15.3.6",
     "postprocessing": "^6.37.6",
     "react": "^19.0.0",
     "react-device-detect": "^2.2.3",
