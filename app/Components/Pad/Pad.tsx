@@ -1,59 +1,33 @@
 'use client';
 import * as THREE from 'three';
-
-export type PadType = 'speed' | 'cannon' | 'mine' | 'shield';
+import React from 'react';
+import { PadType } from './usePadControllerBatch';
 
 type PadProps = {
   type: PadType;
+  meshRef: React.RefObject<THREE.Mesh>;
   position: THREE.Vector3;
   quaternion: THREE.Quaternion;
-  playerRefs: { id: number; ref: React.RefObject<THREE.Object3D> }[];
-  meshRef: React.RefObject<THREE.Mesh>;
+  didPass: boolean;
 };
 
-export default function Pad({
-  type,
-  position,
-  quaternion,
-  meshRef
-}: PadProps) {
-  // Choose pad visuals based on type
-  const padConfig = {
-    speed: {
-      color: 'deepskyblue',
-      emissive: 'cyan',
-      size: [5, 2, 5],
-      opacity: 0.7,
-    },
-    cannon: {
-      color: 'orange',
-      emissive: 'gold',
-      size: [6, 2, 6],
-      opacity: 0.8,
-    },
-    mine: {
-      color: 'crimson',
-      emissive: 'darkred',
-      size: [4, 4, 4],
-      opacity: 0.6,
-    },
-    shield: {
-      color: 'limegreen',
-      emissive: 'green',
-      size: [6, 2, 6],
-      opacity: 0.75,
-    },
+export function Pad({ type, meshRef, position, quaternion, didPass }: PadProps) {
+  const styleMap = {
+    speed: { color: 'lime', emissive: 'green', geometry: <coneGeometry args={[5, 10, 6]} /> },
+    cannon: { color: 'orange', emissive: 'orange', geometry: <boxGeometry args={[5, 5, 5]} /> },
+    mine: { color: 'crimson', emissive: 'crimson', geometry: <boxGeometry args={[5, 5, 5]} /> },
+    shield: { color: 'blue', emissive: 'blue', geometry: <boxGeometry args={[5, 5, 5]} /> },
   }[type];
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>
-      <cylinderGeometry args={[padConfig.size[0], padConfig.size[2], padConfig.size[1], 16]} />
+      {styleMap.geometry}
       <meshStandardMaterial
-        color={padConfig.color}
-        emissive={padConfig.emissive}
-        emissiveIntensity={1.5}
+        color={!didPass ? styleMap.color : 'white'}
+        emissive={!didPass ? styleMap.emissive : 'darkgrey'}
+        emissiveIntensity={1}
         transparent
-        opacity={padConfig.opacity}
+        opacity={0.6}
       />
     </mesh>
   );

@@ -137,7 +137,6 @@ const Terrain = forwardRef<THREE.Mesh, ITerrainChunkProps>(function Terrain(
     // };
 
     worker.onmessage = ({ data }) => {
-
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const vertexCount = (segments + 1) * (segments + 1);
 

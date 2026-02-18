@@ -1,16 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import MiniMapSvg from './MiniMapSVG';
 import * as THREE from 'three';
+import { useGameStore } from '@/Controllers/Game/GameController';
+import { useThrottledValue } from '@/Controllers/UI/useThrottleValue';
 
-type Props = {
-  curve: THREE.Curve<THREE.Vector3>;
-  positions: { id: number; isPlayer: boolean; v: THREE.Vector3 }[];
-};
+export function MiniMapWrapper() {
+  const raceData = useGameStore((s) => s.raceData);
+  const curve = useGameStore((s) => s.track);
+  // compute positions but throttle them to e.g. 12 fps to avoid React churn
+  const positions = useMemo(() => {
+    return Object.entries(raceData)
+      .map(([id, player]) => ({ isPlayer: player.isPlayer, v: player.position, id: parseInt(id) }))
+      .filter((p) => p.id >= 0);
+  }, [raceData]);
 
-export function MiniMapWrapper({ curve, positions }: Props) {
-  const playerPositions = positions.filter((pos) => pos.v instanceof THREE.Vector3);
+  const throttledPositions = useThrottledValue(positions, 12);
+  const playerPositions = throttledPositions.filter((pos) => pos.v instanceof THREE.Vector3);
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
   if (!ready) return null;

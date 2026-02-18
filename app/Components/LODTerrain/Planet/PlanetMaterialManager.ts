@@ -29,4 +29,3 @@ export function getPlanetMaterialManager() {
   if (!instance) instance = new PlanetMaterialManager();
   return instance;
 }
-

@@ -36,12 +36,14 @@ class PlanetWorkerPool {
 
   constructor(
     workerCount = navigator.hardwareConcurrency || 4,
-    material = new PlanetMaterial(new THREE.Texture(), new THREE.Texture(), new THREE.Texture())
+    material = new PlanetMaterial(new THREE.Texture(), new THREE.Texture(), new THREE.Texture()),
   ) {
     this.material = material;
 
     this.workers = Array.from({ length: workerCount }, () => {
-      const worker = new Worker(new URL('@/workers/PlanetWorker.worker.ts', import.meta.url), { type: 'module' });
+      const worker = new Worker(new URL('@/workers/PlanetWorker.worker.ts', import.meta.url), {
+        type: 'module',
+      });
       this.workerReady.set(worker, false);
 
       worker.onmessage = (e) => {
@@ -60,13 +62,21 @@ class PlanetWorkerPool {
     });
   }
 
-  private getBuffer(pool: Map<number, SharedArrayBuffer[]>, vertexCount: number, bytesPerElement: number) {
+  private getBuffer(
+    pool: Map<number, SharedArrayBuffer[]>,
+    vertexCount: number,
+    bytesPerElement: number,
+  ) {
     const arr = pool.get(vertexCount);
     if (arr && arr.length > 0) return arr.pop()!;
     return new SharedArrayBuffer(vertexCount * bytesPerElement);
   }
 
-  private returnBuffer(pool: Map<number, SharedArrayBuffer[]>, vertexCount: number, buffer: SharedArrayBuffer) {
+  private returnBuffer(
+    pool: Map<number, SharedArrayBuffer[]>,
+    vertexCount: number,
+    buffer: SharedArrayBuffer,
+  ) {
     if (!pool.has(vertexCount)) pool.set(vertexCount, []);
     pool.get(vertexCount)!.push(buffer);
   }
@@ -84,10 +94,19 @@ class PlanetWorkerPool {
       geometry = new THREE.BufferGeometry();
 
       // Use SharedArrayBuffers directly
-      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(task.posBuffer), 3));
-      geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(task.normalBuffer), 3));
+      geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(task.posBuffer), 3),
+      );
+      geometry.setAttribute(
+        'normal',
+        new THREE.BufferAttribute(new Float32Array(task.normalBuffer), 3),
+      );
       geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(task.uvBuffer), 2));
-      geometry.setAttribute('elevation', new THREE.BufferAttribute(new Float32Array(task.elevationBuffer), 1));
+      geometry.setAttribute(
+        'elevation',
+        new THREE.BufferAttribute(new Float32Array(task.elevationBuffer), 1),
+      );
 
       // Index caching
       let index = this.indexCache.get(task.segments);
@@ -130,15 +149,23 @@ class PlanetWorkerPool {
     planetSize: number,
     material: PlanetMaterial,
     params: FBMParams,
-    targetMesh?: THREE.Mesh
+    targetMesh?: THREE.Mesh,
   ): Promise<THREE.BufferGeometry> {
     return new Promise((resolve) => {
       const vertexCount = (segments + 1) * (segments + 1);
 
       const task: Task = {
         posBuffer: this.getBuffer(this.posPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT),
-        normalBuffer: this.getBuffer(this.normalPool, vertexCount, 3 * Float32Array.BYTES_PER_ELEMENT),
-        elevationBuffer: this.getBuffer(this.elevationPool, vertexCount, Float32Array.BYTES_PER_ELEMENT),
+        normalBuffer: this.getBuffer(
+          this.normalPool,
+          vertexCount,
+          3 * Float32Array.BYTES_PER_ELEMENT,
+        ),
+        elevationBuffer: this.getBuffer(
+          this.elevationPool,
+          vertexCount,
+          Float32Array.BYTES_PER_ELEMENT,
+        ),
         uvBuffer: this.getBuffer(this.uvPool, vertexCount, 2 * Float32Array.BYTES_PER_ELEMENT),
         planetSize,
         params,
@@ -159,10 +186,18 @@ class PlanetWorkerPool {
     const { mesh, geometry } = this.createOrReuseMesh(task);
 
     // Directly update attributes (no allocations)
-    (geometry.getAttribute('position') as THREE.BufferAttribute).array.set(new Float32Array(task.posBuffer));
-    (geometry.getAttribute('normal') as THREE.BufferAttribute).array.set(new Float32Array(task.normalBuffer));
-    (geometry.getAttribute('uv') as THREE.BufferAttribute).array.set(new Float32Array(task.uvBuffer));
-    (geometry.getAttribute('elevation') as THREE.BufferAttribute).array.set(new Float32Array(task.elevationBuffer));
+    (geometry.getAttribute('position') as THREE.BufferAttribute).array.set(
+      new Float32Array(task.posBuffer),
+    );
+    (geometry.getAttribute('normal') as THREE.BufferAttribute).array.set(
+      new Float32Array(task.normalBuffer),
+    );
+    (geometry.getAttribute('uv') as THREE.BufferAttribute).array.set(
+      new Float32Array(task.uvBuffer),
+    );
+    (geometry.getAttribute('elevation') as THREE.BufferAttribute).array.set(
+      new Float32Array(task.elevationBuffer),
+    );
 
     // Mark for GPU update
     for (const name of ['position', 'normal', 'uv', 'elevation'] as const) {

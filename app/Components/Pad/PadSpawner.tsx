@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { curveType } from '@/Constants';
 import { PadType, PlayerRef, PadData, usePadControllerBatch } from './usePadControllerBatch';
-import Pad from './Pad';
+import { Pad } from './Pad';
 
 type PadSpawnerProps = {
   curve: curveType;
@@ -49,7 +49,10 @@ export default function PadSpawner({
         .addScaledVector(offsetUp, Math.sin(randomAngle) * randomRadius);
 
       const finalPosition = position.clone().add(offset);
-      const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+      const quaternion = new THREE.Quaternion().setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        tangent,
+      );
 
       return { position: finalPosition, quaternion };
     });
@@ -71,7 +74,6 @@ export default function PadSpawner({
   return (
     <>
       {pads.map((pad, i) => {
-
         return (
           <Pad
             key={i}
@@ -79,7 +81,7 @@ export default function PadSpawner({
             meshRef={meshRefs[i]}
             position={pad.position}
             quaternion={pad.quaternion}
-            playerRefs={playerRefs}
+            didPass
           />
         );
       })}

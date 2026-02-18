@@ -4,24 +4,25 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { BotInit } from '@/Constants';
+import { useGameStore } from '@/Controllers/Game/GameController';
 
 type UseBotsWorkerControllerProps = {
   botsInit: BotInit[];
   botRefs: React.RefObject<THREE.Group | null>[];
-  curve: THREE.Curve<THREE.Vector3>;
   onBotFire: (botId: number) => void;
   onBotDropMine: (botId: number) => void;
 };
 
+export type TriggerImpulse = (botId: number, impulse: [number, number, number]) => void;
+
 export function useBotsWorkerController({
   botsInit,
   botRefs,
-  curve,
   onBotFire,
   onBotDropMine,
 }: UseBotsWorkerControllerProps) {
+  const curve = useGameStore(s => s.track);
   const trackWaypoints = useMemo(() => curve.getPoints(100), [curve]);
-
   const workerRef = useRef<Worker | null>(null);
   const readyRef = useRef(false);
 
@@ -29,16 +30,24 @@ export function useBotsWorkerController({
   const quaternionBufferRef = useRef<Float32Array | null>(null);
 
   function triggerImpulseFromMain(botId: number, impulse: [number, number, number]) {
+    console.log('triggering impulse', { botId, impulse });
     const worker = workerRef.current;
     if (!worker || !readyRef.current) return;
+    console.log('posting to worker');
     worker.postMessage({ type: 'triggerImpulse', botId, impulse });
+  }
+
+  function setWorkerCannon(botId: number, value: number) {
+    console.log('trigger set cannon', value);
+    const worker = workerRef.current;
+    if (!worker || !readyRef.current) return;
+    worker.postMessage({ type: 'setCannon', value });
   }
 
   // --- Setup worker once ---
   useEffect(() => {
     if (workerRef.current) return;
 
-    console.log('[useBotsWorkerController] Initializing worker...');
     const worker = new Worker(new URL('@/workers/BotWorker.worker.ts', import.meta.url));
     workerRef.current = worker;
 
@@ -51,11 +60,9 @@ export function useBotsWorkerController({
     // --- Handle messages from worker ---
     worker.onmessage = (e) => {
       const { type, payload } = e.data;
-      console.log('[BotWorker → Main]', e.data);
 
       switch (type) {
         case 'ready':
-          console.log('[useBotsWorkerController] Worker ready, sending init...');
           readyRef.current = true;
 
           const waypointsFlat = trackWaypoints.flatMap((v) => v.toArray());
@@ -69,7 +76,6 @@ export function useBotsWorkerController({
             waypoints: waypointsFlat,
           });
 
-          console.log(`[useBotsWorkerController] Worker init sent for ${numBots} bots`);
           break;
 
         case 'bot_events':
@@ -86,7 +92,6 @@ export function useBotsWorkerController({
     };
 
     return () => {
-      console.log('[useBotsWorkerController] Terminating worker...');
       worker.terminate();
       workerRef.current = null;
       readyRef.current = false;
@@ -115,8 +120,9 @@ export function useBotsWorkerController({
       ref.quaternion.set(quatArray[q], quatArray[q + 1], quatArray[q + 2], quatArray[q + 3]);
     }
   });
-  
+
   return {
-    triggerImpulseFromMain
-  }
+    triggerImpulseFromMain,
+    setWorkerCannon,
+  };
 }

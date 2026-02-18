@@ -190,3 +190,22 @@ kbd {
 .spacer {
   height: 100vh;
 }
+
+
+.canvas-loading {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 40%, #0a1630 0%, #000 70%);
+}
+
+.canvas-fallback {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9cc3ff;
+  background: #02050d;
+  z-index: -1;
+}

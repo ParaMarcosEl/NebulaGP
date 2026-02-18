@@ -136,11 +136,10 @@ export class PlanetMaterial extends THREE.MeshStandardMaterial {
   }
 
   setParams(params: Partial<Record<keyof PlanetUniforms, number | { value: number }>>) {
-  (Object.keys(params) as (keyof PlanetUniforms)[]).forEach((key) => {
-    const uniform = this.customUniforms[key];
-    const value = params[key];
-    if (uniform) uniform.value = typeof value === 'number' ? value : value?.value;
-  });
-}
-
+    (Object.keys(params) as (keyof PlanetUniforms)[]).forEach((key) => {
+      const uniform = this.customUniforms[key];
+      const value = params[key];
+      if (uniform) uniform.value = typeof value === 'number' ? value : value?.value;
+    });
+  }
 }

@@ -17,7 +17,7 @@ function usePadController(
   playerRefs: PlayerRef[],
   padRef: React.RefObject<THREE.Mesh>,
   cooldownTime: number,
-  onActivate: (playerId: number) => void
+  onActivate: (playerId: number) => void,
 ) {
   const cooldown = useRef(0);
   const pad = useRef<Pad>({ mesh: padRef.current!, didPass: false });
@@ -60,7 +60,11 @@ function usePadController(
 }
 
 // --- Individual pad hooks ---
-export function useMinePad(playerRefs: PlayerRef[], minePadRef: React.RefObject<THREE.Mesh>, cooldownTime = 2) {
+export function useMinePad(
+  playerRefs: PlayerRef[],
+  minePadRef: React.RefObject<THREE.Mesh>,
+  cooldownTime = 2,
+) {
   const { setUseMine, raceData } = useGameStore();
   return usePadController(playerRefs, minePadRef, cooldownTime, (id) => {
     const { cannonValue, shieldValue, useMine } = raceData[id];
@@ -68,7 +72,11 @@ export function useMinePad(playerRefs: PlayerRef[], minePadRef: React.RefObject<
   });
 }
 
-export function useShieldPad(playerRefs: PlayerRef[], shieldPadRef: React.RefObject<THREE.Mesh>, cooldownTime = 2) {
+export function useShieldPad(
+  playerRefs: PlayerRef[],
+  shieldPadRef: React.RefObject<THREE.Mesh>,
+  cooldownTime = 2,
+) {
   const { setShieldValue, raceData } = useGameStore();
   return usePadController(playerRefs, shieldPadRef, cooldownTime, (id) => {
     const { cannonValue, shieldValue, useMine } = raceData[id];
@@ -76,7 +84,11 @@ export function useShieldPad(playerRefs: PlayerRef[], shieldPadRef: React.RefObj
   });
 }
 
-export function useWeaponsPad(playerRefs: PlayerRef[], weaponsPadRef: React.RefObject<THREE.Mesh>, cooldownTime = 2) {
+export function useWeaponsPad(
+  playerRefs: PlayerRef[],
+  weaponsPadRef: React.RefObject<THREE.Mesh>,
+  cooldownTime = 2,
+) {
   const { setCannon, raceData } = useGameStore();
   return usePadController(playerRefs, weaponsPadRef, cooldownTime, (id) => {
     const { cannonValue, shieldValue, useMine } = raceData[id];
@@ -84,12 +96,16 @@ export function useWeaponsPad(playerRefs: PlayerRef[], weaponsPadRef: React.RefO
   });
 }
 
-export function useSpeedPad(playerRefs: PlayerRef[], speedPadRef: React.RefObject<THREE.Mesh>, cooldownTime = 2) {
-    const { applyBoost } = useGameStore();
-        const playSound = usePlaySound();
-        const { buffers, audioEnabled } = useAudioStore((s) => s);
-    return usePadController(playerRefs, speedPadRef, cooldownTime, (id) => {
-        applyBoost(id);
-        if (audioEnabled) playSound(buffers['speedup01'], speedPadRef.current.position, 1);
-    })
+export function useSpeedPad(
+  playerRefs: PlayerRef[],
+  speedPadRef: React.RefObject<THREE.Mesh>,
+  cooldownTime = 2,
+) {
+  const { applyBoost } = useGameStore();
+  const playSound = usePlaySound();
+  const { buffers, audioEnabled } = useAudioStore((s) => s);
+  return usePadController(playerRefs, speedPadRef, cooldownTime, (id) => {
+    applyBoost(id);
+    if (audioEnabled) playSound(buffers['speedup01'], speedPadRef.current.position, 1);
+  });
 }

@@ -31,9 +31,10 @@ export default function SpeedPadSpawner({
       const position = curve.getPoint(t);
       const tangent = curve.getTangent(t).normalize();
 
-      const up = Math.abs(tangent.dot(new THREE.Vector3(0, 1, 0))) > 0.95
-        ? new THREE.Vector3(1, 0, 0)
-        : new THREE.Vector3(0, 1, 0);
+      const up =
+        Math.abs(tangent.dot(new THREE.Vector3(0, 1, 0))) > 0.95
+          ? new THREE.Vector3(1, 0, 0)
+          : new THREE.Vector3(0, 1, 0);
 
       const side = new THREE.Vector3().crossVectors(tangent, up).normalize();
       const offsetUp = new THREE.Vector3().crossVectors(side, tangent).normalize();
@@ -56,7 +57,12 @@ export default function SpeedPadSpawner({
   return (
     <>
       {pads.map((pad, index) => (
-        <SpeedPad key={index} position={pad.position} quaternion={pad.quaternion} playerRefs={playerRefs} />
+        <SpeedPad
+          key={index}
+          position={pad.position}
+          quaternion={pad.quaternion}
+          playerRefs={playerRefs}
+        />
       ))}
     </>
   );

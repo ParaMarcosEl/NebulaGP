@@ -13,17 +13,11 @@ import { ControlButtons } from '../TouchControls/ControlButtons';
 import RadialTouchInput from '../TouchControls/RadialTouchInput';
 
 export const HUDUI = ({
-  speed,
-  positions,
-  curve,
   styles,
   trackId,
   playerRefs,
 }: {
-  speed: number;
   styles?: string;
-  positions: { id: number; isPlayer: boolean; v: THREE.Vector3 }[];
-  curve: THREE.Curve<THREE.Vector3>;
   trackId: number;
   playerRefs: React.RefObject<THREE.Object3D | null>[];
 }) => {
@@ -38,8 +32,8 @@ export const HUDUI = ({
       <StartCountdown />
       <RadialTouchInput />
       <ControlButtons />
-      <Speedometer speed={speed} />
-      <MiniMap positions={positions} curve={curve} styles={styles} />
+      <Speedometer />
+      <MiniMap styles={styles} />
     </>
   );
 };

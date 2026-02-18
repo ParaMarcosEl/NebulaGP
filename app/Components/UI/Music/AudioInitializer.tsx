@@ -2,16 +2,31 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAudioStore } from '@/Controllers/Audio/useAudioStore';
+import { useIntroGateStore } from '@/Controllers/UI/useIntroGateStore';
 import './PlaylistInitializer.css';
 
 const AudioInitializer = () => {
   const [isClient, setIsClient] = useState(false);
   const [hasPrompted, setHasPrompted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { setAudioPromptVisible, resolveAudioPrompt } = useIntroGateStore((s) => s);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (!isClient || hasPrompted) {
+      setAudioPromptVisible(false);
+      return;
+    }
+
+    setAudioPromptVisible(true);
+
+    return () => {
+      setAudioPromptVisible(false);
+    };
+  }, [hasPrompted, isClient, setAudioPromptVisible]);
 
   const {
     tracks,
@@ -68,6 +83,7 @@ const AudioInitializer = () => {
   const handleYes = () => {
     setAudioEnabled(true);
     setHasPrompted(true);
+    resolveAudioPrompt();
     setPlaying(true);
     setMasterVolume(masterVolume);
     setMusicVolume(musicVolume);
@@ -77,6 +93,7 @@ const AudioInitializer = () => {
   const handleNo = () => {
     setAudioEnabled(false);
     setHasPrompted(true);
+    resolveAudioPrompt();
     setPlaying(false);
     if (audioRef.current) {
       audioRef.current.pause();

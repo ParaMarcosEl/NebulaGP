@@ -1,38 +1,48 @@
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 
+/**
+ * FollowCamera applies a smooth, exponential lag to follow the target.
+ * This is necessary if the target itself is snapping (due to network correction)
+ * or if a desirable "floaty" cinematic feel is desired.
+ */
 export default function FollowCamera({
-  targetRef,
+  targetRef,
 }: {
-  targetRef: React.RefObject<THREE.Object3D | null>;
+  targetRef: React.RefObject<THREE.Object3D | null>;
 }) {
-  const { camera } = useThree();
+  const { camera } = useThree();
 
-useFrame((_, delta) => {
-  const target = targetRef.current;
-  if (!target) return;
+  useFrame((_, delta) => { // Must capture delta for time-based smoothing
+    const target = targetRef.current;
+    if (!target) return;
 
-  // Target rotation & position
-  const targetQuat = target.getWorldQuaternion(new THREE.Quaternion());
-  const offset = new THREE.Vector3(0, 0, 8).applyQuaternion(targetQuat);
-  const desiredPosition = target.position.clone().add(offset);
+    // Target rotation & position
+    const targetQuat = target.getWorldQuaternion(new THREE.Quaternion());
 
-  // --- Time-based smoothing
-  // positionLag and rotationLag represent the "half-life" in seconds:
-  // the smaller the value, the snappier the camera
-  const positionLag = 0.1; // 0.1s to cover ~63% of the distance
-  const rotationLag = 0.05;
+    // Define the camera offset (8 units back) relative to the target's rotation
+    const offset = new THREE.Vector3(0, 0, 8).applyQuaternion(targetQuat);
+    const desiredPosition = target.position.clone().add(offset);
 
-  // Exponential smoothing formula
-  const positionAlpha = 1 - Math.exp(-delta / positionLag);
-  const rotationAlpha = 1 - Math.exp(-delta / rotationLag);
+    // --- Time-based smoothing ---
+    // positionLag and rotationLag represent the "half-life" in seconds:
+    // the smaller the value, the snappier the camera.
+    // We re-introducing these values to remove the sudden "snap."
+    const positionLag = 0.15; // Increased slightly for more noticeable smoothness
+    const rotationLag = 0.1;
 
-  camera.position.lerp(desiredPosition, positionAlpha);
-  camera.quaternion.slerp(targetQuat, rotationAlpha);
-});
+    // Exponential smoothing alpha calculation, using delta time
+    const positionAlpha = 1 - Math.exp(-delta / positionLag);
+    const rotationAlpha = 1 - Math.exp(-delta / rotationLag);
 
+    // 1. Position: Smoothly move the camera towards the desired position
+    camera.position.lerp(desiredPosition, positionAlpha);
 
-  return null;
+    // 2. Rotation: Smoothly rotate the camera towards the target's rotation
+    camera.quaternion.slerp(targetQuat, rotationAlpha);
+  });
+
+  return null;
 }
 
 export { FollowCamera };

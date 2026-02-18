@@ -184,7 +184,6 @@ class QuadTreeNode {
       mesh.userData.isPlanet = true;
       mesh.userData.sharedMaterial = true;
 
-
       // Orient and position
       const up = new THREE.Vector3(0, 0, 1);
       const q = new THREE.Quaternion().setFromUnitVectors(up, normal);
@@ -456,39 +455,38 @@ export class CubeTree {
     }
     return closest;
   }
-  
+
   private evictBatchSize = 5; // number of meshes to evict per call
 
-private evictIfNeeded() {
-  if (this.meshCache.size <= this.maxCacheSize) return;
+  private evictIfNeeded() {
+    if (this.meshCache.size <= this.maxCacheSize) return;
 
-  // Sort entries by lastUsed ascending (oldest first)
-  const entries = Array.from(this.meshCache.entries()).sort(
-    (a, b) => a[1].lastUsed - b[1].lastUsed
-  );
+    // Sort entries by lastUsed ascending (oldest first)
+    const entries = Array.from(this.meshCache.entries()).sort(
+      (a, b) => a[1].lastUsed - b[1].lastUsed,
+    );
 
-  // Evict only a small batch at a time
-  const toEvict = Math.min(entries.length, this.evictBatchSize);
+    // Evict only a small batch at a time
+    const toEvict = Math.min(entries.length, this.evictBatchSize);
 
-  for (let i = 0; i < toEvict; i++) {
-    const [key, entry] = entries[i];
-    try {
-      const mesh = entry.mesh.deref();
-      if (mesh) {
-        if (this.group.children.includes(mesh)) this.group.remove(mesh);
-        disposeMesh(mesh);
-      }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      // best-effort dispose
+    for (let i = 0; i < toEvict; i++) {
+      const [key, entry] = entries[i];
       try {
-        disposeMesh(entry.mesh.deref()!);
-      } catch {}
+        const mesh = entry.mesh.deref();
+        if (mesh) {
+          if (this.group.children.includes(mesh)) this.group.remove(mesh);
+          disposeMesh(mesh);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        // best-effort dispose
+        try {
+          disposeMesh(entry.mesh.deref()!);
+        } catch {}
+      }
+      this.meshCache.delete(key);
     }
-    this.meshCache.delete(key);
   }
-}
-
 
   async getDynamicMeshesAsync(camera: THREE.Camera, maxDepth = 1): Promise<THREE.Group> {
     const frustum = getCameraFrustum(camera);

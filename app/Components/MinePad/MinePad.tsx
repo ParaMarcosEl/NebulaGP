@@ -17,10 +17,7 @@ export default function MinePad({ position, quaternion, playerRefs }: MinePadPro
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the WeaponPadController logic
-  const WeaponPad = useMinePad(
-    playerRefs,
-    meshRef as React.RefObject<THREE.Mesh>,
-    2);
+  const WeaponPad = useMinePad(playerRefs, meshRef as React.RefObject<THREE.Mesh>, 2);
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>

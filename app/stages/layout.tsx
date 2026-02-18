@@ -10,7 +10,6 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
     <div className="game-layout">
       {children}
       <AnalogInput />
-
     </div>
   );
 }

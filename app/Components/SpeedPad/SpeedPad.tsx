@@ -17,11 +17,7 @@ export default function SpeedPad({ position, quaternion, playerRefs }: SpeedPadP
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Hook into the SpeedPadController logic
-  const speedPad = useSpeedPad(
-    playerRefs,
-    meshRef as React.RefObject<THREE.Mesh>,
-    2,
-  );
+  const speedPad = useSpeedPad(playerRefs, meshRef as React.RefObject<THREE.Mesh>, 2);
 
   return (
     <mesh ref={meshRef} position={position} quaternion={quaternion}>

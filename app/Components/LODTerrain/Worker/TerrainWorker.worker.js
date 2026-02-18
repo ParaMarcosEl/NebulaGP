@@ -1,4 +1,3 @@
-
 function permuteScalar(x) {
   return ((x * 34.0 + 1.0) * x) % 289.0;
 }
@@ -96,7 +95,6 @@ self.onmessage = (e) => {
   const elevations = new Float32Array(positions.length / 3);
   const epsilon = 0.01;
   try {
-
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
       const z = positions[i + 2];
@@ -155,7 +153,6 @@ self.onmessage = (e) => {
 
   self.postMessage({ normals, elevations, positions /* SAB not needed for inputs */ });
 };
-
 
 // self.onmessage = ({ data }) => {
 //   const { positions } = data;

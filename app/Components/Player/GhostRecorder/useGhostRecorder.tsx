@@ -122,7 +122,6 @@ export function useGhostRecorder({
       const history = raceData[0].history;
       const lapTimes = history.map(({ time }) => time);
       const totalTime = history.reduce((prev, curr) => prev + curr.time, 0);
-      console.log({ totalTime, bestTime, user, records });
       const userRecord = records?.find((record) => record.userId === user?.id);
 
       if (totalTime > (userRecord?.totalTime || Infinity)) return;
@@ -139,10 +138,8 @@ export function useGhostRecorder({
       };
 
       if (userRecord) {
-        console.log('user record found. updating record.');
         updateRecord(userRecord.id, recordData);
       } else {
-        console.log('no record found for user. creating record.');
         createRecord(recordData);
       }
     }

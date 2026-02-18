@@ -1,160 +1,76 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useFullscreen } from '@/Controllers/UI/useFullscreen';
-import './page.css';
-import * as THREE from 'three';
 import { useCanvasLoader } from './Components/UI/Loader/CanvasLoader';
 import NavBar from './Components/UI/Navigation/NavBar';
 import AuthForm from './Components/UI/Auth/AuthForm';
 import AuthGuard from './Components/UI/Auth/AuthGaurd';
 import { useUserStore } from './Controllers/Users/useUserStore';
-import { Canvas } from '@react-three/fiber';
-import { Skybox } from './Components/Skybox/Skybox';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import Planet from './Components/World/Planet';
-import { useGameStore } from './Controllers/Game/GameController';
-import { usePlanetStore } from './Controllers/Game/usePlanetStore';
 import Modal from './Components/UI/Modal/Modal';
 import Leaderboard from './Components/UI/Leaderboard/Leaderboard';
 import Dashboard from './Components/UI/Dashboard/Dashboard';
-import ScrollCamera from './Components/Camera/ScrollCamera';
-import Satellite from './Components/World/Satellite';
-import Stars from './Components/World/Stars';
+import { useIntroGateStore } from './Controllers/UI/useIntroGateStore';
+import './page.css';
+
+const GameCanvas = dynamic(() => import('./Components/GameCanvas'), {
+  ssr: false,
+  loading: () => <div className="canvas-loading" aria-hidden="true" />,
+});
+
+const canUseIdleCallback = () => typeof window !== 'undefined' && 'requestIdleCallback' in window;
+
+const preloadGameCanvas = () => import('./Components/GameCanvas');
 
 export default function Home() {
   useFullscreen();
   const [leaderboard1, setLeaderboard1] = useState(false);
-  // const [leaderboard2, setLeaderboard2] = useState(false);
-  // const [leaderboard3, setLeaderboard3] = useState(false);
   const [leaderboard1tt, setLeaderboard1tt] = useState(false);
-  // const [leaderboard2tt, setLeaderboard2tt] = useState(false);
-  // const [leaderboard3tt, setLeaderboard3tt] = useState(false);
 
   const uiContainerRef = useRef<HTMLDivElement>(null);
   const stageSelectRef = useRef<HTMLElement>(null);
   const dashboardRef = useRef<HTMLElement>(null);
 
-  const sunRef = useRef<THREE.Object3D>(null);
-  const graniteRef = useRef<THREE.Object3D>(null);
-  const rubyRef = useRef<THREE.Object3D>(null);
-
   const { loader } = useCanvasLoader();
-  const { setMaterialLoaded } = useGameStore((s) => s);
+  const { user } = useUserStore((s) => s);
+  const { audioPromptVisible, audioPromptResolved } = useIntroGateStore((s) => s);
 
   useEffect(() => {
-    setMaterialLoaded(true);
-    usePlanetStore.getState().setPlanetReady(true);
+    if (!audioPromptVisible) return;
 
-    return () => {
-      usePlanetStore.getState().setPlanetReady(false);
-      setMaterialLoaded(false);
-    };
-  }, []);
+    let cleanup = () => {};
 
-  const { user } = useUserStore((s) => s);
+    if (canUseIdleCallback()) {
+      const idleId = window.requestIdleCallback(() => {
+        void preloadGameCanvas();
+      });
+
+      cleanup = () => window.cancelIdleCallback(idleId);
+    } else {
+      const timeoutId = window.setTimeout(() => {
+        void preloadGameCanvas();
+      }, 150);
+
+      cleanup = () => window.clearTimeout(timeoutId);
+    }
+
+    return cleanup;
+  }, [audioPromptVisible]);
 
   return (
     <>
       {loader}
-      <Canvas
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: -1,
-          width: '100%',
-          height: '100%',
-        }}
-        className="canval"
-        camera={{ position: [0, 5, 15], fov: 60 }}
-      >
-        <Skybox stageName="stageE" />
-        <Suspense fallback={null}>
-          <ambientLight intensity={0.4} />
-          <directionalLight
-            position={[5, 10, 7]}
-            intensity={0.8}
-            castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
-            shadow-camera-near={0.5}
-            shadow-camera-far={500}
-          />
-          <pointLight position={[-10, 5, -10]} intensity={0.3} />
-          <Stars radius={500} count={3000} texturePath="/textures/particleDot512.png" />
-          <Planet
-            clouds={false}
-            texturePath="molten_rock128"
-            emissive
-            color="white"
-            emissiveColor="white"
-            emissiveIntensity={2}
-            size={40}
-            ref={sunRef as React.RefObject<THREE.Object3D>}
-            position={new THREE.Vector3(-120, -120, -500)}
-          />
-
-          <Satellite
-            planetRef={sunRef as React.RefObject<THREE.Object3D>}
-            orbitRadius={100}
-            orbitSpeed={0.55}
-            tilt={0.5}
-          >
-            <Planet color="lime" size={5} cloudRadius={0.5} />
-          </Satellite>
-          <Planet
-            clouds={false}
-            texturePath="ruby_ground128"
-            emissive
-            color="white"
-            emissiveColor="white"
-            emissiveIntensity={2}
-            size={30}
-            ref={graniteRef as React.RefObject<THREE.Object3D>}
-            position={new THREE.Vector3(160, 0, -200)}
-          />
-
-          <Satellite
-            planetRef={graniteRef as React.RefObject<THREE.Object3D>}
-            orbitRadius={60}
-            orbitSpeed={0.287}
-            tilt={1}
-          >
-            <Planet texturePath="granite_ground128" size={1} clouds={false} />
-          </Satellite>
-
-          <Satellite
-            planetRef={graniteRef as React.RefObject<THREE.Object3D>}
-            orbitRadius={40}
-            orbitSpeed={0.431}
-            tilt={5}
-          >
-            <Planet texturePath="granite_ground128" size={1} clouds={false} />
-          </Satellite>
-          <Planet
-            clouds={false}
-            texturePath="rocky_ground128"
-            emissive
-            color="white"
-            emissiveColor="white"
-            emissiveIntensity={2}
-            size={30}
-            ref={rubyRef as React.RefObject<THREE.Object3D>}
-            position={new THREE.Vector3(-20, 0, 300)}
-          />
-          <ScrollCamera
+      {audioPromptResolved && (
+        <Suspense fallback={<div className="canvas-loading" aria-hidden="true" />}>
+          <GameCanvas
             uiContainerRef={uiContainerRef as React.RefObject<HTMLDivElement>}
             dashboardRef={dashboardRef as React.RefObject<HTMLDivElement>}
             stageSelectRef={stageSelectRef as React.RefObject<HTMLDivElement>}
-            planetRefs={{
-              sun: sunRef as React.RefObject<THREE.Object3D>,
-              granite: graniteRef as React.RefObject<THREE.Object3D>,
-              ruby: rubyRef as React.RefObject<THREE.Object3D>,
-            }}
           />
         </Suspense>
-      </Canvas>
+      )}
 
       <main className="main">
         <NavBar uiContainerRef={uiContainerRef as React.RefObject<HTMLElement>} />
@@ -166,7 +82,6 @@ export default function Home() {
               className="link play"
               onClick={() => {
                 if (stageSelectRef.current && uiContainerRef.current)
-                  // uiContainerRef.current.scrollTo(0, stageSelectRef.current.offsetTop);
                   uiContainerRef.current.scrollTo({
                     top: stageSelectRef.current.offsetTop,
                     behavior: 'smooth',
@@ -196,52 +111,16 @@ export default function Home() {
                 </Link>
                 <button onClick={() => setLeaderboard1tt(true)}>Leaderboard</button>
               </div>
-
-              {/* <div>
-                <span>Stage 2</span>
-                <Link href="/stages/stage2" className="stage-select-link">
-                  Race
-                </Link>
-                <button onClick={() => setLeaderboard2(true)}>Leaderboard</button>
-                <Link href="/stages/stage2/time-trial" className="stage-select-link">
-                  Time Trial
-                </Link>
-                <button onClick={() => setLeaderboard2tt(true)}>Leaderboard</button>
-              </div>
-
-              <div>
-                <span>Stage 3</span>
-                <Link href="/stages/stage3" className="stage-select-link">
-                  Race
-                </Link>
-                <button onClick={() => setLeaderboard3(true)}>Leaderboard</button>
-                <Link href="/stages/stage3/time-trial" className="stage-select-link">
-                  Time Trial
-                </Link>
-                <button onClick={() => setLeaderboard3tt(true)}>Leaderboard</button>
-              </div> */}
             </div>
           </section>
 
           <Modal isOpen={leaderboard1} onClose={() => setLeaderboard1(false)}>
             <Leaderboard trackId="/stages/stage1" />
           </Modal>
-          {/* <Modal isOpen={leaderboard2} onClose={() => setLeaderboard2(false)}>
-            <Leaderboard trackId="/stages/stage2" />
-          </Modal>
-          <Modal isOpen={leaderboard3} onClose={() => setLeaderboard3(false)}>
-            <Leaderboard trackId="/stages/stage3" />
-          </Modal> */}
 
           <Modal isOpen={leaderboard1tt} onClose={() => setLeaderboard1tt(false)}>
             <Leaderboard trackId="/stages/stage1/time-trial" />
           </Modal>
-          {/* <Modal isOpen={leaderboard2tt} onClose={() => setLeaderboard2tt(false)}>
-            <Leaderboard trackId="/stages/stage2/time-trial" />
-          </Modal>
-          <Modal isOpen={leaderboard3tt} onClose={() => setLeaderboard3tt(false)}>
-            <Leaderboard trackId="/stages/stage3/time-trial" />
-          </Modal> */}
         </div>
       </main>
     </>

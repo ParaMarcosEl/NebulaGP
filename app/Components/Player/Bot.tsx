@@ -4,12 +4,10 @@ import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { SHIPS } from '@/Constants';
-import { useGameStore } from '@/Controllers/Game/GameController';
 import { Shield } from '../Shield/Shield';
 import { Mine } from '../Weapons/useMines';
 import { EngineSound } from '../Audio/EngineSound';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
-// import { useBotWorkerController } from './useBotsWorkerController';
 
 type BotProps = {
   id: number;
@@ -48,7 +46,6 @@ export default function Bot({
   const { scene: sceneModel } = useGLTF(ship.path);
   const model = useMemo(() => sceneModel.clone(true), [sceneModel]);
   const trailTarget = useRef<THREE.Object3D | null>(null);
-  const { raceData } = useGameStore((s) => s);
 
   // const trackWaypoints = useMemo(() => {
   //   const pts: THREE.Vector3[] = [];
@@ -89,7 +86,7 @@ export default function Bot({
       </group>
       <Shield
         target={aircraftRef as React.RefObject<THREE.Object3D>}
-        shieldValue={raceData[id].shieldValue}
+        playerId={id}
       />
     </>
   );

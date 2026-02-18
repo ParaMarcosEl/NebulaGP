@@ -79,7 +79,7 @@ export function useShipCollisions({
             if (tempDataB && tempDataB.shieldValue > 0) {
               setShieldValue(tempDataB.shieldValue - 0.2, obbB.ref.userData.id);
             }
-            onCollide(obbA.ref, obbB.ref, );
+            onCollide(obbA.ref, obbB.ref);
             playSound(buffers['clank04'], obbA.ref.position, 1);
             playSound(buffers['clank07'], obbB.ref.position, 1);
           }
