@@ -95,6 +95,15 @@ export class MultiplayerClient {
   playerId: string | null = null;
   roomId: string | null = null;
 
+  private debugLog(message: string, meta?: Record<string, unknown>): void {
+    if (typeof console === 'undefined') return;
+    if (meta) {
+      console.info(`[MultiplayerClient] ${message}`, meta);
+      return;
+    }
+    console.info(`[MultiplayerClient] ${message}`);
+  }
+
   constructor(config: MultiplayerClientConfig = {}) {
     this.url = config.url ?? defaultMultiplayerWsUrl();
     this.autoReconnect = config.autoReconnect ?? true;
@@ -110,13 +119,18 @@ export class MultiplayerClient {
     this.lastJoinPayload = joinPayload;
 
     if (this.ws && this.isSocketOpenOrConnecting(this.ws)) {
+      this.debugLog('connect() skipped; socket already open/connecting', {
+        readyState: this.ws.readyState,
+      });
       return;
     }
 
+    this.debugLog('Opening websocket connection', { url: this.url });
     this.clearReconnectTimer();
     this.ws = new WebSocket(this.url);
 
     this.ws.onopen = () => {
+      this.debugLog('WebSocket connected', { url: this.url });
       this.send('join', this.lastJoinPayload ?? {});
       this.flushQueue();
       this.emit('open', undefined);
@@ -150,13 +164,20 @@ export class MultiplayerClient {
     };
 
     this.ws.onerror = (error) => {
+      this.debugLog('WebSocket error emitted');
       this.emit('error', error);
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = (event) => {
+      this.debugLog('WebSocket disconnected', {
+        code: event.code,
+        reason: event.reason || 'no reason provided',
+        wasClean: event.wasClean,
+      });
       this.emit('close', undefined);
 
       if (this.autoReconnect && !this.manuallyDisconnected) {
+        this.debugLog('Scheduling websocket reconnect', { delayMs: this.reconnectDelayMs });
         this.reconnectTimer = setTimeout(() => {
           this.connect(this.lastJoinPayload ?? {});
         }, this.reconnectDelayMs);
@@ -165,14 +186,19 @@ export class MultiplayerClient {
   }
 
   disconnect(): void {
+    this.debugLog('Disconnect requested by client');
     this.manuallyDisconnected = true;
     this.clearReconnectTimer();
     const socket = this.ws;
     this.ws = null;
 
     if (socket && this.isSocketOpenOrConnecting(socket)) {
+      this.debugLog('Closing websocket connection', { readyState: socket.readyState });
       socket.close(1000, 'Client disconnect');
+      return;
     }
+
+    this.debugLog('No websocket to close during disconnect');
   }
 
   send(type: string, payload?: unknown): void {
