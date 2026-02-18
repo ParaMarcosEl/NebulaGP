@@ -109,7 +109,7 @@ export class MultiplayerClient {
     this.manuallyDisconnected = false;
     this.lastJoinPayload = joinPayload;
 
-    if (this.ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(this.ws.readyState)) {
+    if (this.ws && this.isSocketOpenOrConnecting(this.ws)) {
       return;
     }
 
@@ -170,7 +170,7 @@ export class MultiplayerClient {
     const socket = this.ws;
     this.ws = null;
 
-    if (socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) {
+    if (socket && this.isSocketOpenOrConnecting(socket)) {
       socket.close(1000, 'Client disconnect');
     }
   }
@@ -235,6 +235,10 @@ export class MultiplayerClient {
     }
   }
 
+
+  private isSocketOpenOrConnecting(socket: WebSocket): boolean {
+    return socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING;
+  }
   private clearReconnectTimer(): void {
     if (!this.reconnectTimer) return;
     clearTimeout(this.reconnectTimer);
