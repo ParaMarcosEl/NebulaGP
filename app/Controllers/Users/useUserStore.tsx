@@ -4,6 +4,7 @@
 import { create } from 'zustand';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/Lib/Firebase';
+import { MultiplayerClient, type JoinPayload } from '@/Lib/multiplayer/MultiplayerClient';
 import type { User } from '@/Constants/types';
 import { useAlertStore } from '../Alert/useAlertStore';
 import { fetchWithAppCheck } from './useUser';
@@ -12,10 +13,14 @@ interface UserState {
   user: User | null;
   loading: boolean;
   error: string | null;
+  multiplayerClient: MultiplayerClient | null;
 
   setError: (error: string | null) => void;
 
   setUser: (user: User | null) => void;
+  setMultiplayerClient: (client: MultiplayerClient | null) => void;
+  connectMultiplayer: (joinPayload?: JoinPayload) => MultiplayerClient;
+  disconnectMultiplayer: () => void;
 
   fetchUserFromAPI: (uid: string) => Promise<User>;
   createUser: (newUser: User & { password?: string }) => Promise<{
@@ -33,9 +38,30 @@ export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   loading: true,
   error: null,
+  multiplayerClient: null,
 
   setError: (error) => set({ error }),
   setUser: (user) => set({ user }),
+  setMultiplayerClient: (client) => set({ multiplayerClient: client }),
+
+  connectMultiplayer: (joinPayload = {}) => {
+    const existingClient = get().multiplayerClient;
+    if (existingClient) {
+      existingClient.connect(joinPayload);
+      return existingClient;
+    }
+
+    const newClient = new MultiplayerClient();
+    newClient.connect(joinPayload);
+    set({ multiplayerClient: newClient });
+    return newClient;
+  },
+
+  disconnectMultiplayer: () => {
+    const existingClient = get().multiplayerClient;
+    existingClient?.disconnect();
+    set({ multiplayerClient: null });
+  },
 
   // Fetch user from backend
   fetchUserFromAPI: async (uid: string) => {
