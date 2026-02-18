@@ -158,6 +158,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   // Sign out
   signOutUser: async () => {
     try {
+      get().disconnectMultiplayer();
       await signOut(auth);
       set({ user: null, error: null });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,16 +171,22 @@ export const useUserStore = create<UserState>((set, get) => ({
 
 // Subscribe to Firebase auth changes once
 export function initUserStore() {
-  const { fetchUserFromAPI, setUser } = useUserStore.getState();
+  const { fetchUserFromAPI, setUser, connectMultiplayer, disconnectMultiplayer } = useUserStore.getState();
   onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
     if (firebaseUser) {
       if (!firebaseUser.emailVerified) {
+        disconnectMultiplayer();
         useAlertStore.getState().setAlert({
           type: 'error',
           message: 'Please verify your email before logging in.',
         });
         return;
       }
+
+      connectMultiplayer({
+        name: firebaseUser.displayName ?? firebaseUser.email ?? 'anon',
+      });
+
       try {
         await fetchUserFromAPI(firebaseUser.uid);
       } catch {
@@ -192,6 +199,7 @@ export function initUserStore() {
         });
       }
     } else {
+      disconnectMultiplayer();
       setUser(null);
     }
   });
