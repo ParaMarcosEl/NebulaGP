@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { setThrottle, setFiringRef } from '@/Components/Player/PlayerController'; // keep your function
+import { setThrottle, setFiringRef } from '@/Components/Player/PlayerServerController'; // keep your function
 import { isMobileDevice } from '@/Utils';
 import './ThrottleBtn.css';
 

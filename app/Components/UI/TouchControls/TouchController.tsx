@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Joystick } from 'react-joystick-component';
 import { isMobileDevice } from '@/Utils';
-import { playerInputAxis } from '@/Components/Player/PlayerController';
+import { playerInputAxis } from '@/Components/Player/PlayerServerController';
 import './TouchControlls.css';
 
 export default function TouchControls() {
