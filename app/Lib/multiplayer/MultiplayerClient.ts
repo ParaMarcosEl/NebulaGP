@@ -66,18 +66,41 @@ type OutboundMessage = {
   payload?: unknown;
 };
 
-function defaultMultiplayerWsUrl(): string {
-  if (typeof window === 'undefined') {
-    return 'ws://localhost:3030';
+const DEFAULT_MULTIPLAYER_SERVER_HTTP_URL = 'https://nebularaceserver.onrender.com';
+
+function normalizeWebSocketUrl(input: string): string {
+  if (input.startsWith('ws://') || input.startsWith('wss://')) {
+    return input;
   }
 
+  if (input.startsWith('http://')) {
+    return `ws://${input.slice('http://'.length)}`;
+  }
+
+  if (input.startsWith('https://')) {
+    return `wss://${input.slice('https://'.length)}`;
+  }
+
+  return input;
+}
+
+function defaultMultiplayerWsUrl(): string {
   if (process.env.NEXT_PUBLIC_MULTIPLAYER_WS_URL) {
-    return process.env.NEXT_PUBLIC_MULTIPLAYER_WS_URL;
+    return normalizeWebSocketUrl(process.env.NEXT_PUBLIC_MULTIPLAYER_WS_URL);
+  }
+
+  if (typeof window === 'undefined') {
+    return normalizeWebSocketUrl(DEFAULT_MULTIPLAYER_SERVER_HTTP_URL);
   }
 
   const isSecure = window.location.protocol === 'https:';
   const protocol = isSecure ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.hostname}:3030`;
+
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return `${protocol}//${window.location.hostname}:3030`;
+  }
+
+  return normalizeWebSocketUrl(DEFAULT_MULTIPLAYER_SERVER_HTTP_URL);
 }
 
 export class MultiplayerClient {
@@ -105,7 +128,7 @@ export class MultiplayerClient {
   }
 
   constructor(config: MultiplayerClientConfig = {}) {
-    this.url = config.url ?? defaultMultiplayerWsUrl();
+    this.url = normalizeWebSocketUrl(config.url ?? defaultMultiplayerWsUrl());
     this.autoReconnect = config.autoReconnect ?? true;
     this.reconnectDelayMs = config.reconnectDelayMs ?? 1000;
   }
