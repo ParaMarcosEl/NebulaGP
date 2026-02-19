@@ -108,6 +108,8 @@ export function usePlayerServerController({
   pitchVelocity = 3,
   rollVelocity = 6,
   damping = 0.998,
+  fbmParams,
+  planetSize = 350,
 }: PlayerSystemOptions) {
   const {
     playerSpeed,
@@ -134,6 +136,22 @@ export function usePlayerServerController({
     interpQuat: new THREE.Quaternion(),
     velocity: new THREE.Vector3(),
   }).current;
+
+  const terrainMaxHeight = fbmParams?.uMaxHeight ?? 10;
+  const minAllowedRadius = Math.max(planetSize + terrainMaxHeight + 2, 1);
+  const toServerPlayerSpeed = Math.max(25, playerSpeed * 50);
+
+  const enforceOutsidePlanetSurface = (object: THREE.Object3D) => {
+    const radialDistance = object.position.length();
+    if (radialDistance >= minAllowedRadius) return;
+
+    if (radialDistance <= 0.00001) {
+      object.position.set(0, minAllowedRadius, 0);
+      return;
+    }
+
+    object.position.normalize().multiplyScalar(minAllowedRadius);
+  };
 
   const aircraftObjectRef = aircraftRef as React.RefObject<THREE.Object3D>;
   const explosionHandleRef = explosionsRef as React.RefObject<ExplosionHandle>;
@@ -164,7 +182,7 @@ export function usePlayerServerController({
       pitchVelocity,
       rollVelocity,
       damping,
-      playerSpeed,
+      playerSpeed: toServerPlayerSpeed,
       invertPitch: invertPitch ? -1 : 1,
       curvePoints: curve.getPoints(200).map((p) => [p.x, p.y, p.z]),
     });
@@ -175,7 +193,7 @@ export function usePlayerServerController({
     invertPitch,
     multiplayerClient,
     pitchVelocity,
-    playerSpeed,
+    toServerPlayerSpeed,
     rollVelocity,
   ]);
 
@@ -183,10 +201,15 @@ export function usePlayerServerController({
     if (!multiplayerClient) return;
 
     multiplayerClient.send('config', {
-      playerSpeed,
+      playerSpeed: toServerPlayerSpeed,
       invertPitch: invertPitch ? -1 : 1,
     });
-  }, [invertPitch, multiplayerClient, playerSpeed]);
+  }, [invertPitch, multiplayerClient, toServerPlayerSpeed]);
+
+  useEffect(() => {
+    if (!aircraftRef.current) return;
+    enforceOutsidePlanetSurface(aircraftRef.current);
+  }, [aircraftRef, minAllowedRadius]);
 
   useEffect(() => {
     if (!multiplayerClient) return;
@@ -411,6 +434,8 @@ export function usePlayerServerController({
         }
         ship.quaternion.copy(s.quat);
       }
+
+      enforceOutsidePlanetSurface(ship);
     }
 
     if (playingFieldRef?.current) {
