@@ -12,7 +12,7 @@ import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { checkOutOfBoundsSDF } from '@/Utils/SDF';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
-import { FBMParams } from '@/Components/LODTerrain/Planet/fbm';
+import { FBMParams, terrainElevationFBM, terrainElevationRidged } from '@/Components/LODTerrain/Planet/fbm';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
 import type { PhysicsUpdatePayload } from '@/Lib/multiplayer/MultiplayerClient';
 
@@ -138,17 +138,38 @@ export function usePlayerServerController({
   }).current;
 
   const terrainMaxHeight = fbmParams?.uMaxHeight ?? 10;
-  const minAllowedRadius = Math.max(planetSize + terrainMaxHeight + 2, 1);
+  const minSurfaceOffset = 10;
   const toServerPlayerSpeed = Math.max(25, playerSpeed * 50);
 
   const enforceOutsidePlanetSurface = (object: THREE.Object3D) => {
     const radialDistance = object.position.length();
-    if (radialDistance >= minAllowedRadius) return;
 
+    let nx = 0;
+    let ny = 1;
+    let nz = 0;
+
+    if (radialDistance > 0.00001) {
+      nx = object.position.x / radialDistance;
+      ny = object.position.y / radialDistance;
+      nz = object.position.z / radialDistance;
+    }
+
+    let terrainRadius = planetSize;
+    if (fbmParams) {
+      const elevation = fbmParams.useRidged
+        ? terrainElevationRidged([nx, ny, nz], fbmParams)
+        : terrainElevationFBM([nx, ny, nz], fbmParams);
+      terrainRadius += elevation * terrainMaxHeight;
+    }
+
+    const minAllowedRadius = Math.max(terrainRadius + minSurfaceOffset, 1);
+    
     if (radialDistance <= 0.00001) {
       object.position.set(0, minAllowedRadius, 0);
       return;
     }
+
+    if (radialDistance >= minAllowedRadius) return;
 
     object.position.normalize().multiplyScalar(minAllowedRadius);
   };
@@ -209,7 +230,7 @@ export function usePlayerServerController({
   useEffect(() => {
     if (!aircraftRef.current) return;
     enforceOutsidePlanetSurface(aircraftRef.current);
-  }, [aircraftRef, minAllowedRadius]);
+  }, [aircraftRef, fbmParams, planetSize, terrainMaxHeight]);
 
   useEffect(() => {
     if (!multiplayerClient) return;
