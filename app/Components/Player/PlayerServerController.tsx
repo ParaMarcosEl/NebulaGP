@@ -12,7 +12,7 @@ import { useSettingsStore } from '@/Controllers/Settings/useSettingsStore';
 import { useProjectiles } from '../Weapons/useProjectiles';
 import { checkOutOfBoundsSDF } from '@/Utils/SDF';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
-import { FBMParams, terrainElevationFBM, terrainElevationRidged } from '@/Components/LODTerrain/Planet/fbm';
+import { FBMParams } from '@/Components/LODTerrain/Planet/fbm';
 import { useUserStore } from '@/Controllers/Users/useUserStore';
 import type { PhysicsUpdatePayload } from '@/Lib/multiplayer/MultiplayerClient';
 
@@ -108,8 +108,6 @@ export function usePlayerServerController({
   pitchVelocity = 3,
   rollVelocity = 6,
   damping = 0.998,
-  fbmParams,
-  planetSize = 350,
 }: PlayerSystemOptions) {
   const {
     playerSpeed,
@@ -136,43 +134,6 @@ export function usePlayerServerController({
     interpQuat: new THREE.Quaternion(),
     velocity: new THREE.Vector3(),
   }).current;
-
-  const terrainMaxHeight = fbmParams?.uMaxHeight ?? 10;
-  const minSurfaceOffset = 10;
-  const toServerPlayerSpeed = Math.max(25, playerSpeed * 50);
-
-  const enforceOutsidePlanetSurface = (object: THREE.Object3D) => {
-    const radialDistance = object.position.length();
-
-    let nx = 0;
-    let ny = 1;
-    let nz = 0;
-
-    if (radialDistance > 0.00001) {
-      nx = object.position.x / radialDistance;
-      ny = object.position.y / radialDistance;
-      nz = object.position.z / radialDistance;
-    }
-
-    let terrainRadius = planetSize;
-    if (fbmParams) {
-      const elevation = fbmParams.useRidged
-        ? terrainElevationRidged([nx, ny, nz], fbmParams)
-        : terrainElevationFBM([nx, ny, nz], fbmParams);
-      terrainRadius += elevation * terrainMaxHeight;
-    }
-
-    const minAllowedRadius = Math.max(terrainRadius + minSurfaceOffset, 1);
-    
-    if (radialDistance <= 0.00001) {
-      object.position.set(0, minAllowedRadius, 0);
-      return;
-    }
-
-    if (radialDistance >= minAllowedRadius) return;
-
-    object.position.normalize().multiplyScalar(minAllowedRadius);
-  };
 
   const aircraftObjectRef = aircraftRef as React.RefObject<THREE.Object3D>;
   const explosionHandleRef = explosionsRef as React.RefObject<ExplosionHandle>;
@@ -203,7 +164,7 @@ export function usePlayerServerController({
       pitchVelocity,
       rollVelocity,
       damping,
-      playerSpeed: toServerPlayerSpeed,
+      playerSpeed,
       invertPitch: invertPitch ? -1 : 1,
       curvePoints: curve.getPoints(200).map((p) => [p.x, p.y, p.z]),
     });
@@ -214,7 +175,7 @@ export function usePlayerServerController({
     invertPitch,
     multiplayerClient,
     pitchVelocity,
-    toServerPlayerSpeed,
+    playerSpeed,
     rollVelocity,
   ]);
 
@@ -222,15 +183,10 @@ export function usePlayerServerController({
     if (!multiplayerClient) return;
 
     multiplayerClient.send('config', {
-      playerSpeed: toServerPlayerSpeed,
+      playerSpeed,
       invertPitch: invertPitch ? -1 : 1,
     });
-  }, [invertPitch, multiplayerClient, toServerPlayerSpeed]);
-
-  useEffect(() => {
-    if (!aircraftRef.current) return;
-    enforceOutsidePlanetSurface(aircraftRef.current);
-  }, [aircraftRef, fbmParams, planetSize, terrainMaxHeight]);
+  }, [invertPitch, multiplayerClient, playerSpeed]);
 
   useEffect(() => {
     if (!multiplayerClient) return;
@@ -455,8 +411,6 @@ export function usePlayerServerController({
         }
         ship.quaternion.copy(s.quat);
       }
-
-      enforceOutsidePlanetSurface(ship);
     }
 
     if (playingFieldRef?.current) {
