@@ -135,7 +135,7 @@ const Scene = React.memo(function Scene({
           playingFieldRef={playingFieldRef}
           startPosition={startPositions[0].position as [number, number, number]}
           startQuaternion={startPositions[0].quaternion}
-          acceleration={0.1}
+          acceleration={200}
           damping={0.99}
           botSpeed={2}
         />
