@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { isMobileDevice } from '@/Utils';
-import { playerInputAxis } from '@/Components/Player/PlayerController';
+import { playerInputAxis } from '@/Components/Player/PlayerServerController';
 import './RadialTouchInput.css';
 
 interface Props {

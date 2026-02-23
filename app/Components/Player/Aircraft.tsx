@@ -2,14 +2,13 @@
 
 import { useGLTF } from '@react-three/drei';
 import { useEffect, useMemo, useRef } from 'react';
-// import { usePlayerController } from '@/Components/Player/PlayerController';
 import * as THREE from 'three';
 import { SHIPS } from '@/Constants';
 import { Shield } from '../Shield/Shield';
 import { Mine } from '../Weapons/useMines';
 import { EngineSound } from '../Audio/EngineSound';
 import { ExplosionHandle } from '../Particles/ExplosionParticles/ExplosionParticles';
-import { usePlayerSABController } from './PlayerSABController';
+import { usePlayerServerController } from './PlayerServerController';
 import { FBMParams } from '../LODTerrain/Planet/fbm';
 
 type AircraftProps = {
@@ -75,10 +74,10 @@ export default function Aircraft({
     }
   }, [startPosition, startQuaternion, aircraftRef, id]);
 
-  usePlayerSABController({
+  usePlayerServerController({
     fbmParams,
     planetSize,
-    id,
+    id: String(id),
     trackId,
     minePoolRef,
     explosionsRef,
