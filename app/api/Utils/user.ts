@@ -1,6 +1,7 @@
 // lib/getUserFromRequest.ts
 import { NextRequest } from 'next/server';
 import { adminAuth, adminAppCheck } from '@/Lib/Firebase/FirebaseAdmin';
+import { fail, ok } from './response';
 
 export async function getUserFromRequest(req: NextRequest) {
   const token = req.cookies.get('firebase_token')?.value;
@@ -13,17 +14,31 @@ export async function getUserFromRequest(req: NextRequest) {
     return null;
   }
 }
-// lib/jsonResponse.ts
-import { NextResponse } from 'next/server';
-import type { User } from '@/Constants/types';
 
-export function jsonResponse(
-  success: boolean,
-  data: User | null,
-  error: string | null = null,
-  status = 200,
-) {
-  return NextResponse.json({ success, data, error }, { status });
+export const jsonResponse = (success: boolean, data: unknown, error: string | null, status = 200) =>
+  success ? ok(data, status) : fail(error ?? 'Unknown error', status);
+
+type FirebaseErrorLike = {
+  code?: string;
+  message?: string;
+};
+
+export function getErrorCode(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as FirebaseErrorLike).code;
+    if (typeof code === 'string' && code.length > 0) return code;
+  }
+
+  return undefined;
+}
+
+export function getErrorMessage(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as FirebaseErrorLike).message;
+    if (typeof message === 'string' && message.length > 0) return message;
+  }
+
+  return undefined;
 }
 
 // AuthHelpers.ts

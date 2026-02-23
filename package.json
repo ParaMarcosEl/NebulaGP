@@ -36,6 +36,7 @@
     "three-mesh-bvh": "^0.9.1",
     "three-stdlib": "^2.36.0",
     "ws": "^8.18.3",
+    "zod": "^4.3.6",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

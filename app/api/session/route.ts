@@ -1,34 +1,42 @@
-// app/api/session/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { adminAuth } from '@/Lib/Firebase/FirebaseAdmin';
+import { createSessionBodySchema } from '../Utils/schemas';
+import { fail, ok } from '../Utils/response';
+import { parseJsonBody } from '../Utils/validation';
+
+type SessionCreateResponse = {
+  uid: string;
+  email?: string;
+};
+
+type SessionDeleteResponse = {
+  message: string;
+};
 
 export async function POST(req: NextRequest) {
-  // Login: set ID token in HTTP-only cookie
-  const { idToken } = await req.json();
+  const body = await parseJsonBody(req, createSessionBodySchema);
+  if (!body.success) return body.response;
 
   try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    const res = NextResponse.json({ uid: decoded.uid, email: decoded.email });
-    // Set secure HTTP-only cookie
+    const decoded = await adminAuth.verifyIdToken(body.data.idToken);
+    const res = ok<SessionCreateResponse>({ uid: decoded.uid, email: decoded.email }, 200);
+
     res.cookies.set({
       name: 'firebase_token',
-      value: idToken,
+      value: body.data.idToken,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 60 * 24,
     });
     return res;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (err) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  } catch {
+    return fail('Invalid token', 401);
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function DELETE(req: NextRequest) {
-  // Logout: remove cookie
-  const res = NextResponse.json({ message: 'Logged out' });
+export async function DELETE() {
+  const res = ok<SessionDeleteResponse>({ message: 'Logged out' }, 200);
   res.cookies.set({
     name: 'firebase_token',
     value: '',
